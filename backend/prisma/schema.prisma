@@ -1,0 +1,175 @@
+// ============================================================
+// Prisma Schema — Moul Hanout POS SaaS
+// ============================================================
+// Generator
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum Role {
+  OWNER
+  CASHIER
+}
+
+enum StockStatus {
+  IN_STOCK
+  LOW_STOCK
+  OUT_OF_STOCK
+  EXPIRED
+}
+
+enum SaleStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  MOBILE_PAYMENT
+}
+
+// ============================================================
+// MODELS
+// ============================================================
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  password     String
+  name         String
+  role         Role     @default(CASHIER)
+  isActive     Boolean  @default(true)
+  refreshToken String?
+
+  sales    Sale[]
+  sessions Session[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@map("sessions")
+}
+
+model Category {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String?
+  color       String? // UI color tag (hex)
+  icon        String? // Icon name from icon library
+
+  products Product[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories")
+}
+
+model Product {
+  id           String   @id @default(cuid())
+  barcode      String?  @unique
+  name         String
+  description  String?
+  sku          String   @unique // Stock Keeping Unit
+  purchasePrice Decimal @db.Decimal(10, 2)
+  salePrice    Decimal  @db.Decimal(10, 2)
+  imageUrl     String?
+  isActive     Boolean  @default(true)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  stockItems StockItem[]
+  saleItems  SaleItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("products")
+}
+
+model StockItem {
+  id           String      @id @default(cuid())
+  productId    String
+  quantity     Int         @default(0)
+  minQuantity  Int         @default(5)  // Alert threshold
+  maxQuantity  Int?                      // Reorder ceiling
+  unit         String      @default("unit") // unit, kg, liter, box…
+  expiryDate   DateTime?
+  batchNumber  String?
+  status       StockStatus @default(IN_STOCK)
+  location     String?     // Shelf / aisle reference
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("stock_items")
+}
+
+model Sale {
+  id            String        @id @default(cuid())
+  saleNumber    String        @unique // e.g. SALE-20240301-0001
+  cashierId     String
+  status        SaleStatus    @default(COMPLETED)
+  paymentMethod PaymentMethod @default(CASH)
+  subtotal      Decimal       @db.Decimal(10, 2)
+  taxRate       Decimal       @default(0.20) @db.Decimal(4, 2)
+  taxAmount     Decimal       @db.Decimal(10, 2)
+  discount      Decimal       @default(0) @db.Decimal(10, 2)
+  total         Decimal       @db.Decimal(10, 2)
+  note          String?
+  returnedFrom  String?       // saleId reference for refunds
+
+  cashier   User       @relation(fields: [cashierId], references: [id])
+  saleItems SaleItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id        String  @id @default(cuid())
+  saleId    String
+  productId String
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)
+  discount  Decimal @default(0) @db.Decimal(10, 2)
+  total     Decimal @db.Decimal(10, 2)
+
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("sale_items")
+}
