@@ -249,3 +249,15 @@ test(backend/sales): add e2e sale creation test
 | Route Guard | Next.js Edge Middleware             |
 | Containers  | Docker + Docker Compose             |
 | Shared Code | packages/shared-types, shared-utils |
+
+---
+
+## Production Deployment
+
+Ensure all production secrets are securely set in your .env files before deploying.
+
+# Build and run all services in detached mode
+docker-compose up --build -d
+
+# Execute pending migrations against the production database
+docker-compose exec backend npx prisma migrate deploy
