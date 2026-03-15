@@ -1,0 +1,37 @@
+name: Quality Gate
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+      - 'feat/**'
+      - 'fix/**'
+      - 'chore/**'
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Shared packages build
+        run: npm run check:shared
+
+      - name: Backend unit tests
+        run: npm run check:backend
+
+      - name: Frontend lint and build
+        run: npm run check:frontend
