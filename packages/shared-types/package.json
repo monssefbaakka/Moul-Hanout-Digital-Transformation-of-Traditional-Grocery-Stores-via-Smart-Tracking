@@ -2,8 +2,11 @@
   "name": "@moul-hanout/shared-types",
   "version": "1.0.0",
   "description": "Shared TypeScript types for Moul Hanout POS — used by both backend and frontend",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch"
