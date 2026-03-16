@@ -31,7 +31,7 @@ jobs:
         run: npm run check:shared
  
       - name: Generate Prisma Client
-        run: npm run generate:prisma
+        run: npm run prisma:generate --workspace backend
 
       - name: Backend unit tests
         run: npm run check:backend
