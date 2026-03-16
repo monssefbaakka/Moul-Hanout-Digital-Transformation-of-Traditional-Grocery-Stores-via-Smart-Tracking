@@ -8,6 +8,7 @@ export interface JwtPayload {
   sub: string;   // userId
   email: string;
   role: string;
+  sid?: string;
   iat?: number;
   exp?: number;
 }
@@ -26,13 +27,31 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(payload: JwtPayload) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: payload.sub },
-      select: { id: true, email: true, role: true, isActive: true },
-    });
+    const [user, session] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        select: { id: true, email: true, name: true, role: true, isActive: true, createdAt: true },
+      }),
+      payload.sid
+        ? this.prisma.session.findUnique({
+            where: { id: payload.sid },
+            select: { id: true, expiresAt: true },
+          })
+        : Promise.resolve(null),
+    ]);
+
     if (!user || !user.isActive) {
       throw new UnauthorizedException('User not found or deactivated');
     }
-    return user;
+
+    if (!payload.sid || !session || session.expiresAt <= new Date()) {
+      throw new UnauthorizedException('Session is invalid or expired');
+    }
+
+    return {
+      ...user,
+      sessionId: session.id,
+      tokenExpiresAt: payload.exp ? new Date(payload.exp * 1000).toISOString() : null,
+    };
   }
 }

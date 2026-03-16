@@ -5,10 +5,16 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Headers,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginDto, RefreshTokenDto, RegisterDto } from './dto/auth.dto';
+import {
+  LoginDto,
+  RefreshTokenDto,
+  RegisterDto,
+  ValidateTokenDto,
+} from './dto/auth.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { IS_PUBLIC_KEY } from '../../common/guards/jwt-auth.guard';
@@ -42,11 +48,22 @@ export class AuthController {
     return this.authService.refresh(dto.refreshToken);
   }
 
+  @Public()
+  @Post('validate')
+  @HttpCode(HttpStatus.OK)
+  validate(@Body() dto: ValidateTokenDto) {
+    return this.authService.validateAccessToken(dto.accessToken);
+  }
+
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
-  logout(@CurrentUser('id') userId: string) {
-    return this.authService.logout(userId);
+  logout(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('sessionId') sessionId: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    return this.authService.logout(userId, sessionId, authorization);
   }
 }

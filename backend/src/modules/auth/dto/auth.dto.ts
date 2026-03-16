@@ -34,3 +34,9 @@ export class RefreshTokenDto {
   @IsString()
   refreshToken: string;
 }
+
+export class ValidateTokenDto {
+  @ApiProperty()
+  @IsString()
+  accessToken: string;
+}
