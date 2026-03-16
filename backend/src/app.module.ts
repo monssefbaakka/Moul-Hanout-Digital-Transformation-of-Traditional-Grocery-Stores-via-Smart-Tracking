@@ -16,6 +16,7 @@ import { HealthModule } from './modules/health/health.module';
 import { appConfig } from './config/app.config';
 import { jwtConfig } from './config/jwt.config';
 import { databaseConfig } from './config/database.config';
+import { validateEnv } from './config/env.validation';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { databaseConfig } from './config/database.config';
       isGlobal: true,
       load: [appConfig, jwtConfig, databaseConfig],
       envFilePath: ['.env.local', '.env'],
+      validate: validateEnv,
     }),
 
     // Rate limiting
