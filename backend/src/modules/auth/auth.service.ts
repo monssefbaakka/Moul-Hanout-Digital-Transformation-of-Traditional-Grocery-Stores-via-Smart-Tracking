@@ -433,7 +433,20 @@ export class AuthService {
    * In a real app, this would verify the token and update the user's password.
    */
   async resetPassword(dto: ResetPasswordDto) {
-    // TODO: Verify reset token and update password.
+    // TODO: 1. Verify that the reset token is valid and not expired.
+    // TODO: 2. Find the user associated with that reset token.
+
+    // Example of hashing the new password before storing it:
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 12);
+
+    // TODO: 3. Update the user record with the new hashedPassword.
+    // await this.prisma.user.update({
+    //   where: { id: userIdFromToken },
+    //   data: { password: hashedPassword },
+    // });
+
+    // TODO: 4. Invalidate the reset token so it cannot be reused.
+
     return {
       message: 'Password has been successfully reset.',
     };
