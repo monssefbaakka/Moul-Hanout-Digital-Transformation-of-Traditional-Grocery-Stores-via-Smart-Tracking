@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { Role } from '../../common/enums';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
@@ -27,5 +28,16 @@ export class UsersService {
 
   deactivate(id: string) {
     return this.prisma.user.update({ where: { id }, data: { isActive: false } });
+  }
+
+  /**
+   * Securely updates a user's password after hashing it.
+   */
+  async updatePassword(id: string, newPassword: string) {
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    return this.prisma.user.update({
+      where: { id },
+      data: { password: hashedPassword },
+    });
   }
 }

@@ -25,8 +25,13 @@ import type { StringValue } from 'ms';
 // `PrismaService` is our database access layer.
 import { PrismaService } from '../../database/prisma.service';
 
-// These DTOs define the shape of login and register request bodies.
-import { LoginDto, RegisterDto } from './dto/auth.dto';
+// These DTOs define the shape of login, register, and password-recovery request bodies.
+import {
+  LoginDto,
+  RegisterDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+} from './dto/auth.dto';
 
 // `Role` is the app-level enum for user roles.
 import { Role } from '../../common/enums';
@@ -410,5 +415,40 @@ export class AuthService {
 
     // Return the extracted token string.
     return token;
+  }
+
+  /**
+   * Placeholder for forgot password logic.
+   * In a real app, this would generate a reset token, save it, and send an email.
+   */
+  async forgotPassword(dto: ForgotPasswordDto) {
+    // TODO: Generate reset token, save to DB, and send email.
+    return {
+      message: 'If an account exists with that email, a reset link has been sent.',
+    };
+  }
+
+  /**
+   * Placeholder for password reset logic.
+   * In a real app, this would verify the token and update the user's password.
+   */
+  async resetPassword(dto: ResetPasswordDto) {
+    // TODO: 1. Verify that the reset token is valid and not expired.
+    // TODO: 2. Find the user associated with that reset token.
+
+    // Example of hashing the new password before storing it:
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 12);
+
+    // TODO: 3. Update the user record with the new hashedPassword.
+    // await this.prisma.user.update({
+    //   where: { id: userIdFromToken },
+    //   data: { password: hashedPassword },
+    // });
+
+    // TODO: 4. Invalidate the reset token so it cannot be reused.
+
+    return {
+      message: 'Password has been successfully reset.',
+    };
   }
 }
