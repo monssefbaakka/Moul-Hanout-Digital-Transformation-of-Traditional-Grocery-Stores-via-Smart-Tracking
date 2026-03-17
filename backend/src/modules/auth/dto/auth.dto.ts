@@ -1,42 +1,120 @@
-import { IsEmail, IsString, MinLength, MaxLength } from 'class-validator';
+import { IsEmail, IsString, MinLength, MaxLength, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
+/**
+ * Data transfer object for user login.
+ */
 export class LoginDto {
-  @ApiProperty({ example: 'owner@moulhanout.ma' })
-  @IsEmail()
+  @ApiProperty({
+    description: 'The email address of the user',
+    example: 'owner@moulhanout.ma',
+  })
+  @IsEmail({}, { message: 'Please provide a valid email address' })
+  @IsNotEmpty({ message: 'Email is required' })
   email: string;
 
-  @ApiProperty({ example: 'Admin@123!' })
+  @ApiProperty({
+    description: 'The user password (min 8 characters)',
+    example: 'Admin@123!',
+    minLength: 8,
+  })
   @IsString()
-  @MinLength(8)
+  @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  @IsNotEmpty({ message: 'Password is required' })
   password: string;
 }
 
+/**
+ * Data transfer object for user registration.
+ */
 export class RegisterDto {
-  @ApiProperty({ example: 'John Doe' })
+  @ApiProperty({
+    description: 'The full name of the user',
+    example: 'John Doe',
+    minLength: 2,
+    maxLength: 80,
+  })
   @IsString()
-  @MinLength(2)
-  @MaxLength(80)
+  @IsNotEmpty({ message: 'Name is required' })
+  @MinLength(2, { message: 'Name must be at least 2 characters long' })
+  @MaxLength(80, { message: 'Name cannot exceed 80 characters' })
   name: string;
 
-  @ApiProperty({ example: 'cashier@moulhanout.ma' })
-  @IsEmail()
+  @ApiProperty({
+    description: 'The email address for the new account',
+    example: 'cashier@moulhanout.ma',
+  })
+  @IsEmail({}, { message: 'Please provide a valid email address' })
+  @IsNotEmpty({ message: 'Email is required' })
   email: string;
 
-  @ApiProperty({ example: 'Cashier@123!' })
+  @ApiProperty({
+    description: 'Secure password for the new account (min 8 characters)',
+    example: 'Cashier@123!',
+    minLength: 8,
+  })
   @IsString()
-  @MinLength(8)
+  @IsNotEmpty({ message: 'Password is required' })
+  @MinLength(8, { message: 'Password must be at least 8 characters long' })
   password: string;
 }
 
+/**
+ * Data transfer object for refreshing access tokens.
+ */
 export class RefreshTokenDto {
-  @ApiProperty()
+  @ApiProperty({
+    description: 'The valid refresh token string',
+  })
   @IsString()
+  @IsNotEmpty({ message: 'Refresh token is required' })
   refreshToken: string;
 }
 
+/**
+ * Data transfer object for manual token validation.
+ */
 export class ValidateTokenDto {
-  @ApiProperty()
+  @ApiProperty({
+    description: 'The access token to validate',
+  })
   @IsString()
+  @IsNotEmpty({ message: 'Access token is required' })
   accessToken: string;
 }
+
+/**
+ * Data transfer object for requesting a password reset.
+ */
+export class ForgotPasswordDto {
+  @ApiProperty({
+    description: 'The email address to send the reset link to',
+    example: 'owner@moulhanout.ma',
+  })
+  @IsEmail({}, { message: 'Please provide a valid email address' })
+  @IsNotEmpty({ message: 'Email is required' })
+  email: string;
+}
+
+/**
+ * Data transfer object for resetting the password using a token.
+ */
+export class ResetPasswordDto {
+  @ApiProperty({
+    description: 'The reset token received via email',
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'Reset token is required' })
+  token: string;
+
+  @ApiProperty({
+    description: 'The new secure password',
+    example: 'NewAdmin@123!',
+    minLength: 8,
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'New password is required' })
+  @MinLength(8, { message: 'New password must be at least 8 characters long' })
+  newPassword: string;
+}
+
