@@ -7,7 +7,17 @@ import {
   UseGuards,
   Headers,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiUnauthorizedResponse,
+  ApiConflictResponse,
+  ApiNoContentResponse,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import {
   LoginDto,
@@ -32,6 +42,9 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Authenticate user and return tokens' })
+  @ApiOkResponse({ description: 'Successfully authenticated. Returns access and refresh tokens.' })
+  @ApiUnauthorizedResponse({ description: 'Invalid credentials or account deactivated.' })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
@@ -39,6 +52,9 @@ export class AuthController {
   @Public()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Register a new user account' })
+  @ApiCreatedResponse({ description: 'Account successfully created.' })
+  @ApiConflictResponse({ description: 'Email address already in use.' })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
@@ -46,6 +62,9 @@ export class AuthController {
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Refresh access token using a valid refresh token' })
+  @ApiOkResponse({ description: 'Tokens successfully refreshed.' })
+  @ApiUnauthorizedResponse({ description: 'Invalid or expired refresh token.' })
   refresh(@Body() dto: RefreshTokenDto) {
     return this.authService.refresh(dto.refreshToken);
   }
@@ -53,6 +72,9 @@ export class AuthController {
   @Public()
   @Post('validate')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Validate an access token manually' })
+  @ApiOkResponse({ description: 'Token status and user metadata returned.' })
+  @ApiUnauthorizedResponse({ description: 'Invalid or expired access token.' })
   validate(@Body() dto: ValidateTokenDto) {
     return this.authService.validateAccessToken(dto.accessToken);
   }
@@ -61,6 +83,9 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Log out current user session' })
+  @ApiNoContentResponse({ description: 'Successfully logged out and session revoked.' })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing access token.' })
   logout(
     @CurrentUser('id') userId: string,
     @CurrentUser('sessionId') sessionId: string,
@@ -72,6 +97,8 @@ export class AuthController {
   @Public()
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request a password reset email' })
+  @ApiOkResponse({ description: 'Success message indicating reset instructions were sent.' })
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto);
   }
@@ -79,6 +106,8 @@ export class AuthController {
   @Public()
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset password using the token received via email' })
+  @ApiOkResponse({ description: 'Confirmation that the password has been reset.' })
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
   }
