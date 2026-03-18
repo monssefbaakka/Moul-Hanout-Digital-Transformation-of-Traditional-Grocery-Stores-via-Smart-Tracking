@@ -6,13 +6,13 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 # ─── Stage 2: Build ──────────────────────────────────────────
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 COPY . .
 RUN npm run build
 # Generate Prisma client for production
@@ -28,7 +28,6 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 COPY --from=deps --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nestjs:nodejs /app/generated ./generated
 COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
 COPY --chown=nestjs:nodejs package*.json ./
 

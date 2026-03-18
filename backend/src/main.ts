@@ -24,7 +24,7 @@ async function bootstrap() {
   app.enableCors({
     origin: configService.get<string>('FRONTEND_URL', 'http://localhost:3000'),
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    credentials: true,
+    credentials: false,
   });
 
   // Global pipes, filters, interceptors
@@ -42,17 +42,12 @@ async function bootstrap() {
   // Swagger — only in non-production
   if (nodeEnv !== 'production') {
     const swaggerConfig = new DocumentBuilder()
-      .setTitle('Moul Hanout POS API')
-      .setDescription('Production-grade POS SaaS REST API')
+      .setTitle('Moul Hanout API')
+      .setDescription('Phase 1 backend foundation: auth, users, and health only')
       .setVersion('1.0')
       .addBearerAuth()
       .addTag('auth', 'Authentication & authorization')
       .addTag('users', 'User management')
-      .addTag('products', 'Product catalog')
-      .addTag('categories', 'Product categories')
-      .addTag('stock', 'Stock & inventory')
-      .addTag('sales', 'Sales transactions')
-      .addTag('reports', 'Reports & analytics')
       .addTag('health', 'Health checks')
       .build();
 

@@ -11,7 +11,6 @@ import {
   ApiTags,
   ApiBearerAuth,
   ApiOperation,
-  ApiResponse,
   ApiOkResponse,
   ApiCreatedResponse,
   ApiUnauthorizedResponse,
@@ -23,9 +22,6 @@ import {
   LoginDto,
   RefreshTokenDto,
   RegisterDto,
-  ValidateTokenDto,
-  ForgotPasswordDto,
-  ResetPasswordDto,
 } from './dto/auth.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -69,16 +65,6 @@ export class AuthController {
     return this.authService.refresh(dto.refreshToken);
   }
 
-  @Public()
-  @Post('validate')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Validate an access token manually' })
-  @ApiOkResponse({ description: 'Token status and user metadata returned.' })
-  @ApiUnauthorizedResponse({ description: 'Invalid or expired access token.' })
-  validate(@Body() dto: ValidateTokenDto) {
-    return this.authService.validateAccessToken(dto.accessToken);
-  }
-
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post('logout')
@@ -92,23 +78,5 @@ export class AuthController {
     @Headers('authorization') authorization?: string,
   ) {
     return this.authService.logout(userId, sessionId, authorization);
-  }
-
-  @Public()
-  @Post('forgot-password')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Request a password reset email' })
-  @ApiOkResponse({ description: 'Success message indicating reset instructions were sent.' })
-  forgotPassword(@Body() dto: ForgotPasswordDto) {
-    return this.authService.forgotPassword(dto);
-  }
-
-  @Public()
-  @Post('reset-password')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Reset password using the token received via email' })
-  @ApiOkResponse({ description: 'Confirmation that the password has been reset.' })
-  resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.authService.resetPassword(dto);
   }
 }

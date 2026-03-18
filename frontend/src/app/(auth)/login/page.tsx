@@ -11,11 +11,11 @@ export default function LoginPage() {
           contract is stable.
         </p>
         <div className="auth-actions">
-          <Link href="/sales" className="button-link">
-            Go to dashboard shell
-          </Link>
-          <Link href="/register" className="button-link secondary">
+          <Link href="/register" className="button-link">
             Open register page
+          </Link>
+          <Link href="/" className="button-link secondary">
+            Back to project status
           </Link>
         </div>
       </section>

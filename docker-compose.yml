@@ -1,7 +1,6 @@
 version: '3.9'
 
 services:
-  # ─── PostgreSQL ──────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
     container_name: moul_hanout_db
@@ -20,23 +19,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # ─── Redis (optional — for future job queues / caching) ──────
-  redis:
-    image: redis:7-alpine
-    container_name: moul_hanout_redis
-    restart: unless-stopped
-    ports:
-      - '${REDIS_PORT:-6379}:6379'
-    command: redis-server --save 60 1 --loglevel warning
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # ─── Backend (NestJS) ────────────────────────────────────────
   backend:
     build:
       context: ./backend
@@ -47,22 +29,18 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     environment:
       NODE_ENV: production
       PORT: 4000
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      REDIS_URL: redis://redis:6379
       FRONTEND_URL: ${NEXTAUTH_URL:-http://localhost:3000}
     ports:
       - '${BACKEND_PORT:-4000}:4000'
     volumes:
       - backend_uploads:/app/uploads
 
-  # ─── Frontend (Next.js) ──────────────────────────────────────
   frontend:
     build:
       context: ./frontend
@@ -81,5 +59,4 @@ services:
 
 volumes:
   postgres_data:
-  redis_data:
   backend_uploads:

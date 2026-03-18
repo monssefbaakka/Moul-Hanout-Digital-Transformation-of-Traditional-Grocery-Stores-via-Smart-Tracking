@@ -153,43 +153,6 @@ describe('AuthService', () => {
     });
   });
 
-  it('returns token validation metadata for a valid access token', async () => {
-    jwt.verify.mockReturnValue({
-      sub: 'user-1',
-      sid: 'session-1',
-      exp: 1890000000,
-    });
-    prisma.session.findUnique.mockResolvedValue({
-      id: 'session-1',
-      userId: 'user-1',
-      expiresAt: new Date('2099-01-01T00:00:00.000Z'),
-      user: {
-        id: 'user-1',
-        email: 'owner@moulhanout.ma',
-        name: 'Owner',
-        role: Role.OWNER,
-        isActive: true,
-        createdAt: new Date('2026-03-16T00:00:00.000Z'),
-      },
-    });
-
-    const result = await service.validateAccessToken('access-token');
-
-    expect(result).toEqual({
-      valid: true,
-      user: {
-        id: 'user-1',
-        email: 'owner@moulhanout.ma',
-        name: 'Owner',
-        role: Role.OWNER,
-        isActive: true,
-        createdAt: new Date('2026-03-16T00:00:00.000Z'),
-      },
-      sessionId: 'session-1',
-      expiresAt: new Date(1890000000 * 1000).toISOString(),
-    });
-  });
-
   it('rejects refresh when the hashed token does not match the stored session token', async () => {
     jwt.verify.mockReturnValue({
       sub: 'user-1',

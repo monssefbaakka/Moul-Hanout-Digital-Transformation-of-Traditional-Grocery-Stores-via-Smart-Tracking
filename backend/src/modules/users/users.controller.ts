@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -19,15 +19,4 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
-  @Roles(Role.OWNER)
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
-  }
-
-  @Roles(Role.OWNER)
-  @Patch(':id/deactivate')
-  deactivate(@Param('id') id: string) {
-    return this.usersService.deactivate(id);
-  }
 }

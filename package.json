@@ -19,7 +19,7 @@
     "test": "npm run test --workspace backend",
     "check:shared": "npm run build --workspace @moul-hanout/shared-types && npm run build --workspace @moul-hanout/shared-utils",
     "check:frontend": "npm run lint --workspace frontend && npm run build --workspace frontend",
-    "check:backend": "npm run generate:prisma && npm run test --workspace backend",
+    "check:backend": "npm run generate:prisma && npm run test --workspace backend && npm run test:e2e --workspace backend && npm run build --workspace backend",
     "verify": "npm run check:shared && npm run check:backend && npm run check:frontend"
   },
   "devDependencies": {

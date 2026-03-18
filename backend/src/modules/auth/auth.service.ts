@@ -29,8 +29,6 @@ import { PrismaService } from '../../database/prisma.service';
 import {
   LoginDto,
   RegisterDto,
-  ForgotPasswordDto,
-  ResetPasswordDto,
 } from './dto/auth.dto';
 
 // `Role` is the app-level enum for user roles.
@@ -214,58 +212,6 @@ export class AuthService {
     });
   }
 
-  // This method validates an access token and returns useful auth metadata.
-  async validateAccessToken(accessToken: string) {
-    // Verify the access token signature and decode its payload.
-    const payload = this.verifyToken(accessToken, 'access');
-
-    // Load the related session and a safe subset of the user fields.
-    const session = await this.prisma.session.findUnique({
-      // Find the session by the session id stored in the token.
-      where: { id: payload.sid },
-
-      // Include user information needed by the caller.
-      include: {
-        user: {
-          // Only select safe fields that can be returned to the client.
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            role: true,
-            isActive: true,
-            createdAt: true,
-          },
-        },
-      },
-    });
-
-    // Reject the token if the session is missing, does not belong to the user, or has expired.
-    if (!session || session.userId !== payload.sub || session.expiresAt <= new Date()) {
-      throw new UnauthorizedException('Access token session is invalid or expired');
-    }
-
-    // Reject the token if the user account is no longer active.
-    if (!session.user.isActive) {
-      throw new UnauthorizedException('User not found or deactivated');
-    }
-
-    // Return a structured validation result.
-    return {
-      // Tell the caller the token is valid.
-      valid: true,
-
-      // Return the safe user summary.
-      user: session.user,
-
-      // Return the session id so the caller can trace the active session.
-      sessionId: session.id,
-
-      // Convert the JWT expiration time into a readable ISO date string.
-      expiresAt: payload.exp ? new Date(payload.exp * 1000).toISOString() : null,
-    };
-  }
-
   // This helper creates a session row and then generates tokens for that session.
   private async issueTokensForUser(user: AuthenticatedUser) {
     // Create the session first so we have a database id to embed inside the JWT payload.
@@ -417,38 +363,4 @@ export class AuthService {
     return token;
   }
 
-  /**
-   * Placeholder for forgot password logic.
-   * In a real app, this would generate a reset token, save it, and send an email.
-   */
-  async forgotPassword(dto: ForgotPasswordDto) {
-    // TODO: Generate reset token, save to DB, and send email.
-    return {
-      message: 'If an account exists with that email, a reset link has been sent.',
-    };
-  }
-
-  /**
-   * Placeholder for password reset logic.
-   * In a real app, this would verify the token and update the user's password.
-   */
-  async resetPassword(dto: ResetPasswordDto) {
-    // TODO: 1. Verify that the reset token is valid and not expired.
-    // TODO: 2. Find the user associated with that reset token.
-
-    // Example of hashing the new password before storing it:
-    const hashedPassword = await bcrypt.hash(dto.newPassword, 12);
-
-    // TODO: 3. Update the user record with the new hashedPassword.
-    // await this.prisma.user.update({
-    //   where: { id: userIdFromToken },
-    //   data: { password: hashedPassword },
-    // });
-
-    // TODO: 4. Invalidate the reset token so it cannot be reused.
-
-    return {
-      message: 'Password has been successfully reset.',
-    };
-  }
 }
