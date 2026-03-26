@@ -1,7 +1,7 @@
 // ============================================================
 // Prisma Schema — Moul Hanout POS SaaS
 // ============================================================
-// Generator
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,30 +13,73 @@ datasource db {
 // ============================================================
 // ENUMS
 // ============================================================
-
 enum Role {
   OWNER
   CASHIER
+}
+
+enum PaymentMode {
+  CASH
+  CARD
+  OTHER
+}
+
+enum MovementType {
+  IN
+  OUT
+  ADJUST
 }
 
 // ============================================================
 // MODELS
 // ============================================================
 
+model Shop {
+  id        String   @id @default(cuid())
+  name      String
+  currency  String   @default("MAD")
+  timezone  String   @default("Africa/Casablanca")
+  createdAt DateTime @default(now())
+
+  users      UserShopRole[]
+  categories Category[]
+  products   Product[]
+  sales      Sale[]
+  auditLogs  AuditLog[]
+
+  @@map("shops")
+}
+
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  password     String
-  name         String
-  role         Role     @default(CASHIER)
-  isActive     Boolean  @default(true)
-
-  sessions Session[]
-
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String // Renamed from password_hash for simpler internal mapping
+  name      String
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  sessions       Session[]
+  shopRoles      UserShopRole[]
+  salesMade      Sale[]
+  stockMovements StockMovement[]
+  auditLogs      AuditLog[]
+
   @@map("users")
+}
+
+// Pivot table allowing multi-tenancy + RBAC per shop
+model UserShopRole {
+  id     String @id @default(cuid())
+  userId String
+  shopId String
+  role   Role   @default(CASHIER)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, shopId])
+  @@map("user_shop_roles")
 }
 
 model Session {
@@ -46,10 +89,101 @@ model Session {
   expiresAt DateTime
   ipAddress String?
   userAgent String?
+  createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@map("sessions")
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  shopId    String
+  name      String
   createdAt DateTime @default(now())
 
-  @@map("sessions")
+  shop     Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id                String  @id @default(cuid())
+  shopId            String
+  categoryId        String
+  name              String
+  barcode           String?
+  salePrice         Float // Maps to sale_price
+  costPrice         Float? // Maps to cost_price
+  lowStockThreshold Int     @default(5)
+  currentStock      Int     @default(0) // Cache to avoid SUM(movements) every time
+
+  shop           Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  category       Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  saleItems      SaleItem[]
+  stockMovements StockMovement[]
+
+  @@unique([shopId, barcode]) // Barcodes must be unique per shop
+  @@map("products")
+}
+
+model Sale {
+  id            String      @id @default(cuid())
+  shopId        String
+  cashierUserId String
+  totalAmount   Float
+  paymentMode   PaymentMode @default(CASH)
+  soldAt        DateTime    @default(now())
+
+  shop    Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  cashier User       @relation(fields: [cashierUserId], references: [id], onDelete: Restrict)
+  items   SaleItem[]
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id        String @id @default(cuid())
+  saleId    String
+  productId String
+  qty       Int
+  unitPrice Float
+  discount  Float?
+
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@map("sale_items")
+}
+
+model StockMovement {
+  id        String       @id @default(cuid())
+  productId String
+  type      MovementType
+  qtyDelta  Int // Can be positive (IN) or negative (OUT)
+  reason    String?
+  createdBy String
+  createdAt DateTime     @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@map("stock_movements")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  shopId     String
+  userId     String
+  action     String // e.g., "DELETE", "UPDATE"
+  entityType String // e.g., "PRODUCT", "CATEGORY"
+  entityId   String
+  payload    Json? // Stores the before/after state
+  createdAt  DateTime @default(now())
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
 }
