@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { Module, Global } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import Redis from 'ioredis';
 
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -12,6 +13,7 @@ import { jwtConfig } from './config/jwt.config';
 import { databaseConfig } from './config/database.config';
 import { validateEnv } from './config/env.validation';
 
+@Global()
 @Module({
   imports: [
     // Configuration — load env first
@@ -37,5 +39,15 @@ import { validateEnv } from './config/env.validation';
     UsersModule,
     HealthModule,
   ],
+  providers: [
+    {
+      provide: 'REDIS_CLIENT',
+      useFactory: (configService: ConfigService) => {
+        return new Redis(configService.get<string>('REDIS_URL') || 'redis://localhost:6379');
+      },
+      inject: [ConfigService],
+    },
+  ],
+  exports: ['REDIS_CLIENT'],
 })
 export class AppModule {}

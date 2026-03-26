@@ -19,6 +19,16 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: moul_hanout_redis
+    restart: unless-stopped
+    ports:
+      - '${REDIS_PORT:-6380}:6379'
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
   backend:
     build:
       context: ./backend
@@ -29,12 +39,15 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_started
     environment:
       NODE_ENV: production
       PORT: 4000
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       FRONTEND_URL: ${NEXTAUTH_URL:-http://localhost:3000}
     ports:
       - '${BACKEND_PORT:-4000}:4000'
@@ -60,3 +73,4 @@ services:
 volumes:
   postgres_data:
   backend_uploads:
+  redis_data:
