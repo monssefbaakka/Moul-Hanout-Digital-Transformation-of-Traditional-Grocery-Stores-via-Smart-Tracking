@@ -58,12 +58,12 @@ interface AuthenticatedUser {
   createdAt: Date;
 }
 
-interface AuthTokens {
+export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
 }
 
-interface AuthResponse extends AuthTokens {
+export interface AuthResponse extends AuthTokens {
   user: {
     id: string;
     email: string;
@@ -74,7 +74,7 @@ interface AuthResponse extends AuthTokens {
   };
 }
 
-interface LogoutResponse {
+export interface LogoutResponse {
   message: string;
 }
 

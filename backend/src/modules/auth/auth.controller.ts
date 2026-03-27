@@ -16,7 +16,7 @@ import {
   ApiUnauthorizedResponse,
   ApiConflictResponse,
 } from '@nestjs/swagger';
-import { AuthService } from './auth.service';
+import { AuthResponse, AuthService, LogoutResponse } from './auth.service';
 import {
   LoginDto,
   RefreshTokenDto,
@@ -40,7 +40,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Authenticate user and return tokens' })
   @ApiOkResponse({ description: 'Successfully authenticated. Returns access and refresh tokens.' })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials or account deactivated.' })
-  login(@Body() dto: LoginDto) {
+  login(@Body() dto: LoginDto): Promise<AuthResponse> {
     return this.authService.login(dto);
   }
 
@@ -60,7 +60,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Refresh access token using a valid refresh token' })
   @ApiOkResponse({ description: 'Tokens successfully refreshed.' })
   @ApiUnauthorizedResponse({ description: 'Invalid or expired refresh token.' })
-  refresh(@Body() dto: RefreshTokenDto) {
+  refresh(@Body() dto: RefreshTokenDto): Promise<AuthResponse> {
     return this.authService.refresh(dto.refreshToken);
   }
 
@@ -75,7 +75,7 @@ export class AuthController {
     @CurrentUser('id') userId: string,
     @CurrentUser('sessionId') sessionId: string,
     @Headers('authorization') authorization?: string,
-  ) {
+  ): Promise<LogoutResponse> {
     return this.authService.logout(userId, sessionId, authorization);
   }
 }
