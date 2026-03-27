@@ -9,11 +9,9 @@ import { useAuthStore } from '@/store/auth.store';
 
 export function AuthSessionPanel() {
   const router = useRouter();
-  const { hasHydrated, isAuthenticated, user } = useAuthStore((state) => ({
-    hasHydrated: state.hasHydrated,
-    isAuthenticated: state.isAuthenticated,
-    user: state.user,
-  }));
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const user = useAuthStore((state) => state.user);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   async function handleLogout() {
@@ -52,7 +50,7 @@ export function AuthSessionPanel() {
           <p className="text-sm uppercase tracking-[0.14em] text-emerald-700">Active Session</p>
           <h3 className="mt-1 text-xl font-semibold text-slate-900">{user.name}</h3>
           <p className="mt-1 text-sm text-slate-600">
-            {user.email} · Role: {user.role}
+            {user.email} | Role: {user.role}
           </p>
         </div>
 

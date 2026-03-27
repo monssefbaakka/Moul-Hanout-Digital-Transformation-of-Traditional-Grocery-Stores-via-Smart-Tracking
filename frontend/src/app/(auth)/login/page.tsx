@@ -14,11 +14,9 @@ const DEMO_PASSWORD = 'Admin@123!';
 
 export default function MoulHanoutLoginPage() {
   const router = useRouter();
-  const { isAuthenticated, hasHydrated, user } = useAuthStore((state) => ({
-    isAuthenticated: state.isAuthenticated,
-    hasHydrated: state.hasHydrated,
-    user: state.user,
-  }));
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const user = useAuthStore((state) => state.user);
 
   const [email, setEmail] = useState(DEMO_EMAIL);
   const [password, setPassword] = useState(DEMO_PASSWORD);
