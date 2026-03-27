@@ -8,11 +8,13 @@ interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  hasHydrated: boolean;
 
   // Actions
   login: (auth: AuthResponse) => void;
   logout: () => void;
   updateUser: (user: Partial<AuthUser>) => void;
+  setHydrated: (value: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -23,6 +25,7 @@ export const useAuthStore = create<AuthState>()(
         accessToken: null,
         refreshToken: null,
         isAuthenticated: false,
+        hasHydrated: false,
 
         login(auth) {
           const tokens: AuthTokens = {
@@ -49,9 +52,30 @@ export const useAuthStore = create<AuthState>()(
             user: state.user ? { ...state.user, ...partial } : null,
           }));
         },
+
+        setHydrated(value) {
+          set({ hasHydrated: value });
+        },
       }),
       {
         name: 'moul-hanout-auth',
+        onRehydrateStorage: () => (state) => {
+          const tokens =
+            state?.accessToken && state?.refreshToken
+              ? {
+                  accessToken: state.accessToken,
+                  refreshToken: state.refreshToken,
+                }
+              : null;
+
+          if (tokens) {
+            setTokens(tokens);
+          } else {
+            clearTokens();
+          }
+
+          state?.setHydrated(true);
+        },
         // Only persist tokens and user — don't persist the whole state
         partialize: (state) => ({
           user: state.user,

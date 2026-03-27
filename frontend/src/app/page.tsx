@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { AuthSessionPanel } from '@/components/auth/auth-session-panel';
 
 export default function HomePage() {
   return (
@@ -14,10 +15,18 @@ export default function HomePage() {
 
       <section className="panel">
         <h2>Available UI</h2>
-        <p>The auth pages remain as placeholders. Product, stock, sales, and report routes are disabled.</p>
+        <p>
+          The login flow is now wired to the backend auth contract. Product, stock, sales,
+          and report routes are still disabled.
+        </p>
         <Link href="/login" className="button-link secondary">
-          Open auth shell
+          Open login
         </Link>
+      </section>
+
+      <section className="panel">
+        <h2>Session Status</h2>
+        <AuthSessionPanel />
       </section>
     </main>
   );
