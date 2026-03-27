@@ -80,10 +80,12 @@ export default function MoulHanoutLoginPage() {
         <div className="mx-auto grid min-h-[820px] max-w-[1180px] grid-cols-1 overflow-hidden rounded-[36px] bg-white shadow-[0_10px_40px_rgba(15,23,42,0.06)] lg:grid-cols-2">
           <div className="relative p-0">
             <div
-              className="h-full min-h-[420px] bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.18),_transparent_34%),linear-gradient(135deg,_#1f6b4f_0%,_#2d7b64_42%,_#0f3f31_100%)]"
-            >
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-            </div>
+              className="h-full min-h-[420px] bg-cover bg-center"
+              style={{
+                backgroundImage:
+                  "linear-gradient(to top, rgba(0,0,0,0.4), rgba(0,0,0,0.08)), url('/auth/login-hero.png')",
+              }}
+            />
 
             <div className="absolute bottom-10 left-10 max-w-[360px] text-white">
               <h2 className="text-5xl font-bold leading-[1.05] tracking-tight">
