@@ -9,6 +9,11 @@ async function main() {
   const ownerPassword = await bcrypt.hash('Admin@123!', 12);
   const cashierPassword = await bcrypt.hash('Cashier@123!', 12);
 
+  let shop = await prisma.shop.findFirst({ where: { name: 'Main Shop' } });
+  if (!shop) {
+    shop = await prisma.shop.create({ data: { name: 'Main Shop' } });
+  }
+
   const owner = await prisma.user.upsert({
     where: { email: 'owner@moulhanout.ma' },
     update: {},
@@ -16,7 +21,12 @@ async function main() {
       email: 'owner@moulhanout.ma',
       password: ownerPassword,
       name: 'Store Owner',
-      role: Role.OWNER,
+      shopRoles: {
+        create: {
+          shopId: shop.id,
+          role: Role.OWNER,
+        },
+      },
     },
   });
 
@@ -27,7 +37,12 @@ async function main() {
       email: 'cashier@moulhanout.ma',
       password: cashierPassword,
       name: 'Default Cashier',
-      role: Role.CASHIER,
+      shopRoles: {
+        create: {
+          shopId: shop.id,
+          role: Role.CASHIER,
+        },
+      },
     },
   });
 

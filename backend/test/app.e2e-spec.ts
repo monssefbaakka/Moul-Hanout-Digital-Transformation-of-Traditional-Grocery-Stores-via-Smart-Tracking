@@ -20,7 +20,7 @@ type UserRecord = {
   email: string;
   password: string;
   name: string;
-  role: Role;
+  shopRoles: { role: Role, shopId?: string }[];
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -58,7 +58,7 @@ async function createPrismaMock() {
       email: 'owner@moulhanout.ma',
       password: ownerPassword,
       name: 'Store Owner',
-      role: Role.OWNER,
+      shopRoles: [{ role: Role.OWNER, shopId: 'default-shop-id' }],
       isActive: true,
       createdAt: now,
       updatedAt: now,
@@ -68,7 +68,7 @@ async function createPrismaMock() {
       email: 'cashier@moulhanout.ma',
       password: cashierPassword,
       name: 'Default Cashier',
-      role: Role.CASHIER,
+      shopRoles: [{ role: Role.CASHIER, shopId: 'default-shop-id' }],
       isActive: true,
       createdAt: now,
       updatedAt: now,
@@ -97,7 +97,9 @@ async function createPrismaMock() {
           email: args.data.email,
           password: args.data.password,
           name: args.data.name,
-          role: args.data.role,
+          shopRoles: args.data.shopRoles?.create 
+            ? [{ role: args.data.shopRoles.create.role, shopId: args.data.shopRoles.create.shopId || 'default-shop-id' }] 
+            : [{ role: Role.CASHIER, shopId: 'default-shop-id' }],
           isActive: true,
           createdAt,
           updatedAt: createdAt,

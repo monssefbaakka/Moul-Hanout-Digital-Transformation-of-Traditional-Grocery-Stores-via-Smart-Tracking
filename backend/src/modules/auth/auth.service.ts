@@ -76,7 +76,10 @@ export class AuthService {
   // This method handles the login flow.
   async login(dto: LoginDto) {
     // Look up the user by the submitted email address.
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+      include: { shopRoles: true },
+    });
 
     // Reject the request if the user does not exist or the account is disabled.
     if (!user || !user.isActive) {
@@ -102,8 +105,7 @@ export class AuthService {
       // Pass the user's name into the helper method.
       name: user.name,
 
-      // Pass the user's role into the helper method.
-      role: user.role,
+      role: user.shopRoles?.[0]?.role || Role.CASHIER,
 
       // Pass the active flag into the helper method.
       isActive: user.isActive,
@@ -137,16 +139,35 @@ export class AuthService {
         // Save the hashed password instead of the raw password.
         password: hashed,
 
-        // Force all self-registered users to start as cashiers.
-        role: Role.CASHIER,
+        // Create a default shop connection. NOTE: In a real app the shop should be passed in.
+        shopRoles: {
+          create: {
+            role: Role.CASHIER,
+            shop: {
+              connectOrCreate: {
+                where: { id: 'default-shop-id' },
+                create: { name: 'Main Shop' },
+              },
+            },
+          },
+        },
       },
 
       // Only return non-sensitive fields.
-      select: { id: true, email: true, name: true, role: true },
+      select: { 
+        id: true, 
+        email: true, 
+        name: true,
+        shopRoles: { select: { role: true, shopId: true } }
+      },
     });
 
-    // Return the created user summary.
-    return user;
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.shopRoles?.[0]?.role || Role.CASHIER,
+    };
   }
 
   // This method handles the refresh token flow.
@@ -160,7 +181,7 @@ export class AuthService {
       where: { id: payload.sid },
 
       // Also fetch the linked user so we can validate account state.
-      include: { user: true },
+      include: { user: { include: { shopRoles: true } } },
     });
 
     // Reject the request if the session does not exist, belongs to another user, or is expired.
@@ -187,8 +208,7 @@ export class AuthService {
       // Pass the user name.
       name: session.user.name,
 
-      // Pass the user role.
-      role: session.user.role,
+      role: session.user.shopRoles?.[0]?.role || Role.CASHIER,
 
       // Pass the user active flag.
       isActive: session.user.isActive,
