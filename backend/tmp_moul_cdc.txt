@@ -1,0 +1,328 @@
+
+
+===== PAGE 1 =====
+Cahier des charges — Application web Moul l Hanout 
+Synthèse exécutive 
+Moul l Hanout est une application web de gestion opérationnelle d’un commerce de proximité 
+(hanout) visant à : (1) fluidifier la vente (POS web), (2) fiabiliser le stock (mouvements, alertes), 
+(3) simplifier la gestion du catalogue et des prix, et (4) donner une visibilité de pilotage 
+(rapports essentiels). Le présent cahier des charges est rédigé dans un style académique et 
+professionnel, avec une structuration “clean work” (périmètre P0/P1/P2, exigences 
+non‑fonctionnelles mesurables, architecture cible, maquettes, modèles de données, tests, 
+planning, budget, risques, SLA, gouvernance). 
+Connecteurs activés (listés) : Figma. 
+- Le connecteur permet ici de générer des diagrammes FigJam (Mermaid supporté : flowchart, 
+sequence, state, gantt). 
+- Il ne permet pas (dans cette configuration) de “lister des fichiers” ni de “créer des frames 
+design” sans fournir un fileKey/nodeId d’un fichier Design existant. En conséquence : les 
+maquettes web sont fournies en images (à importer dans Figma comme frames), et les 
+diagrammes sont fournis via liens FigJam. 
+Hypothèses non spécifiées (explicitement signalées) : 
+- public cible exact ; 
+- budget maximal ; 
+- contraintes légales locales (selon pays de déploiement). 
+Ces points doivent être confirmés en cadrage ; le CDC ci‑dessous est néanmoins opérationnel et 
+directement exploitable pour lancer un MVP web. 
+Informations nécessaires et cadrage documentaire 
+Besoins d’information pour répondre correctement 
+Pour un CDC solide et “exécutable”, les informations suivantes sont déterminantes : 
+• Profil(s) utilisateurs (gérant, caissier, multi‑boutiques), niveau de maturité numérique, 
+langues (FR/AR), et matériel (PC, tablette). 
+• Flux métier prioritaires (vente, produits, stock, réassort, rapports) et fréquence d’usage. 
+• Contraintes légales et de conformité (pays d’exploitation, conservation des données, 
+hébergement, fiscalité). 
+• Objectifs de service (SLA, support, horaires, criticité opérationnelle en caisse). 
+• Budget maximal et modèle de réalisation (équipe interne / prestataire / mix). 
+• Contraintes techniques (hébergeur imposé, SI existant, intégrations attendues). 
+
+===== PAGE 2 =====
+Fiche d’identité du document 
+Champ Valeur 
+Document Cahier des charges — Application web “Moul l Hanout” 
+Version v1.0 (draft) 
+Date 11/03/2026  
+Hypothèses retenues (faute d’informations) 
+Sujet Hypothèse Impact sur le CDC 
+Public cible Gérant (Owner) + caissier ;  
+Usage quotidien très rapide 
+UX orientée “rapidité”, POS web 
+prioritaire 
+Budget 
+maximal 
+Non défini Budget donné en scénarios 
+(Lean/Standard/Robuste) 
+Légal Pays non précisé (Maroc / Union 
+européenne possibles) 
+Conformité (CNDP vs RGPD), localisation 
+et rétention 
+Plateforme Web responsive (desktop + tablette), 
+option PWA P1 
+Compatibilité navigateurs + offline partiel 
+Criticité Haute pendant heures d’ouverture SLA, sauvegardes, monitoring, plan de 
+reprise 
+Objectifs du produit et périmètre fonctionnel 
+Objectifs du produit 
+Objectifs métier (KPI suggérés) : - Accélération de la vente : réduire le temps moyen de 
+transaction (TMT) et le nombre d’erreurs (retours/annulations). 
+- Fiabilisation du stock : limiter écarts stock théorique vs réel, améliorer la réactivité sur 
+ruptures. 
+- Pilotage simplifié : faire émerger CA, transactions, top produits, marges (si coût renseigné) 
+sans compétences avancées. 
+Objectifs qualité : - Performance web mesurée (Core Web Vitals). 
+- Sécurité applicative de niveau professionnel (référentiels OWASP). 
+- Accessibilité conforme (WCAG ; RGAA si contexte France). 
+Périmètre fonctionnel P0/P1/P2 
+Définitions : 
+- P0 (MVP) : indispensable pour délivrer la valeur et lancer en production. 
+- P1 (Post‑MVP) : améliore fortement la solution, sans bloquer le lancement. 
+- P2 (Évolutions) : extensions selon budget/retours terrain. 
+ 
+
+===== PAGE 3 =====
+Domaine Fonctionnalités Priorité 
+Authentification Connexion, déconnexion, réinitialisation de mot de passe P0 
+Rôles & 
+permissions 
+Owner / Caissier (RBAC) + restrictions actions sensibles P0 
+POS web (vente) Recherche produit, ajout panier, quantités, remise simple, 
+validation vente 
+P0 
+Paiement Cash (rendu monnaie), mode “autre” (libellé) P0 
+Ticket Affichage ticket + impression navigateur / export PDF P1 
+Catalogue 
+produits 
+CRUD produit (nom, catégorie, code-barres, prix vente, 
+photo optionnelle) 
+P0 
+Catégories CRUD catégories P0 
+Stock Stock par produit + mouvements (IN/OUT/ADJUST) P0 
+Seuils & alertes Low stock / rupture + liste d’actions P0 
+Réassort Entrée stock + coût (optionnel) + historique P0 
+Rapports CA jour/semaine/mois, top produits, tendances P1 
+Marges Marge estimée si prix d’achat présent P1 
+Exports CSV ventes/stock/produits P1 
+Audit Journal d’audit (actions sensibles) P0 
+Multi-boutiques Plusieurs shops / multi-tenant P2 
+Péremption / lots Gestion lots + dates + liste “proche expiration” P2 (si 
+nécessaire) 
+Intégrations Comptabilité, e-commerce, etc. P2 
+Cas d’utilisation et règles métier (extraits) 
+• Vente : une vente validée doit créer une transaction + lignes, décrémenter le stock, et 
+consigner l’action (audit). 
+• Stock : tout changement de stock doit passer par un mouvement (traçabilité). 
+• Permissions : seules certaines actions (prix, stock, exports, gestion utilisateurs) sont 
+autorisées pour l’Owner. 
+ 
+ 
+ 
+
+===== PAGE 4 =====
+Exigences non‑fonctionnelles mesurables 
+Performance (Core Web Vitals) 
+Cibles recommandées (niveau “bon”) : - LCP ≤ 2,5 s, INP ≤ 200 ms, CLS ≤ 0,1 (référence Core 
+Web Vitals, web.dev). 
+- Mesure au 75e percentile, séparée mobile/desktop. 
+Exigences complémentaires : - Budget performance (ex. JS initial ≤ X Ko gzip, à définir) et 
+stratégies d’optimisation (lazy loading, code-splitting). 
+- CDN pour assets, compression, cache HTTP, images optimisées. 
+Sécurité (OWASP ASVS / MASVS) 
+Référentiels : - OWASP ASVS pour le web/backend/API (contrôles d’authentification, gestion de 
+session, contrôle d’accès, validation des entrées, logs, etc.). 
+- OWASP MASVS à considérer si PWA/usage intensif sur navigateur mobile (stockage local, 
+transport, intégrité). 
+Exigences sécurité (testables) : - Contrôles d’accès exclusivement côté serveur (aucune 
+permission “client-side only”). 
+- Journal d’audit immuable au niveau applicatif (écriture append‑only logique). 
+- Protection brute force, politique mots de passe, gestion des sessions (rotation, expiration). 
+- Validation systématique des entrées, protection XSS/CSRF, CSP dès P0. 
+- Gestion des secrets (vault/variables sécurisées), rotation et principe du moindre privilège. 
+Accessibilité (WCAG / RGAA) 
+Références : - W3C WCAG 2.2 cible AA (recommandation pour applications pro). 
+- RGAA (France) : méthode et critères de vérification (à appliquer si contexte réglementaire FR). 
+Exigences : - Navigation clavier complète (tab/focus), labels explicites, messages d’erreur 
+accessibles. 
+- Contraste et taille de police adaptés ; composants réutilisables “accessibles by default”. 
+Compatibilité navigateurs/OS 
+Cibles (hypothèse raisonnable) : - Chrome/Edge/Firefox : dernières 2 versions majeures. 
+- Safari macOS : dernière version majeure. 
+- Tablettes : iPadOS Safari récent, Android Chrome récent. 
+Scalabilité et résilience 
+• Architecture stateless pour l’API, scalabilité horizontale. 
+• Contention DB limitée par indexation, pagination, agrégations pré‑calculées pour rapports. 
+• Sauvegardes automatisées, tests de restauration, monitoring et alerting. 
+
+===== PAGE 5 =====
+Architecture technique proposée et schémas de données 
+Architecture cible (logique MVP → évolutif) 
+Proposition “web moderne, maintenance simple” : - Front : SPA/SSR (TypeScript) + design system 
+minimal. 
+- Backend : API REST documentée OpenAPI, RBAC, validations. 
+- DB : PostgreSQL (transactions et cohérence). 
+- Cache : Redis (sessions/rate‑limit/caches). 
+- Stockage : objet (photos, exports). 
+- Observabilité : logs structurés + métriques. 
+API : - Spécification par **OpenAPI Initiative OpenAPI 3.1.1 (contrat, tests, documentation). 
+- Versioning /v1 ; conventions d’erreurs ; idempotence (ex. mouvements stock). 
+Hébergement (options, pas de contrainte imposée) : - PaaS/containers managés (time‑to‑market) 
+; 
+- Kubernetes managé (si multi‑tenant large) ; 
+- VPS + containers (budget minimal mais exploitation plus lourde). 
+IaC : - Référence de bonnes pratiques SDLC sécurisé : **NIST SSDF (circuits de build, 
+dépendances, contrôles). 
+- Terraform/Pulumi/équivalent ; séparation dev/staging/prod ; secrets gérés proprement. 
+Dictionnaire de données (noyau P0) 
+Entité Rôle Champs clés (exemples) 
+Shop Boutique / 
+tenant 
+id, name, currency, timezone 
+User Compte id, email, password_hash, is_active 
+UserShopRole RBAC user_id, shop_id, role (OWNER/CASHIER) 
+Category Classification id, shop_id, name 
+Product Produit id, shop_id, category_id, name, barcode, sale_price, 
+low_stock_threshold 
+Sale Vente id, shop_id, cashier_user_id, total_amount, payment_mode, 
+sold_at 
+SaleItem Lignes vente sale_id, product_id, qty, unit_price 
+StockMovement Traçabilité 
+stock 
+product_id, type (IN/OUT/ADJUST), qty_delta, reason, 
+created_at 
+
+===== PAGE 6 =====
+ 
+ERD (Mermaid) 
+ 
+UX/UI, maquettes et diagrammes (Figma + Mermaid) 
+Lignes directrices UX/UI 
+Principes : - Efficacité : moins de clics, parcours “vente” très court, recherche rapide. 
+- Prévention d’erreurs : confirmations, annulation contrôlée, messages clairs. 
+- Lisibilité : tableaux paginés, filtres simples, actions “1 clic”. 
+- Accessibilité : focus visible, labels, contraste, clavier. 
+
+
+===== PAGE 7 =====
+Maquettes web (fallback images importables dans Figma) 
+Maquette low‑fi (wireframe) : 
+Wireframe low‑fi 
+ 
+Maquette hi‑fi (dashboard, exemple) : 
+Mockup hi‑fi 
+ 
+Liens FigJam générés via le connecteur Figma 
+Diagramme de cas d'utilisation (FigJam) : 
+  
+ 
+Parcours principal Web (FigJam) : 
+
+
+===== PAGE 8 =====
+ 
+ 
+Planning MVP Web (FigJam) : 
+ 
+Parcours utilisateurs (Mermaid) 
+Parcours “Vendre” : 
+
+
+===== PAGE 9 =====
+ 
+Diagramme de cas d’utilisation (Mermaid) 
+ 
+Validation, tests, planning, budget, risques, SLA et gouvernance 
+Critères d’acceptation et stratégie de tests 
+Stratégie de tests (vérifiable) : - Unitaires : calculs (totaux, rendu monnaie, seuils stock, remises). 
+- Intégration : API + DB (vente → lignes → mouvements stock). 
+- E2E : scénarios “vendre”, “réassort”, “gérer produit”, “droits”. 
+- Sécurité : check‑list ASVS (auth, session, authz, validation, logs) + MASVS si PWA. 
+- Accessibilité : audits WCAG + méthode RGAA si applicable. 
+- Performance : budgets + mesures LCP/INP/CLS. 
+Exemples de critères d’acceptation (P0) : 
+User Story Critère d’acceptation (exemple) Preuve attendue 
+Vendre Valider une vente décrémente le stock et écrit un audit Test intégration + E2E vert 
+Permissions Caissier ne peut pas modifier prix E2E + test authz serveur 
+Stock Toute modification crée un mouvement Test intégration sur DB 
+Performance Dashboard et POS respectent LCP/INP/CLS “bon” Rapport perf (CI + RUM) 
+ 
+  
+
+
+===== PAGE 10 =====
+Planning et jalons 
+Table jalons (indicatif) : 
+Phase Durée Jalons Livrables 
+Cadrage 2 sem. Périmètre MVP signé backlog P0/P1/P2, risques, critères d’acceptation 
+UX/UI 2 sem. Proto validé wireframes + hi‑fi, design system léger 
+Dev 6 sem. Feature freeze front + API + DB + RBAC + audit 
+QA/Hardening 3 sem. Go/No‑Go campagne tests, sécurité, accessibilité, perf 
+Déploiement 1 sem. Mise en prod runbook, monitoring, sauvegardes, SLA 
+Gantt (Mermaid) : 
+ 
+ Estimation budgétaire (comparatif) 
+Sans budget maximal fourni, estimation par scénarios (charges en j.h ; coûts à appliquer selon 
+TJM local) : 
+Poste Lean (MVP strict) Standard (recommandé) Robuste (qualité + évolutif) 
+Product/BA 10–15 15–25 25–40 
+UX/UI 10–15 15–30 30–45 
+Dev Front 30–40 45–60 60–90 
+Dev Backend 30–40 45–70 70–110 
+QA 10–15 20–35 35–60 
+DevOps/IaC 5–8 8–15 15–30 
+Infra mensuelle faible faible→moyen moyen 
+Licences/outils faible faible→moyen moyen 
+ 
+  
+
+
+===== PAGE 11 =====
+Risques et mitigations 
+Risque Prob. Impact Mitigation 
+Périmètre trop large M Élevé figer P0, change control, release plan 
+Bugs stock critiques M Élevé transactions DB, tests intégration, audit 
+Failles d’autorisation M Élevé ASVS + tests authz systématiques 
+Performance insuffisante M Moyen budgets, RUM, optimisation JS/images 
+Non‑conformité 
+accessibilité 
+M Moyen check WCAG, audits RGAA si requis 
+Flou légal/localisation M Élevé cadrage conformité (CNDP/RGPD), minimisation 
+données 
+Maintenance, SLA et gouvernance 
+SLA indicatif (à contractualiser) : - Disponibilité : 99,5% (MVP) ; 99,9% (si criticité élevée). 
+- Sauvegardes : quotidiennes, rétention 30 jours, test restauration mensuel. 
+- Support : P1 < 1h ouvrée ; P2 < 1 jour ouvré. 
+Gouvernance (RACI) : 
+Activité Sponsor PO PM/Delivery Tech Lead QA Sec/Legal 
+Périmètre/arbitrages A R C C C C 
+Specs & backlog C R C C C C 
+Architecture C C C R C C 
+Développement C C R R C C 
+Recette/Go‑NoGo A A R C R C 
+Mise en prod C C R R C C 
+ 
+  
+
+===== PAGE 12 =====
+Références officielles (sources primaires, majoritairement FR quand disponible) 
+Core Web Vitals (seuils LCP/INP/CLS) — web.dev 
+https://web.dev/articles/vitals 
+ 
+OWASP ASVS — Application Security Verification Standard 
+https://owasp.org/www-project-application-security-verification-standard/ 
+ 
+OWASP MASVS — Mobile Application Security Verification Standard 
+https://mas.owasp.org/MASVS/ 
+ 
+WCAG 2.2 — W3C Recommendation 
+https://www.w3.org/TR/WCAG22/ 
+ 
+RGAA — Accessibilité numérique (France) 
+https://accessibilite.numerique.gouv.fr/ 
+ 
+OpenAPI Specification 3.1.1 — OpenAPI Initiative 
+https://spec.openapis.org/oas/v3.1.1.html 
+ 
+NIST SP 800-218 (SSDF) — Secure Software Development Framework 
+https://csrc.nist.gov/pubs/sp/800/218/final 
+ 
+CNDP (Maroc) — Autorité / ressources officielles 
+https://www.cndp.ma/ 
+ 
