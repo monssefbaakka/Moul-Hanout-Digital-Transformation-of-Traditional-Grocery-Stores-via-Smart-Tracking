@@ -15,7 +15,6 @@ import {
   ApiCreatedResponse,
   ApiUnauthorizedResponse,
   ApiConflictResponse,
-  ApiNoContentResponse,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import {
@@ -68,9 +67,9 @@ export class AuthController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post('logout')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Log out current user session' })
-  @ApiNoContentResponse({ description: 'Successfully logged out and session revoked.' })
+  @ApiOkResponse({ description: 'Successfully logged out and session revoked.' })
   @ApiUnauthorizedResponse({ description: 'Invalid or missing access token.' })
   logout(
     @CurrentUser('id') userId: string,

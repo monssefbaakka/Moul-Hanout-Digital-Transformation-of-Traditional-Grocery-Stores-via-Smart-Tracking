@@ -58,6 +58,26 @@ interface AuthenticatedUser {
   createdAt: Date;
 }
 
+interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+interface AuthResponse extends AuthTokens {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    isActive: boolean;
+    createdAt: Date;
+  };
+}
+
+interface LogoutResponse {
+  message: string;
+}
+
 // This tells NestJS that `AuthService` can be injected into controllers and other services.
 @Injectable()
 export class AuthService {
@@ -230,6 +250,8 @@ export class AuthService {
       // Match both the session id and the user id for safety.
       where: { id: sessionId, userId },
     });
+
+    return { message: 'Logged out successfully' } satisfies LogoutResponse;
   }
 
   // This helper creates a session row and then generates tokens for that session.
@@ -280,11 +302,16 @@ export class AuthService {
     });
 
     // Return the plain tokens to the caller. Only the hash is stored in the database.
-    return tokens;
+    return this.buildAuthResponse(user, tokens);
   }
 
   // This helper signs the actual JWT access and refresh tokens.
-  private generateTokens(userId: string, email: string, role: string, sessionId: string) {
+  private generateTokens(
+    userId: string,
+    email: string,
+    role: string,
+    sessionId: string,
+  ): AuthTokens {
     // Build the payload that will be embedded in both tokens.
     const payload = { sub: userId, email, role, sid: sessionId };
 
@@ -381,6 +408,20 @@ export class AuthService {
 
     // Return the extracted token string.
     return token;
+  }
+
+  private buildAuthResponse(user: AuthenticatedUser, tokens: AuthTokens): AuthResponse {
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        isActive: user.isActive,
+        createdAt: user.createdAt,
+      },
+      ...tokens,
+    };
   }
 
 }

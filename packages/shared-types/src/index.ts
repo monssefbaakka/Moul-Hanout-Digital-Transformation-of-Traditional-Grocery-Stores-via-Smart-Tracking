@@ -28,7 +28,7 @@ export interface PaginatedResponse<T> {
   };
 }
 
-export interface User {
+export interface AuthUser {
   id: string;
   email: string;
   name: string;
@@ -37,7 +37,17 @@ export interface User {
   createdAt: string;
 }
 
+export type User = AuthUser;
+
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
+}
+
+export interface AuthResponse extends AuthTokens {
+  user: AuthUser;
+}
+
+export interface LogoutResponse {
+  message: string;
 }

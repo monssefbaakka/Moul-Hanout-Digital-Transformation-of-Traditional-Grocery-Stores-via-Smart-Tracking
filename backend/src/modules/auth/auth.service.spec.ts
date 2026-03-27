@@ -68,7 +68,7 @@ describe('AuthService', () => {
       email: 'owner@moulhanout.ma',
       password: 'stored-password',
       name: 'Owner',
-      role: Role.OWNER,
+      shopRoles: [{ role: Role.OWNER }],
       isActive: true,
       createdAt: new Date('2026-03-16T00:00:00.000Z'),
     });
@@ -87,6 +87,14 @@ describe('AuthService', () => {
     });
 
     expect(result).toEqual({
+      user: {
+        id: 'user-1',
+        email: 'owner@moulhanout.ma',
+        name: 'Owner',
+        role: Role.OWNER,
+        isActive: true,
+        createdAt: new Date('2026-03-16T00:00:00.000Z'),
+      },
       accessToken: 'access-token',
       refreshToken: 'refresh-token',
     });
@@ -115,7 +123,7 @@ describe('AuthService', () => {
         id: 'user-1',
         email: 'owner@moulhanout.ma',
         name: 'Owner',
-        role: Role.OWNER,
+        shopRoles: [{ role: Role.OWNER }],
         isActive: true,
         createdAt: new Date('2026-03-16T00:00:00.000Z'),
       },
@@ -131,6 +139,14 @@ describe('AuthService', () => {
     const result = await service.refresh('refresh-token');
 
     expect(result).toEqual({
+      user: {
+        id: 'user-1',
+        email: 'owner@moulhanout.ma',
+        name: 'Owner',
+        role: Role.OWNER,
+        isActive: true,
+        createdAt: new Date('2026-03-16T00:00:00.000Z'),
+      },
       accessToken: 'next-access-token',
       refreshToken: 'next-refresh-token',
     });
@@ -146,11 +162,12 @@ describe('AuthService', () => {
   it('deletes the current session during logout', async () => {
     prisma.session.deleteMany.mockResolvedValue({ count: 1 });
 
-    await service.logout('user-1', 'session-1', 'Bearer access-token');
+    const result = await service.logout('user-1', 'session-1', 'Bearer access-token');
 
     expect(prisma.session.deleteMany).toHaveBeenCalledWith({
       where: { id: 'session-1', userId: 'user-1' },
     });
+    expect(result).toEqual({ message: 'Logged out successfully' });
   });
 
   it('rejects refresh when the hashed token does not match the stored session token', async () => {
@@ -168,7 +185,7 @@ describe('AuthService', () => {
         id: 'user-1',
         email: 'owner@moulhanout.ma',
         name: 'Owner',
-        role: Role.OWNER,
+        shopRoles: [{ role: Role.OWNER }],
         isActive: true,
         createdAt: new Date('2026-03-16T00:00:00.000Z'),
       },

@@ -1,18 +1,18 @@
 import { create } from 'zustand';
 import { persist, devtools } from 'zustand/middleware';
-import type { User, AuthTokens } from '@moul-hanout/shared-types';
+import type { AuthResponse, AuthTokens, AuthUser } from '@moul-hanout/shared-types';
 import { setTokens, clearTokens } from '../lib/api/api-client';
 
 interface AuthState {
-  user: User | null;
+  user: AuthUser | null;
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
 
   // Actions
-  login: (user: User, tokens: AuthTokens) => void;
+  login: (auth: AuthResponse) => void;
   logout: () => void;
-  updateUser: (user: Partial<User>) => void;
+  updateUser: (user: Partial<AuthUser>) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -24,12 +24,17 @@ export const useAuthStore = create<AuthState>()(
         refreshToken: null,
         isAuthenticated: false,
 
-        login(user, tokens) {
+        login(auth) {
+          const tokens: AuthTokens = {
+            accessToken: auth.accessToken,
+            refreshToken: auth.refreshToken,
+          };
+
           setTokens(tokens); // Sync to API client
           set({
-            user,
-            accessToken: tokens.accessToken,
-            refreshToken: tokens.refreshToken,
+            user: auth.user,
+            accessToken: auth.accessToken,
+            refreshToken: auth.refreshToken,
             isAuthenticated: true,
           });
         },

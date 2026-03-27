@@ -1,4 +1,9 @@
-import type { ApiResponse, AuthTokens } from '@moul-hanout/shared-types';
+import type {
+  ApiResponse,
+  AuthResponse,
+  AuthTokens,
+  LogoutResponse,
+} from '@moul-hanout/shared-types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
@@ -23,8 +28,8 @@ export function clearTokens() {
   refreshToken = null;
 }
 
-async function refreshTokens(): Promise<boolean> {
-  if (!refreshToken) return false;
+async function refreshTokens(): Promise<AuthResponse | null> {
+  if (!refreshToken) return null;
 
   try {
     const response = await fetch(`${BASE_URL}/auth/refresh`, {
@@ -33,13 +38,13 @@ async function refreshTokens(): Promise<boolean> {
       body: JSON.stringify({ refreshToken }),
     });
 
-    if (!response.ok) return false;
+    if (!response.ok) return null;
 
-    const payload = (await response.json()) as ApiResponse<AuthTokens>;
+    const payload = (await response.json()) as ApiResponse<AuthResponse>;
     setTokens(payload.data);
-    return true;
+    return payload.data;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -97,10 +102,10 @@ export class ApiError extends Error {
 
 export const authApi = {
   login: (email: string, password: string) =>
-    request<AuthTokens>('/auth/login', { method: 'POST', body: { email, password } }),
+    request<AuthResponse>('/auth/login', { method: 'POST', body: { email, password } }),
   register: (name: string, email: string, password: string) =>
     request('/auth/register', { method: 'POST', body: { name, email, password } }),
-  logout: () => request('/auth/logout', { method: 'POST' }),
+  logout: () => request<LogoutResponse>('/auth/logout', { method: 'POST' }),
   refresh: (token: string) =>
-    request<AuthTokens>('/auth/refresh', { method: 'POST', body: { refreshToken: token } }),
+    request<AuthResponse>('/auth/refresh', { method: 'POST', body: { refreshToken: token } }),
 };
