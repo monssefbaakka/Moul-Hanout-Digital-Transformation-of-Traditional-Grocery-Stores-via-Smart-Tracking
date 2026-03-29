@@ -100,6 +100,26 @@ describe('AuthService', () => {
     });
   });
 
+  it('login fails when the password does not match the stored hash', async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: 'user-1',
+      email: 'owner@moulhanout.ma',
+      password: 'stored-password',
+      name: 'Owner',
+      role: Role.OWNER,
+      isActive: true,
+      createdAt: new Date('2026-03-16T00:00:00.000Z'),
+    });
+    (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+    await expect(
+      service.login({
+        email: 'owner@moulhanout.ma',
+        password: 'wrong-password',
+      }),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
   it('rotates tokens during refresh when the stored refresh token hash matches', async () => {
     jwt.verify.mockReturnValue({
       sub: 'user-1',

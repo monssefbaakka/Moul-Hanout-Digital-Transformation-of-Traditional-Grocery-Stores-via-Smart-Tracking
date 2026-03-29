@@ -13,6 +13,8 @@ import { SalesModule } from './modules/sales/sales.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { HealthModule } from './modules/health/health.module';
 
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 import { appConfig } from './config/app.config';
 import { jwtConfig } from './config/jwt.config';
 import { databaseConfig } from './config/database.config';
@@ -51,5 +53,7 @@ import { validateEnv } from './config/env.validation';
     ReportsModule,
     HealthModule,
   ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

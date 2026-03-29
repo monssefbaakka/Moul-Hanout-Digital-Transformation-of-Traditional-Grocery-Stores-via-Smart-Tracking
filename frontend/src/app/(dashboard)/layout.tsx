@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { LogoutButton } from '../../components/auth/LogoutButton';
 
 const links = [
   { href: '/products', label: 'Products' },
@@ -28,6 +29,7 @@ export default function DashboardLayout({
                 {link.label}
               </Link>
             ))}
+            <LogoutButton />
           </nav>
         </div>
       </header>
