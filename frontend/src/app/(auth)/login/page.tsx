@@ -159,12 +159,12 @@ export default function MoulHanoutLoginPage() {
                     >
                       Password
                     </label>
-                    <button
-                      type="button"
+                    <Link
+                      href="/forgot-password"
                       className="text-[14px] font-semibold text-[#1f6b4f] hover:underline"
                     >
                       Forgot?
-                    </button>
+                    </Link>
                   </div>
 
                   <div className="flex items-center gap-3 rounded-2xl border border-transparent bg-[#eef1fb] px-5 py-5 focus-within:border-[#1f6b4f]">

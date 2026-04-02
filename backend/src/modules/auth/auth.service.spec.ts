@@ -108,6 +108,26 @@ describe('AuthService', () => {
     });
   });
 
+  it('fails to log in when the password is incorrect', async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: 'user-1',
+      email: 'owner@moulhanout.ma',
+      password: 'stored-password',
+      name: 'Owner',
+      shopRoles: [{ role: Role.OWNER }],
+      isActive: true,
+      createdAt: new Date('2026-03-16T00:00:00.000Z'),
+    });
+    (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+    await expect(
+      service.login({
+        email: 'owner@moulhanout.ma',
+        password: 'WrongPassword@123',
+      }),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
   it('rotates tokens during refresh when the stored refresh token hash matches', async () => {
     jwt.verify.mockReturnValue({
       sub: 'user-1',

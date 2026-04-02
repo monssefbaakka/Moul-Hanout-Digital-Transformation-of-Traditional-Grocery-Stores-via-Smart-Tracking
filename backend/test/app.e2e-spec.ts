@@ -202,6 +202,14 @@ describe('Phase 1 e2e', () => {
           };
         }),
       })
+      .overrideProvider('REDIS_CLIENT')
+      .useValue({
+        on: jest.fn(),
+        quit: jest.fn(),
+        disconnect: jest.fn(),
+        get: jest.fn(),
+        set: jest.fn(),
+      })
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -283,5 +291,32 @@ describe('Phase 1 e2e', () => {
     expect(response.body.success).toBe(true);
     expect(Array.isArray(response.body.data)).toBe(true);
     expect(response.body.data).toHaveLength(2);
+  });
+
+  it('POST /api/v1/auth/login fails with invalid credentials', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({
+        email: 'owner@moulhanout.ma',
+        password: 'wrongpassword',
+      })
+      .expect(401);
+  });
+
+  it('GET /api/v1/users denies an authenticated cashier', async () => {
+    const loginResponse = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({
+        email: 'cashier@moulhanout.ma',
+        password: 'Cashier@123!',
+      })
+      .expect(200);
+
+    const accessToken = loginResponse.body.data.accessToken as string;
+
+    await request(app.getHttpServer())
+      .get('/api/v1/users')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(403);
   });
 });
