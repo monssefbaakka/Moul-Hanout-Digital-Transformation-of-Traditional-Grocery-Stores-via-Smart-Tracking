@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Check, Eye, EyeOff, Info, Loader2, Lock, Mail } from 'lucide-react';
 import { ApiError } from '@/lib/api/api-client';
@@ -14,6 +14,7 @@ const DEMO_PASSWORD = 'Admin@123!';
 
 export default function MoulHanoutLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const user = useAuthStore((state) => state.user);
@@ -29,9 +30,10 @@ export default function MoulHanoutLoginPage() {
     if (!hasHydrated) return;
 
     if (isAuthenticated && user) {
-      router.replace(getPostLoginRedirect(user.role));
+      const next = searchParams.get('next');
+      router.replace(next ?? getPostLoginRedirect(user.role));
     }
-  }, [hasHydrated, isAuthenticated, router, user]);
+  }, [hasHydrated, isAuthenticated, router, searchParams, user]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -46,7 +48,8 @@ export default function MoulHanoutLoginPage() {
 
     try {
       const auth = await loginWithPassword(email.trim(), password);
-      router.replace(getPostLoginRedirect(auth.user.role));
+      const next = searchParams.get('next');
+      router.replace(next ?? getPostLoginRedirect(auth.user.role));
     } catch (error) {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
@@ -63,17 +66,9 @@ export default function MoulHanoutLoginPage() {
       <header className="flex w-full items-center justify-between px-8 py-6 md:px-16">
         <h1 className="text-[22px] font-semibold tracking-tight">Moul Hanout</h1>
 
-        <div className="flex items-center gap-4">
-          <Link
-            href="/register"
-            className="text-[15px] font-medium text-slate-700 transition hover:text-slate-900"
-          >
-            Register
-          </Link>
-          <span className="rounded-xl bg-[#1f6b4f] px-6 py-3 text-[15px] font-semibold text-white shadow-sm">
-            Sign In
-          </span>
-        </div>
+        <span className="rounded-xl bg-[#1f6b4f] px-6 py-3 text-[15px] font-semibold text-white shadow-sm">
+          Sign In
+        </span>
       </header>
 
       <main className="flex-1 px-6 pb-8 md:px-12">
@@ -231,28 +226,8 @@ export default function MoulHanoutLoginPage() {
                 </button>
               </form>
 
-              <div className="mt-10 text-center text-[18px] text-slate-600">
-                New to the marketplace?{' '}
-                <Link href="/register" className="font-semibold text-[#1f6b4f] hover:underline">
-                  Create an account
-                </Link>
-              </div>
-
-              <div className="my-10 h-px bg-slate-200" />
-
-              <div className="flex items-center justify-center gap-6">
-                <button
-                  type="button"
-                  className="min-w-[150px] rounded-2xl bg-[#f2f4fb] px-6 py-4 text-[18px] font-medium text-slate-700 transition hover:bg-[#e9edf8]"
-                >
-                  Google
-                </button>
-                <button
-                  type="button"
-                  className="min-w-[150px] rounded-2xl bg-[#f2f4fb] px-6 py-4 text-[18px] font-medium text-slate-700 transition hover:bg-[#e9edf8]"
-                >
-                  Apple ID
-                </button>
+              <div className="mt-10 text-center text-[14px] text-slate-400">
+                Access is managed by your store owner.
               </div>
             </div>
           </div>

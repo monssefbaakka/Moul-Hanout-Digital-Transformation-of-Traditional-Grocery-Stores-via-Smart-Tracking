@@ -1,21 +1,10 @@
-import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
+/**
+ * /register is intentionally disabled.
+ * New users are added directly by the owner from the dashboard.
+ * This page permanently redirects to /login to avoid 404s from old links.
+ */
 export default function RegisterPage() {
-  return (
-    <main className="auth-layout">
-      <section className="auth-card">
-        <span className="eyebrow">Auth Base</span>
-        <h1>Register page placeholder</h1>
-        <p>
-          Keep registration minimal in the base phase. The main goal is route structure and
-          shared API contract readiness.
-        </p>
-        <div className="auth-actions">
-          <Link href="/login" className="button-link">
-            Back to login
-          </Link>
-        </div>
-      </section>
-    </main>
-  );
+  redirect('/login');
 }

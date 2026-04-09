@@ -3,6 +3,21 @@ import { persist, devtools } from 'zustand/middleware';
 import type { AuthResponse, AuthTokens, AuthUser } from '@moul-hanout/shared-types';
 import { setTokens, clearTokens } from '../lib/api/api-client';
 
+/** Cookie used by the Edge middleware to detect auth state without localStorage. */
+const AUTH_COOKIE = 'mh-auth';
+
+function setAuthCookie() {
+  if (typeof document !== 'undefined') {
+    document.cookie = `${AUTH_COOKIE}=1; path=/; SameSite=Lax`;
+  }
+}
+
+function clearAuthCookie() {
+  if (typeof document !== 'undefined') {
+    document.cookie = `${AUTH_COOKIE}=0; path=/; SameSite=Lax; Max-Age=0`;
+  }
+}
+
 interface AuthState {
   user: AuthUser | null;
   accessToken: string | null;
@@ -34,6 +49,7 @@ export const useAuthStore = create<AuthState>()(
           };
 
           setTokens(tokens); // Sync to API client
+          setAuthCookie();   // Let the Edge middleware know we're authenticated
           set({
             user: auth.user,
             accessToken: auth.accessToken,
@@ -44,6 +60,7 @@ export const useAuthStore = create<AuthState>()(
 
         logout() {
           clearTokens();
+          clearAuthCookie(); // Clear the Edge middleware cookie
           set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
         },
 
@@ -70,8 +87,10 @@ export const useAuthStore = create<AuthState>()(
 
           if (tokens) {
             setTokens(tokens);
+            setAuthCookie(); // Re-sync cookie so middleware stays in sync on page reload
           } else {
             clearTokens();
+            clearAuthCookie();
           }
 
           state?.setHydrated(true);
