@@ -28,7 +28,11 @@ export class HealthController {
   @HealthCheck()
   check() {
     return this.health.check([
-      () => this.prismaHealth.pingCheck('database', this.prisma as unknown as PrismaClient),
+      () =>
+        this.prismaHealth.pingCheck(
+          'database',
+          this.prisma as unknown as PrismaClient,
+        ),
       () => this.memory.checkHeap('memory_heap', 512 * 1024 * 1024), // 512 MB
     ]);
   }

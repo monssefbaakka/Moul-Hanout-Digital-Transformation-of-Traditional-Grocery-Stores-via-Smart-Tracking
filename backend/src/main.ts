@@ -37,13 +37,18 @@ async function bootstrap() {
     }),
   );
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(new LoggingInterceptor(), new TransformInterceptor());
+  app.useGlobalInterceptors(
+    new LoggingInterceptor(),
+    new TransformInterceptor(),
+  );
 
   // Swagger — only in non-production
   if (nodeEnv !== 'production') {
     const swaggerConfig = new DocumentBuilder()
       .setTitle('Moul Hanout API')
-      .setDescription('Phase 1 backend foundation: auth, users, and health only')
+      .setDescription(
+        'Phase 1 backend foundation: auth, users, and health only',
+      )
       .setVersion('1.0')
       .addBearerAuth()
       .addTag('auth', 'Authentication & authorization')

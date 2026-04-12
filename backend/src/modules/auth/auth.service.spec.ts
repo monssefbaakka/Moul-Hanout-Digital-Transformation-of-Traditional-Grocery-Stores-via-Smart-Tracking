@@ -182,7 +182,11 @@ describe('AuthService', () => {
   it('deletes the current session during logout', async () => {
     prisma.session.deleteMany.mockResolvedValue({ count: 1 });
 
-    const result = await service.logout('user-1', 'session-1', 'Bearer access-token');
+    const result = await service.logout(
+      'user-1',
+      'session-1',
+      'Bearer access-token',
+    );
 
     expect(prisma.session.deleteMany).toHaveBeenCalledWith({
       where: { id: 'session-1', userId: 'user-1' },

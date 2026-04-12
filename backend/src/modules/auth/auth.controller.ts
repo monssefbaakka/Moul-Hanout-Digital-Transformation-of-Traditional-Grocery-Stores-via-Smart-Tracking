@@ -17,11 +17,7 @@ import {
   ApiConflictResponse,
 } from '@nestjs/swagger';
 import { AuthResponse, AuthService, LogoutResponse } from './auth.service';
-import {
-  LoginDto,
-  RefreshTokenDto,
-  RegisterDto,
-} from './dto/auth.dto';
+import { LoginDto, RefreshTokenDto, RegisterDto } from './dto/auth.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { IS_PUBLIC_KEY } from '../../common/guards/jwt-auth.guard';
@@ -38,8 +34,13 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Authenticate user and return tokens' })
-  @ApiOkResponse({ description: 'Successfully authenticated. Returns access and refresh tokens.' })
-  @ApiUnauthorizedResponse({ description: 'Invalid credentials or account deactivated.' })
+  @ApiOkResponse({
+    description:
+      'Successfully authenticated. Returns access and refresh tokens.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Invalid credentials or account deactivated.',
+  })
   login(@Body() dto: LoginDto): Promise<AuthResponse> {
     return this.authService.login(dto);
   }
@@ -69,7 +70,9 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Log out current user session' })
-  @ApiOkResponse({ description: 'Successfully logged out and session revoked.' })
+  @ApiOkResponse({
+    description: 'Successfully logged out and session revoked.',
+  })
   @ApiUnauthorizedResponse({ description: 'Invalid or missing access token.' })
   logout(
     @CurrentUser('id') userId: string,

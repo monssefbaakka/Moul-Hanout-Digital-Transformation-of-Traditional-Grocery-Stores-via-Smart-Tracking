@@ -26,10 +26,7 @@ import type { StringValue } from 'ms';
 import { PrismaService } from '../../database/prisma.service';
 
 // These DTOs define the shape of login, register, and password-recovery request bodies.
-import {
-  LoginDto,
-  RegisterDto,
-} from './dto/auth.dto';
+import { LoginDto, RegisterDto } from './dto/auth.dto';
 
 // `Role` is the app-level enum for user roles.
 import { Role } from '../../common/enums';
@@ -138,7 +135,9 @@ export class AuthService {
   // This method handles user registration.
   async register(dto: RegisterDto) {
     // Check whether another user already exists with the same email address.
-    const exists = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const exists = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
 
     // Reject duplicate email addresses.
     if (exists) throw new ConflictException('Email already registered');
@@ -174,11 +173,11 @@ export class AuthService {
       },
 
       // Only return non-sensitive fields.
-      select: { 
-        id: true, 
-        email: true, 
+      select: {
+        id: true,
+        email: true,
         name: true,
-        shopRoles: { select: { role: true, shopId: true } }
+        shopRoles: { select: { role: true, shopId: true } },
       },
     });
 
@@ -205,7 +204,11 @@ export class AuthService {
     });
 
     // Reject the request if the session does not exist, belongs to another user, or is expired.
-    if (!session || session.userId !== payload.sub || session.expiresAt <= new Date()) {
+    if (
+      !session ||
+      session.userId !== payload.sub ||
+      session.expiresAt <= new Date()
+    ) {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
@@ -276,9 +279,17 @@ export class AuthService {
   }
 
   // This helper generates a fresh token pair and updates the stored refresh-token hash.
-  private async rotateSessionTokens(sessionId: string, user: AuthenticatedUser) {
+  private async rotateSessionTokens(
+    sessionId: string,
+    user: AuthenticatedUser,
+  ) {
     // Create a new access token and refresh token for this user and session.
-    const tokens = this.generateTokens(user.id, user.email, user.role, sessionId);
+    const tokens = this.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      sessionId,
+    );
 
     // Hash the refresh token before saving it to the database.
     const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 12);
@@ -366,7 +377,9 @@ export class AuthService {
 
       // Reject the token if it does not contain a session id.
       if (!payload.sid) {
-        throw new UnauthorizedException(`${tokenType} token is missing session information`);
+        throw new UnauthorizedException(
+          `${tokenType} token is missing session information`,
+        );
       }
 
       // Return the decoded payload when verification succeeds.
@@ -385,7 +398,7 @@ export class AuthService {
   // This helper extracts the expiration timestamp from a JWT without verifying it again.
   private getTokenExpiry(token: string) {
     // Decode the token payload.
-    const decoded = this.jwt.decode(token) as JwtPayload | null;
+    const decoded = this.jwt.decode(token);
 
     // Reject the token if it has no expiration field.
     if (!decoded?.exp) {
@@ -403,14 +416,19 @@ export class AuthService {
 
     // Reject the header if it does not use the Bearer scheme or has no token value.
     if (scheme !== 'Bearer' || !token) {
-      throw new UnauthorizedException('Authorization header must use Bearer scheme');
+      throw new UnauthorizedException(
+        'Authorization header must use Bearer scheme',
+      );
     }
 
     // Return the extracted token string.
     return token;
   }
 
-  private buildAuthResponse(user: AuthenticatedUser, tokens: AuthTokens): AuthResponse {
+  private buildAuthResponse(
+    user: AuthenticatedUser,
+    tokens: AuthTokens,
+  ): AuthResponse {
     return {
       user: {
         id: user.id,
@@ -423,5 +441,4 @@ export class AuthService {
       ...tokens,
     };
   }
-
 }

@@ -1,4 +1,8 @@
-import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
+import {
+  INestApplication,
+  ValidationPipe,
+  VersioningType,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   HealthCheckService,
@@ -20,7 +24,7 @@ type UserRecord = {
   email: string;
   password: string;
   name: string;
-  shopRoles: { role: Role, shopId?: string }[];
+  shopRoles: { role: Role; shopId?: string }[];
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -36,7 +40,10 @@ type SessionRecord = {
   createdAt: Date;
 };
 
-function pickSelected<T extends Record<string, unknown>>(record: T | null, select?: Record<string, boolean>) {
+function pickSelected<T extends Record<string, unknown>>(
+  record: T | null,
+  select?: Record<string, boolean>,
+) {
   if (!record) return null;
   if (!select) return { ...record };
 
@@ -97,8 +104,14 @@ async function createPrismaMock() {
           email: args.data.email,
           password: args.data.password,
           name: args.data.name,
-          shopRoles: args.data.shopRoles?.create 
-            ? [{ role: args.data.shopRoles.create.role, shopId: args.data.shopRoles.create.shopId || 'default-shop-id' }] 
+          shopRoles: args.data.shopRoles?.create
+            ? [
+                {
+                  role: args.data.shopRoles.create.role,
+                  shopId:
+                    args.data.shopRoles.create.shopId || 'default-shop-id',
+                },
+              ]
             : [{ role: Role.CASHIER, shopId: 'default-shop-id' }],
           isActive: true,
           createdAt,
@@ -136,10 +149,13 @@ async function createPrismaMock() {
         if (!session) return null;
 
         if (args.include?.user) {
-          const user = users.find((entry) => entry.id === session.userId) ?? null;
+          const user =
+            users.find((entry) => entry.id === session.userId) ?? null;
           return {
             ...session,
-            user: args.include.user.select ? pickSelected(user, args.include.user.select) : user,
+            user: args.include.user.select
+              ? pickSelected(user, args.include.user.select)
+              : user,
           };
         }
 
@@ -149,7 +165,10 @@ async function createPrismaMock() {
         const before = sessions.length;
         for (let index = sessions.length - 1; index >= 0; index -= 1) {
           const session = sessions[index];
-          if (session.id === args.where.id && session.userId === args.where.userId) {
+          if (
+            session.id === args.where.id &&
+            session.userId === args.where.userId
+          ) {
             sessions.splice(index, 1);
           }
         }
@@ -191,16 +210,18 @@ describe('Phase 1 e2e', () => {
       })
       .overrideProvider(HealthCheckService)
       .useValue({
-        check: jest.fn(async (checks: Array<() => Promise<Record<string, unknown>>>) => {
-          const results = await Promise.all(checks.map((check) => check()));
-          const details = Object.assign({}, ...results);
-          return {
-            status: 'ok',
-            info: details,
-            error: {},
-            details,
-          };
-        }),
+        check: jest.fn(
+          async (checks: Array<() => Promise<Record<string, unknown>>>) => {
+            const results = await Promise.all(checks.map((check) => check()));
+            const details = Object.assign({}, ...results);
+            return {
+              status: 'ok',
+              info: details,
+              error: {},
+              details,
+            };
+          },
+        ),
       })
       .overrideProvider('REDIS_CLIENT')
       .useValue({
@@ -224,7 +245,10 @@ describe('Phase 1 e2e', () => {
       }),
     );
     app.useGlobalFilters(new HttpExceptionFilter());
-    app.useGlobalInterceptors(new LoggingInterceptor(), new TransformInterceptor());
+    app.useGlobalInterceptors(
+      new LoggingInterceptor(),
+      new TransformInterceptor(),
+    );
     await app.init();
   });
 
@@ -233,7 +257,9 @@ describe('Phase 1 e2e', () => {
   });
 
   it('GET /api/v1/health returns an ok response', async () => {
-    const response = await request(app.getHttpServer()).get('/api/v1/health').expect(200);
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/health')
+      .expect(200);
 
     expect(response.body.success).toBe(true);
     expect(response.body.data.status).toBe('ok');

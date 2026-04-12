@@ -7,7 +7,14 @@ export class UsersService {
 
   findAll() {
     return this.prisma.user.findMany({
-      select: { id: true, name: true, email: true, shopRoles: { select: { role: true, shopId: true } }, isActive: true, createdAt: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        shopRoles: { select: { role: true, shopId: true } },
+        isActive: true,
+        createdAt: true,
+      },
     });
   }
 }
