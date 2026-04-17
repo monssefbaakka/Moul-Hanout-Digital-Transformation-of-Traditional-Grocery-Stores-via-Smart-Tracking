@@ -45,6 +45,14 @@
     "@next/swc-win32-arm64-msvc": "^15.5.12",
     "@next/swc-win32-x64-msvc": "^15.5.12",
     "lightningcss-linux-x64-gnu": "^1.32.0",
-    "lightningcss-linux-x64-musl": "^1.32.0"
+    "lightningcss-linux-x64-musl": "^1.32.0",
+    "@tailwindcss/oxide-linux-x64-gnu": "^4.2.2",
+    "@tailwindcss/oxide-linux-x64-musl": "^4.2.2",
+    "@tailwindcss/oxide-linux-arm64-gnu": "^4.2.2",
+    "@tailwindcss/oxide-linux-arm64-musl": "^4.2.2",
+    "@tailwindcss/oxide-darwin-x64": "^4.2.2",
+    "@tailwindcss/oxide-darwin-arm64": "^4.2.2",
+    "@tailwindcss/oxide-win32-x64-msvc": "^4.2.2",
+    "@tailwindcss/oxide-win32-arm64-msvc": "^4.2.2"
   }
 }
