@@ -15,6 +15,9 @@ export function OwnerQuickLinks() {
     <section className="panel">
       <h2>Owner sections</h2>
       <nav className="flex flex-wrap gap-3" aria-label="Owner sections">
+        <Link href="/categories" className="button-link secondary">
+          Categories
+        </Link>
         <Link href="/produits" className="button-link secondary">
           Produits
         </Link>

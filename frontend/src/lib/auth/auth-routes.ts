@@ -16,9 +16,9 @@ export function getPostLoginRedirect(role: Role) {
   // Expand here when owner-dashboard and cashier-pos routes are built.
   switch (role) {
     case 'OWNER':
-      return '/dashboard';
+      return '/';
     case 'CASHIER':
-      return '/pos';
+      return '/';
     default:
       return '/';
   }
