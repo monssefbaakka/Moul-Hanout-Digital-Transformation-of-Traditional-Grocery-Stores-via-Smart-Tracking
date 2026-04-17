@@ -21,7 +21,8 @@
     "prisma:generate": "prisma generate",
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
-    "db:seed": "ts-node prisma/seeds/seed.ts",
+    "seed": "ts-node --project tsconfig.seed.json prisma/seeds/seed.ts",
+    "db:seed": "ts-node --project tsconfig.seed.json prisma/seeds/seed.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {
@@ -38,7 +39,7 @@
     "@nestjs/terminus": "^11.0.0",
     "@nestjs/throttler": "^6.0.0",
     "@prisma/adapter-pg": "^7.7.0",
-    "@prisma/client": "7.4.2",
+    "@prisma/client": "^7.7.0",
     "axios": "^1.7.0",
     "bcryptjs": "^2.4.3",
     "cache-manager": "^7.2.8",
@@ -49,7 +50,7 @@
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.20.0",
-    "prisma": "7.4.2",
+    "prisma": "^7.7.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },
