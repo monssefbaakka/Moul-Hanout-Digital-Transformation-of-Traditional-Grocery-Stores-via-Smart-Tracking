@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { AuthSessionPanel } from '@/components/auth/auth-session-panel';
+import { OwnerQuickLinks } from '@/components/auth/owner-quick-links';
 
 export default function HomePage() {
   return (
@@ -28,6 +29,8 @@ export default function HomePage() {
         <h2>Session Status</h2>
         <AuthSessionPanel />
       </section>
+
+      <OwnerQuickLinks />
     </main>
   );
 }

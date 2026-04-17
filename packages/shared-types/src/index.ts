@@ -92,3 +92,15 @@ export interface CreateProductInput {
 }
 
 export type UpdateProductInput = Partial<CreateProductInput>;
+
+export interface CreateCategoryInput {
+  name: string;
+  description?: string;
+  isActive?: boolean;
+}
+
+export interface CreateUserInput {
+  name: string;
+  email: string;
+  password: string;
+}

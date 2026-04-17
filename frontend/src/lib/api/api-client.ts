@@ -3,10 +3,13 @@ import type {
   AuthResponse,
   AuthTokens,
   Category,
+  CreateCategoryInput,
   CreateProductInput,
+  CreateUserInput,
   LogoutResponse,
   Product,
   UpdateProductInput,
+  User,
 } from '@moul-hanout/shared-types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
@@ -107,15 +110,23 @@ export class ApiError extends Error {
 export const authApi = {
   login: (email: string, password: string) =>
     request<AuthResponse>('/auth/login', { method: 'POST', body: { email, password } }),
-  register: (name: string, email: string, password: string) =>
-    request('/auth/register', { method: 'POST', body: { name, email, password } }),
+  register: (payload: CreateUserInput) =>
+    request<User>('/auth/register', { method: 'POST', body: payload }),
   logout: () => request<LogoutResponse>('/auth/logout', { method: 'POST' }),
   refresh: (token: string) =>
     request<AuthResponse>('/auth/refresh', { method: 'POST', body: { refreshToken: token } }),
 };
 
+export const usersApi = {
+  list: () => request<User[]>('/users'),
+  deactivate: (userId: string) =>
+    request<User>(`/users/${userId}/deactivate`, { method: 'PATCH' }),
+};
+
 export const categoriesApi = {
   list: () => request<Category[]>('/categories'),
+  create: (payload: CreateCategoryInput) =>
+    request<Category>('/categories', { method: 'POST', body: payload }),
 };
 
 export const productsApi = {
