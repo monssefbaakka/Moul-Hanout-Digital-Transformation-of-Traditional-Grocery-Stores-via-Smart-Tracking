@@ -2,7 +2,11 @@ import type {
   ApiResponse,
   AuthResponse,
   AuthTokens,
+  Category,
+  CreateProductInput,
   LogoutResponse,
+  Product,
+  UpdateProductInput,
 } from '@moul-hanout/shared-types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
@@ -108,4 +112,16 @@ export const authApi = {
   logout: () => request<LogoutResponse>('/auth/logout', { method: 'POST' }),
   refresh: (token: string) =>
     request<AuthResponse>('/auth/refresh', { method: 'POST', body: { refreshToken: token } }),
+};
+
+export const categoriesApi = {
+  list: () => request<Category[]>('/categories'),
+};
+
+export const productsApi = {
+  list: () => request<Product[]>('/products'),
+  create: (payload: CreateProductInput) =>
+    request<Product>('/products', { method: 'POST', body: payload }),
+  update: (productId: string, payload: UpdateProductInput) =>
+    request<Product>(`/products/${productId}`, { method: 'PATCH', body: payload }),
 };

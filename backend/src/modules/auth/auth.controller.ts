@@ -19,9 +19,12 @@ import {
 import { AuthResponse, AuthService, LogoutResponse } from './auth.service';
 import { LoginDto, RefreshTokenDto, RegisterDto } from './dto/auth.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { Role } from '../../common/enums';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { IS_PUBLIC_KEY } from '../../common/guards/jwt-auth.guard';
 import { SetMetadata } from '@nestjs/common';
+import { RolesGuard } from '../../common/guards/roles.guard';
 
 const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 
@@ -45,14 +48,19 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
-  @Public()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.OWNER)
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Register a new user account' })
   @ApiCreatedResponse({ description: 'Account successfully created.' })
   @ApiConflictResponse({ description: 'Email address already in use.' })
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid access token.' })
+  register(
+    @CurrentUser('shopId') shopId: string,
+    @Body() dto: RegisterDto,
+  ) {
+    return this.authService.register(shopId, dto);
   }
 
   @Public()

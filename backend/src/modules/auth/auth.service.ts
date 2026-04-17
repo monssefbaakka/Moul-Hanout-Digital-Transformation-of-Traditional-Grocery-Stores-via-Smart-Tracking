@@ -48,6 +48,9 @@ interface AuthenticatedUser {
   // The user's role as a plain string value.
   role: string;
 
+  // The authenticated user's primary shop id.
+  shopId: string;
+
   // Whether the user account is active.
   isActive: boolean;
 
@@ -123,6 +126,7 @@ export class AuthService {
       name: user.name,
 
       role: user.shopRoles?.[0]?.role || Role.CASHIER,
+      shopId: user.shopRoles?.[0]?.shopId || 'default-shop-id',
 
       // Pass the active flag into the helper method.
       isActive: user.isActive,
@@ -133,7 +137,7 @@ export class AuthService {
   }
 
   // This method handles user registration.
-  async register(dto: RegisterDto) {
+  async register(shopId: string, dto: RegisterDto) {
     // Check whether another user already exists with the same email address.
     const exists = await this.prisma.user.findUnique({
       where: { email: dto.email },
@@ -158,15 +162,11 @@ export class AuthService {
         // Save the hashed password instead of the raw password.
         password: hashed,
 
-        // Create a default shop connection. NOTE: In a real app the shop should be passed in.
         shopRoles: {
           create: {
             role: Role.CASHIER,
             shop: {
-              connectOrCreate: {
-                where: { id: 'default-shop-id' },
-                create: { name: 'Main Shop' },
-              },
+              connect: { id: shopId },
             },
           },
         },
@@ -232,6 +232,7 @@ export class AuthService {
       name: session.user.name,
 
       role: session.user.shopRoles?.[0]?.role || Role.CASHIER,
+      shopId: session.user.shopRoles?.[0]?.shopId || 'default-shop-id',
 
       // Pass the user active flag.
       isActive: session.user.isActive,

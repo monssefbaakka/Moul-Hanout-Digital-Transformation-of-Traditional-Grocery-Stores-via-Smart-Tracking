@@ -51,3 +51,44 @@ export interface AuthResponse extends AuthTokens {
 export interface LogoutResponse {
   message: string;
 }
+
+export interface Category {
+  id: string;
+  shopId: string;
+  name: string;
+  description?: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface Product {
+  id: string;
+  shopId: string;
+  categoryId: string;
+  name: string;
+  description?: string | null;
+  isActive: boolean;
+  unit?: string | null;
+  photo?: string | null;
+  barcode?: string | null;
+  salePrice: number;
+  costPrice?: number | null;
+  lowStockThreshold: number;
+  currentStock: number;
+  category?: Category;
+}
+
+export interface CreateProductInput {
+  name: string;
+  categoryId: string;
+  salePrice: number;
+  costPrice?: number;
+  barcode?: string;
+  description?: string;
+  isActive?: boolean;
+  unit?: string;
+  photo?: string;
+  lowStockThreshold?: number;
+}
+
+export type UpdateProductInput = Partial<CreateProductInput>;

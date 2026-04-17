@@ -30,12 +30,13 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     const [user, session] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id: payload.sub },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          isActive: true,
-          createdAt: true,
+        include: {
+          shopRoles: {
+            select: {
+              role: true,
+              shopId: true,
+            },
+          },
         },
       }),
       payload.sid
@@ -55,8 +56,13 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     }
 
     return {
-      ...user,
-      role: payload.role,
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+      role: user.shopRoles[0]?.role ?? payload.role,
+      shopId: user.shopRoles[0]?.shopId ?? null,
       sessionId: session.id,
       tokenExpiresAt: payload.exp
         ? new Date(payload.exp * 1000).toISOString()

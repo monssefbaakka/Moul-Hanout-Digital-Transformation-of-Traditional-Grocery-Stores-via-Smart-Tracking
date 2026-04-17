@@ -24,7 +24,7 @@ type UserRecord = {
   email: string;
   password: string;
   name: string;
-  shopRoles: { role: Role; shopId?: string }[];
+  shopRoles: { role: Role; shopId: string }[];
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -40,18 +40,146 @@ type SessionRecord = {
   createdAt: Date;
 };
 
-function pickSelected<T extends Record<string, unknown>>(
-  record: T | null,
-  select?: Record<string, boolean>,
+type CategoryRecord = {
+  id: string;
+  shopId: string;
+  name: string;
+  description?: string | null;
+  isActive: boolean;
+  createdAt: Date;
+};
+
+type ProductRecord = {
+  id: string;
+  shopId: string;
+  categoryId: string;
+  name: string;
+  description?: string | null;
+  isActive: boolean;
+  unit?: string | null;
+  photo?: string | null;
+  barcode?: string | null;
+  salePrice: number;
+  costPrice?: number | null;
+  lowStockThreshold: number;
+  currentStock: number;
+};
+
+function selectFields<T extends Record<string, unknown>>(
+  record: T,
+  select?: Record<string, any>,
 ) {
-  if (!record) return null;
-  if (!select) return { ...record };
+  if (!select) {
+    return { ...record };
+  }
 
   return Object.fromEntries(
     Object.entries(select)
-      .filter(([, enabled]) => enabled)
+      .filter(([, value]) => Boolean(value))
       .map(([key]) => [key, record[key]]),
   );
+}
+
+function selectUser(user: UserRecord, args?: any) {
+  if (args?.include?.shopRoles) {
+    return {
+      ...user,
+      shopRoles: user.shopRoles.map((shopRole) =>
+        args.include.shopRoles === true
+          ? { ...shopRole }
+          : selectFields(shopRole, args.include.shopRoles.select),
+      ),
+    };
+  }
+
+  if (args?.select) {
+    const selected = selectFields(user, args.select);
+
+    if (args.select.shopRoles) {
+      return {
+        ...selected,
+        shopRoles: user.shopRoles.map((shopRole) =>
+          selectFields(shopRole, args.select.shopRoles.select),
+        ),
+      };
+    }
+
+    return selected;
+  }
+
+  return { ...user };
+}
+
+function matchUser(user: UserRecord, where?: any) {
+  if (!where) {
+    return true;
+  }
+
+  if (where.email && user.email !== where.email) {
+    return false;
+  }
+
+  if (where.id && user.id !== where.id) {
+    return false;
+  }
+
+  if (where.shopRoles?.some?.shopId) {
+    return user.shopRoles.some((role) => role.shopId === where.shopRoles.some.shopId);
+  }
+
+  return true;
+}
+
+function matchCategory(category: CategoryRecord, where?: any) {
+  if (!where) {
+    return true;
+  }
+
+  if (where.id && category.id !== where.id) {
+    return false;
+  }
+
+  if (where.shopId && category.shopId !== where.shopId) {
+    return false;
+  }
+
+  if (where.isActive !== undefined && category.isActive !== where.isActive) {
+    return false;
+  }
+
+  return true;
+}
+
+function matchProduct(product: ProductRecord, where?: any) {
+  if (!where) {
+    return true;
+  }
+
+  if (where.id && product.id !== where.id) {
+    return false;
+  }
+
+  if (where.shopId && product.shopId !== where.shopId) {
+    return false;
+  }
+
+  if (where.categoryId && product.categoryId !== where.categoryId) {
+    return false;
+  }
+
+  if (where.barcode !== undefined && product.barcode !== where.barcode) {
+    return false;
+  }
+
+  if (where.isActive !== undefined && product.isActive !== where.isActive) {
+    return false;
+  }
+
+  if (where.id?.not && product.id === where.id.not) {
+    return false;
+  }
+
+  return true;
 }
 
 async function createPrismaMock() {
@@ -81,44 +209,139 @@ async function createPrismaMock() {
       updatedAt: now,
     },
   ];
+
+  const categories: CategoryRecord[] = [
+    {
+      id: 'cat-active-1',
+      shopId: 'default-shop-id',
+      name: 'Boissons',
+      description: 'Cold drinks',
+      isActive: true,
+      createdAt: now,
+    },
+    {
+      id: 'cat-active-2',
+      shopId: 'default-shop-id',
+      name: 'Snacks',
+      description: 'Chips and biscuits',
+      isActive: true,
+      createdAt: now,
+    },
+    {
+      id: 'cat-inactive',
+      shopId: 'default-shop-id',
+      name: 'Legacy',
+      description: 'Inactive category',
+      isActive: false,
+      createdAt: now,
+    },
+    {
+      id: 'cat-other-shop',
+      shopId: 'other-shop-id',
+      name: 'Other Shop Category',
+      description: 'Should not leak',
+      isActive: true,
+      createdAt: now,
+    },
+  ];
+
+  const products: ProductRecord[] = [
+    {
+      id: 'product-active',
+      shopId: 'default-shop-id',
+      categoryId: 'cat-active-1',
+      name: 'Water 1L',
+      description: 'Bottle',
+      isActive: true,
+      unit: 'bottle',
+      photo: null,
+      barcode: 'WATER-001',
+      salePrice: 6,
+      costPrice: 4,
+      lowStockThreshold: 5,
+      currentStock: 10,
+    },
+    {
+      id: 'product-inactive',
+      shopId: 'default-shop-id',
+      categoryId: 'cat-active-2',
+      name: 'Old Chips',
+      description: 'Inactive product',
+      isActive: false,
+      unit: 'bag',
+      photo: null,
+      barcode: 'CHIPS-OLD',
+      salePrice: 4,
+      costPrice: 2,
+      lowStockThreshold: 5,
+      currentStock: 3,
+    },
+    {
+      id: 'product-other-shop',
+      shopId: 'other-shop-id',
+      categoryId: 'cat-other-shop',
+      name: 'Other Shop Juice',
+      description: 'Should not leak',
+      isActive: true,
+      unit: 'bottle',
+      photo: null,
+      barcode: 'OTHER-001',
+      salePrice: 9,
+      costPrice: 5,
+      lowStockThreshold: 5,
+      currentStock: 12,
+    },
+  ];
+
   const sessions: SessionRecord[] = [];
+
+  const getCategory = (categoryId: string) =>
+    categories.find((category) => category.id === categoryId) ?? null;
 
   return {
     user: {
       findUnique: jest.fn(async (args: any) => {
-        const match = users.find((user) => {
-          if (args.where.email) return user.email === args.where.email;
-          if (args.where.id) return user.id === args.where.id;
-          return false;
-        });
-
-        return pickSelected(match ?? null, args.select);
+        const user =
+          users.find((candidate) => matchUser(candidate, args.where)) ?? null;
+        return user ? selectUser(user, args) : null;
+      }),
+      findFirst: jest.fn(async (args: any) => {
+        const user =
+          users.find((candidate) => matchUser(candidate, args.where)) ?? null;
+        return user ? selectUser(user, args) : null;
       }),
       findMany: jest.fn(async (args?: any) => {
-        return users.map((user) => pickSelected(user, args?.select));
+        return users.map((user) => selectUser(user, args));
       }),
       create: jest.fn(async (args: any) => {
         const createdAt = new Date();
+        const shopId = args.data.shopRoles?.create?.shop?.connect?.id ?? 'default-shop-id';
         const user: UserRecord = {
           id: `user-${users.length + 1}`,
           email: args.data.email,
           password: args.data.password,
           name: args.data.name,
-          shopRoles: args.data.shopRoles?.create
-            ? [
-                {
-                  role: args.data.shopRoles.create.role,
-                  shopId:
-                    args.data.shopRoles.create.shopId || 'default-shop-id',
-                },
-              ]
-            : [{ role: Role.CASHIER, shopId: 'default-shop-id' }],
+          shopRoles: [
+            {
+              role: args.data.shopRoles?.create?.role ?? Role.CASHIER,
+              shopId,
+            },
+          ],
           isActive: true,
           createdAt,
           updatedAt: createdAt,
         };
         users.push(user);
-        return pickSelected(user, args.select);
+        return selectUser(user, args);
+      }),
+      update: jest.fn(async (args: any) => {
+        const user = users.find((candidate) => candidate.id === args.where.id);
+        if (!user) {
+          throw new Error(`User ${args.where.id} not found`);
+        }
+
+        Object.assign(user, args.data, { updatedAt: new Date() });
+        return selectUser(user, args);
       }),
     },
     session: {
@@ -146,20 +369,19 @@ async function createPrismaMock() {
       }),
       findUnique: jest.fn(async (args: any) => {
         const session = sessions.find((entry) => entry.id === args.where.id);
-        if (!session) return null;
+        if (!session) {
+          return null;
+        }
 
         if (args.include?.user) {
-          const user =
-            users.find((entry) => entry.id === session.userId) ?? null;
+          const user = users.find((entry) => entry.id === session.userId) ?? null;
           return {
             ...session,
-            user: args.include.user.select
-              ? pickSelected(user, args.include.user.select)
-              : user,
+            user: user ? selectUser(user, args.include.user) : null,
           };
         }
 
-        return pickSelected(session, args.select);
+        return selectFields(session, args.select);
       }),
       deleteMany: jest.fn(async (args: any) => {
         const before = sessions.length;
@@ -176,7 +398,105 @@ async function createPrismaMock() {
         return { count: before - sessions.length };
       }),
     },
+    category: {
+      findMany: jest.fn(async (args?: any) => {
+        return categories
+          .filter((category) => matchCategory(category, args?.where))
+          .map((category) => ({ ...category }));
+      }),
+      create: jest.fn(async (args: any) => {
+        const category: CategoryRecord = {
+          id: `category-${categories.length + 1}`,
+          shopId: args.data.shopId,
+          name: args.data.name,
+          description: args.data.description ?? null,
+          isActive: args.data.isActive ?? true,
+          createdAt: new Date(),
+        };
+        categories.push(category);
+        return { ...category };
+      }),
+      findFirst: jest.fn(async (args: any) => {
+        const category =
+          categories.find((candidate) => matchCategory(candidate, args.where)) ??
+          null;
+        return category ? selectFields(category, args.select) : null;
+      }),
+    },
+    product: {
+      findMany: jest.fn(async (args?: any) => {
+        return products
+          .filter((product) => matchProduct(product, args?.where))
+          .map((product) => ({
+            ...product,
+            ...(args?.include?.category ? { category: getCategory(product.categoryId) } : {}),
+          }));
+      }),
+      findFirst: jest.fn(async (args: any) => {
+        const product =
+          products.find((candidate) => matchProduct(candidate, args.where)) ?? null;
+        if (!product) {
+          return null;
+        }
+
+        if (args.include?.category) {
+          return {
+            ...product,
+            category: getCategory(product.categoryId),
+          };
+        }
+
+        return args.select ? selectFields(product, args.select) : { ...product };
+      }),
+      create: jest.fn(async (args: any) => {
+        const product: ProductRecord = {
+          id: `product-${products.length + 1}`,
+          shopId: args.data.shopId,
+          categoryId: args.data.categoryId,
+          name: args.data.name,
+          description: args.data.description ?? null,
+          isActive: args.data.isActive ?? true,
+          unit: args.data.unit ?? null,
+          photo: args.data.photo ?? null,
+          barcode: args.data.barcode ?? null,
+          salePrice: args.data.salePrice,
+          costPrice: args.data.costPrice ?? null,
+          lowStockThreshold: args.data.lowStockThreshold ?? 5,
+          currentStock: args.data.currentStock ?? 0,
+        };
+        products.push(product);
+        return {
+          ...product,
+          ...(args.include?.category ? { category: getCategory(product.categoryId) } : {}),
+        };
+      }),
+      update: jest.fn(async (args: any) => {
+        const product = products.find((candidate) => candidate.id === args.where.id);
+        if (!product) {
+          throw new Error(`Product ${args.where.id} not found`);
+        }
+
+        Object.assign(product, args.data);
+        return {
+          ...product,
+          ...(args.include?.category ? { category: getCategory(product.categoryId) } : {}),
+        };
+      }),
+    },
   };
+}
+
+async function loginAs(
+  app: INestApplication<App>,
+  email: string,
+  password: string,
+) {
+  const response = await request(app.getHttpServer())
+    .post('/api/v1/auth/login')
+    .send({ email, password })
+    .expect(200);
+
+  return response.body.data.accessToken as string;
 }
 
 describe('Phase 1 e2e', () => {
@@ -265,9 +585,23 @@ describe('Phase 1 e2e', () => {
     expect(response.body.data.status).toBe('ok');
   });
 
-  it('POST /api/v1/auth/register creates a cashier account', async () => {
+  it('POST /api/v1/auth/register requires authentication', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({
+        name: 'New Cashier',
+        email: 'new.cashier@moulhanout.ma',
+        password: 'Cashier@123!',
+      })
+      .expect(401);
+  });
+
+  it('POST /api/v1/auth/register allows an owner to create a cashier', async () => {
+    const accessToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+
     const response = await request(app.getHttpServer())
       .post('/api/v1/auth/register')
+      .set('Authorization', `Bearer ${accessToken}`)
       .send({
         name: 'New Cashier',
         email: 'new.cashier@moulhanout.ma',
@@ -294,20 +628,112 @@ describe('Phase 1 e2e', () => {
     expect(typeof response.body.data.refreshToken).toBe('string');
   });
 
+  it('POST /api/v1/categories denies cashier and allows owner', async () => {
+    const cashierToken = await loginAs(
+      app,
+      'cashier@moulhanout.ma',
+      'Cashier@123!',
+    );
+
+    await request(app.getHttpServer())
+      .post('/api/v1/categories')
+      .set('Authorization', `Bearer ${cashierToken}`)
+      .send({ name: 'Household' })
+      .expect(403);
+
+    const ownerToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/categories')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({
+        name: 'Household',
+        description: 'Cleaning items',
+      })
+      .expect(201);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.name).toBe('Household');
+    expect(response.body.data.isActive).toBe(true);
+  });
+
+  it('GET /api/v1/categories returns only active categories for the shop', async () => {
+    const ownerToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/categories')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(200);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.map((category: any) => category.id)).toEqual([
+      'cat-active-1',
+      'cat-active-2',
+    ]);
+  });
+
+  it('POST /api/v1/products rejects costPrice greater than salePrice', async () => {
+    const ownerToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/products')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({
+        name: 'Invalid Product',
+        categoryId: 'cat-active-1',
+        salePrice: 8,
+        costPrice: 10,
+      })
+      .expect(422);
+
+    expect(response.body.error).toBe(
+      'RG08: costPrice cannot be greater than salePrice',
+    );
+  });
+
+  it('POST /api/v1/products rejects duplicate barcode within the same shop', async () => {
+    const ownerToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/products')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({
+        name: 'Duplicate Barcode Product',
+        categoryId: 'cat-active-1',
+        salePrice: 12,
+        costPrice: 6,
+        barcode: 'WATER-001',
+      })
+      .expect(409);
+
+    expect(response.body.error).toBe(
+      'RG07: barcode must be unique within a shop',
+    );
+  });
+
+  it('PATCH /api/v1/products/:id with isActive false hides the product from GET /products', async () => {
+    const ownerToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+
+    await request(app.getHttpServer())
+      .patch('/api/v1/products/product-active')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ isActive: false })
+      .expect(200);
+
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/products')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(200);
+
+    expect(response.body.data).toEqual([]);
+  });
+
   it('GET /api/v1/users requires authentication', async () => {
     await request(app.getHttpServer()).get('/api/v1/users').expect(401);
   });
 
   it('GET /api/v1/users allows an authenticated owner', async () => {
-    const loginResponse = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({
-        email: 'owner@moulhanout.ma',
-        password: 'Admin@123!',
-      })
-      .expect(200);
-
-    const accessToken = loginResponse.body.data.accessToken as string;
+    const accessToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
 
     const response = await request(app.getHttpServer())
       .get('/api/v1/users')
@@ -330,19 +756,35 @@ describe('Phase 1 e2e', () => {
   });
 
   it('GET /api/v1/users denies an authenticated cashier', async () => {
-    const loginResponse = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({
-        email: 'cashier@moulhanout.ma',
-        password: 'Cashier@123!',
-      })
-      .expect(200);
-
-    const accessToken = loginResponse.body.data.accessToken as string;
+    const accessToken = await loginAs(
+      app,
+      'cashier@moulhanout.ma',
+      'Cashier@123!',
+    );
 
     await request(app.getHttpServer())
       .get('/api/v1/users')
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(403);
+  });
+
+  it('PATCH /api/v1/users/:id/deactivate disables the user and blocks later login', async () => {
+    const ownerToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+
+    const deactivateResponse = await request(app.getHttpServer())
+      .patch('/api/v1/users/user-cashier/deactivate')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(200);
+
+    expect(deactivateResponse.body.success).toBe(true);
+    expect(deactivateResponse.body.data.isActive).toBe(false);
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({
+        email: 'cashier@moulhanout.ma',
+        password: 'Cashier@123!',
+      })
+      .expect(401);
   });
 });
