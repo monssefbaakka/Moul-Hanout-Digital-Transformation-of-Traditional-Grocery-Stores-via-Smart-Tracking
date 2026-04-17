@@ -1,37 +1,72 @@
 # ============================================================
-# Frontend Dockerfile — Multi-stage build (Next.js standalone)
+# Frontend Dockerfile — Multi-stage build (monorepo root context)
+# Build context: repo root  (docker-compose: context: .)
+#
+# next.config.ts sets:
+#   outputFileTracingRoot = path.join(__dirname, '..')   ← monorepo root
+#
+# This means Next.js organises the standalone bundle relative to /app
+# (the monorepo root), so the production WORKDIR must also be /app.
 # ============================================================
 
 # ─── Stage 1: Dependencies ───────────────────────────────────
-FROM node:20-alpine AS deps
+FROM node:20-bookworm-slim AS deps
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
+
+# Copy all workspace manifests so npm resolves the full workspace graph
+# and caches this layer independently of source changes.
+COPY package.json package-lock.json ./
+COPY backend/package.json ./backend/
+COPY frontend/package.json ./frontend/
+COPY packages/shared-types/package.json ./packages/shared-types/
+COPY packages/shared-utils/package.json ./packages/shared-utils/
+
+# HUSKY=0 — no .git in Docker, so the prepare script must be skipped.
+RUN HUSKY=0 npm install && \
+    npm install --no-save --package-lock=false lightningcss-linux-x64-gnu@$(node -p "require('./node_modules/lightningcss/package.json').version")
 
 # ─── Stage 2: Build ──────────────────────────────────────────
-FROM node:20-alpine AS builder
+FROM node:20-bookworm-slim AS builder
 WORKDIR /app
+
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-# Disable Next.js telemetry
+
+# Shared packages expose their TypeScript source directly
+# ("main": "src/index.ts").  Next.js compiles them via transpilePackages;
+# no pre-build step is required.
+COPY packages ./packages
+COPY frontend ./frontend
+# Root package.json is read by Next.js for workspace resolution.
+COPY package.json ./
+
+ARG NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+RUN cd frontend && npm run build
 
 # ─── Stage 3: Production ─────────────────────────────────────
-FROM node:20-alpine AS production
+FROM node:20-bookworm-slim AS production
+# WORKDIR must equal outputFileTracingRoot (/app) so that server.js
+# resolves app files at frontend/.next/server/… relative to this root.
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Security: non-root user
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Copy standalone output (requires output: 'standalone' in next.config.ts)
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+# standalone/ mirrors the repo-root layout because outputFileTracingRoot = /app:
+#   standalone/server.js          ← entry point (run from /app)
+#   standalone/node_modules/      ← traced runtime deps
+#   standalone/frontend/.next/…   ← app server code
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/standalone ./
+
+# Static assets must be at the path the standalone server expects.
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/static ./frontend/.next/static
+
+# Public files served at /.
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/public ./frontend/public
 
 USER nextjs
 
@@ -40,6 +75,6 @@ ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
+    CMD node -e "fetch('http://127.0.0.1:3000').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
 
-CMD ["node", "server.js"]
+CMD ["node", "frontend/server.js"]

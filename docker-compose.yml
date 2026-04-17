@@ -1,4 +1,3 @@
-version: '3.9'
 
 services:
   postgres:
@@ -14,7 +13,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-moulhanout}']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-moulhanout} -d ${POSTGRES_DB:-moul_hanout}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,8 +30,8 @@ services:
 
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
       target: production
     container_name: moul_hanout_api
     restart: unless-stopped
@@ -56,13 +55,16 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/Dockerfile
       target: production
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000/api/v1}
     container_name: moul_hanout_web
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000/api/v1}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}

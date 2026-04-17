@@ -1,0 +1,37 @@
+# ── Version control ────────────────────────────────────────────
+.git
+.github
+.gitignore
+
+# ── Build artifacts (rebuilt inside Docker) ────────────────────
+**/node_modules
+**/.next
+**/dist
+**/coverage
+**/.turbo
+
+# ── Environment / secrets ──────────────────────────────────────
+**/.env
+**/.env.*
+!**/.env.example
+
+# ── Local dev / editor ─────────────────────────────────────────
+**/.claude
+**/.vscode
+**/.idea
+**/venv
+
+# ── Docs and non-build project files ──────────────────────────
+docs
+documentation.md
+scripts
+docker
+agents.md
+tasks_baghdad_01.md
+CONTRIBUTING.md
+*.md
+!README.md
+
+# ── OS artifacts ──────────────────────────────────────────────
+.DS_Store
+Thumbs.db
