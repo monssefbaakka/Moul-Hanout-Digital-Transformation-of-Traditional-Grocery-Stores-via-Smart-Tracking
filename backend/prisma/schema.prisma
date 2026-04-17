@@ -1,5 +1,5 @@
 // ============================================================
-// Prisma Schema — Moul Hanout POS SaaS
+// Prisma Schema — Moul Hanout POS 
 // ============================================================
 
 generator client {
@@ -30,6 +30,23 @@ enum MovementType {
   ADJUST
 }
 
+enum SaleStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum AlertType {
+  LOW_STOCK
+  EXPIRY
+}
+
 // ============================================================
 // MODELS
 // ============================================================
@@ -45,6 +62,7 @@ model Shop {
   categories Category[]
   products   Product[]
   sales      Sale[]
+  alerts     Alert[]
   auditLogs  AuditLog[]
 
   @@map("shops")
@@ -97,10 +115,12 @@ model Session {
 }
 
 model Category {
-  id        String   @id @default(cuid())
-  shopId    String
-  name      String
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  shopId      String
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
 
   shop     Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
   products Product[]
@@ -113,6 +133,10 @@ model Product {
   shopId            String
   categoryId        String
   name              String
+  description       String?
+  isActive          Boolean @default(true)
+  unit              String?
+  photo             String?
   barcode           String?
   salePrice         Float // Maps to sale_price
   costPrice         Float? // Maps to cost_price
@@ -122,6 +146,8 @@ model Product {
   shop           Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
   category       Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   saleItems      SaleItem[]
+  stockBatches   StockBatch[]
+  alerts         Alert[]
   stockMovements StockMovement[]
 
   @@unique([shopId, barcode]) // Barcodes must be unique per shop
@@ -132,15 +158,63 @@ model Sale {
   id            String      @id @default(cuid())
   shopId        String
   cashierUserId String
+  receiptNumber String      @unique
+  subtotal      Float
   totalAmount   Float
+  status        SaleStatus  @default(PENDING)
   paymentMode   PaymentMode @default(CASH)
   soldAt        DateTime    @default(now())
 
-  shop    Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  cashier User       @relation(fields: [cashierUserId], references: [id], onDelete: Restrict)
-  items   SaleItem[]
+  shop     Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  cashier  User       @relation(fields: [cashierUserId], references: [id], onDelete: Restrict)
+  items    SaleItem[]
+  payments Payment[]
 
   @@map("sales")
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  saleId        String
+  amount        Float
+  paymentMethod PaymentMode
+  status        PaymentStatus @default(PENDING)
+  paidAt        DateTime      @default(now())
+
+  sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model StockBatch {
+  id         String    @id @default(cuid())
+  productId  String
+  quantity   Int
+  expiryDate DateTime?
+  supplierId String?
+  receivedAt DateTime  @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  alerts  Alert[]
+
+  @@map("stock_batches")
+}
+
+model Alert {
+  id        String    @id @default(cuid())
+  shopId    String
+  type      AlertType
+  productId String
+  batchId   String?
+  message   String
+  isRead    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  shop    Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  product Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  batch   StockBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
+
+  @@map("alerts")
 }
 
 model SaleItem {
