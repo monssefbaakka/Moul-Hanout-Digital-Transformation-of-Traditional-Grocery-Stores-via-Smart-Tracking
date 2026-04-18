@@ -743,6 +743,8 @@ describe('Phase 1 e2e', () => {
     expect(response.body.success).toBe(true);
     expect(Array.isArray(response.body.data)).toBe(true);
     expect(response.body.data).toHaveLength(2);
+    expect(response.body.data[0]).toHaveProperty('role');
+    expect(response.body.data[0]).not.toHaveProperty('shopRoles');
   });
 
   it('POST /api/v1/auth/login fails with invalid credentials', async () => {
@@ -786,5 +788,41 @@ describe('Phase 1 e2e', () => {
         password: 'Cashier@123!',
       })
       .expect(401);
+  });
+
+  it('PATCH /api/v1/users/:id/deactivate blocks the owner from deactivating their own account', async () => {
+    const ownerToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+
+    const response = await request(app.getHttpServer())
+      .patch('/api/v1/users/user-owner/deactivate')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(403);
+
+    expect(response.body.error).toBe('You cannot deactivate your own account');
+  });
+
+  it('PATCH /api/v1/users/:id/activate reactivates an inactive user so they can sign in again', async () => {
+    const ownerToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+
+    await request(app.getHttpServer())
+      .patch('/api/v1/users/user-cashier/deactivate')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(200);
+
+    const activateResponse = await request(app.getHttpServer())
+      .patch('/api/v1/users/user-cashier/activate')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(200);
+
+    expect(activateResponse.body.success).toBe(true);
+    expect(activateResponse.body.data.isActive).toBe(true);
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({
+        email: 'cashier@moulhanout.ma',
+        password: 'Cashier@123!',
+      })
+      .expect(200);
   });
 });

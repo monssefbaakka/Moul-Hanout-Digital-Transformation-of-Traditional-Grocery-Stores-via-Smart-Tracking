@@ -178,6 +178,8 @@ export class AuthService {
         email: true,
         name: true,
         shopRoles: { select: { role: true, shopId: true } },
+        isActive: true,
+        createdAt: true,
       },
     });
 
@@ -186,6 +188,8 @@ export class AuthService {
       email: user.email,
       name: user.name,
       role: user.shopRoles?.[0]?.role || Role.CASHIER,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
     };
   }
 

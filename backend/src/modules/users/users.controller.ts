@@ -24,8 +24,18 @@ export class UsersController {
   @Patch(':id/deactivate')
   deactivate(
     @CurrentUser('shopId') shopId: string,
+    @CurrentUser('id') currentUserId: string,
     @Param('id') userId: string,
   ) {
-    return this.usersService.deactivate(shopId, userId);
+    return this.usersService.deactivate(shopId, currentUserId, userId);
+  }
+
+  @Roles(Role.OWNER)
+  @Patch(':id/activate')
+  activate(
+    @CurrentUser('shopId') shopId: string,
+    @Param('id') userId: string,
+  ) {
+    return this.usersService.reactivate(shopId, userId);
   }
 }

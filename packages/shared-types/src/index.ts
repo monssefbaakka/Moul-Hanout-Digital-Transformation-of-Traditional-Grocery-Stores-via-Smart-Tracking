@@ -39,6 +39,15 @@ export interface AuthUser {
 
 export type User = AuthUser;
 
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  role: Role;
+  isActive: boolean;
+  createdAt: string;
+}
+
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;

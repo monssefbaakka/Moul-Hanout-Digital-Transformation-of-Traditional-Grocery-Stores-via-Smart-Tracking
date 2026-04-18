@@ -1,4 +1,5 @@
 import type {
+  AdminUser,
   ApiResponse,
   AuthResponse,
   AuthTokens,
@@ -9,7 +10,6 @@ import type {
   LogoutResponse,
   Product,
   UpdateProductInput,
-  User,
 } from '@moul-hanout/shared-types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
@@ -111,16 +111,18 @@ export const authApi = {
   login: (email: string, password: string) =>
     request<AuthResponse>('/auth/login', { method: 'POST', body: { email, password } }),
   register: (payload: CreateUserInput) =>
-    request<User>('/auth/register', { method: 'POST', body: payload }),
+    request<AdminUser>('/auth/register', { method: 'POST', body: payload }),
   logout: () => request<LogoutResponse>('/auth/logout', { method: 'POST' }),
   refresh: (token: string) =>
     request<AuthResponse>('/auth/refresh', { method: 'POST', body: { refreshToken: token } }),
 };
 
 export const usersApi = {
-  list: () => request<User[]>('/users'),
+  list: () => request<AdminUser[]>('/users'),
   deactivate: (userId: string) =>
-    request<User>(`/users/${userId}/deactivate`, { method: 'PATCH' }),
+    request<AdminUser>(`/users/${userId}/deactivate`, { method: 'PATCH' }),
+  activate: (userId: string) =>
+    request<AdminUser>(`/users/${userId}/activate`, { method: 'PATCH' }),
 };
 
 export const categoriesApi = {

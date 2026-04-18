@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { User } from '@moul-hanout/shared-types';
+import type { AdminUser } from '@moul-hanout/shared-types';
 import { ApiError, authApi, usersApi } from '@/lib/api/api-client';
 import { useAuthStore } from '@/store/auth.store';
 
@@ -21,12 +21,12 @@ const INITIAL_FORM: CreateUserFormState = {
 export function UsersWorkspace() {
   const router = useRouter();
   const { user, isAuthenticated, hasHydrated } = useAuthStore();
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [form, setForm] = useState<CreateUserFormState>(INITIAL_FORM);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pendingDeactivation, setPendingDeactivation] = useState<string | null>(null);
+  const [pendingActionUserId, setPendingActionUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!hasHydrated) {
@@ -72,8 +72,12 @@ export function UsersWorkspace() {
         email: form.email.trim(),
         password: form.password,
       });
-      setUsers((current) => [...current, created]);
-      setStatusMessage(`User ${created.email} created successfully.`);
+      setUsers((current) =>
+        [...current, created].sort((left, right) => left.name.localeCompare(right.name)),
+      );
+      setStatusMessage(
+        `Cashier account for ${created.name} was created and can sign in immediately.`,
+      );
       setForm(INITIAL_FORM);
     } catch (error) {
       if (error instanceof ApiError) {
@@ -87,14 +91,14 @@ export function UsersWorkspace() {
   }
 
   async function handleDeactivate(userId: string) {
-    setPendingDeactivation(userId);
+    setPendingActionUserId(userId);
     setStatusMessage(null);
     setErrorMessage(null);
 
     try {
       const updated = await usersApi.deactivate(userId);
       setUsers((current) => current.map((u) => (u.id === userId ? updated : u)));
-      setStatusMessage(`User ${updated.email} deactivated.`);
+      setStatusMessage(`${updated.name} was deactivated and can no longer sign in.`);
     } catch (error) {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
@@ -102,7 +106,27 @@ export function UsersWorkspace() {
         setErrorMessage('Unable to deactivate this user right now.');
       }
     } finally {
-      setPendingDeactivation(null);
+      setPendingActionUserId(null);
+    }
+  }
+
+  async function handleActivate(userId: string) {
+    setPendingActionUserId(userId);
+    setStatusMessage(null);
+    setErrorMessage(null);
+
+    try {
+      const updated = await usersApi.activate(userId);
+      setUsers((current) => current.map((u) => (u.id === userId ? updated : u)));
+      setStatusMessage(`${updated.name} was reactivated and can sign in again.`);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage('Unable to reactivate this user right now.');
+      }
+    } finally {
+      setPendingActionUserId(null);
     }
   }
 
@@ -135,6 +159,7 @@ export function UsersWorkspace() {
           Create accounts for cashiers and deactivate users that should no longer access the
           shop. Account creation is restricted to owners.
         </p>
+        <p>Inactive users stay visible here and can be reactivated at any time.</p>
       </section>
 
       <section className="products-layout">
@@ -190,6 +215,10 @@ export function UsersWorkspace() {
 
         <article className="panel">
           <h2>Shop users</h2>
+          <p>
+            Active users can sign in. Inactive users are blocked from login until you reactivate
+            them.
+          </p>
           <div className="product-list">
             {users.length === 0 ? <p>No users yet.</p> : null}
             {users.map((member) => (
@@ -216,9 +245,21 @@ export function UsersWorkspace() {
                       type="button"
                       className="button-link secondary"
                       onClick={() => handleDeactivate(member.id)}
-                      disabled={pendingDeactivation === member.id}
+                      disabled={pendingActionUserId === member.id}
                     >
-                      {pendingDeactivation === member.id ? 'Deactivating...' : 'Deactivate'}
+                      {pendingActionUserId === member.id ? 'Updating...' : 'Deactivate'}
+                    </button>
+                  </div>
+                ) : null}
+                {!member.isActive ? (
+                  <div className="form-actions">
+                    <button
+                      type="button"
+                      className="button-link"
+                      onClick={() => handleActivate(member.id)}
+                      disabled={pendingActionUserId === member.id}
+                    >
+                      {pendingActionUserId === member.id ? 'Updating...' : 'Reactivate'}
                     </button>
                   </div>
                 ) : null}
