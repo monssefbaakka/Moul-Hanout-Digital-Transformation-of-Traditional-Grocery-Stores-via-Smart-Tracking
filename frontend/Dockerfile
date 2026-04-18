@@ -22,8 +22,9 @@ COPY packages/shared-types/package.json ./packages/shared-types/
 COPY packages/shared-utils/package.json ./packages/shared-utils/
 
 # HUSKY=0 — no .git in Docker, so the prepare script must be skipped.
-RUN HUSKY=0 npm install && \
-    npm install --no-save --package-lock=false lightningcss-linux-x64-gnu@$(node -p "require('./node_modules/lightningcss/package.json').version")
+# Use the lockfile directly so optional platform packages such as
+# lightningcss are installed in one pass without an extra registry hit.
+RUN HUSKY=0 npm ci --include=optional --no-audit --no-fund
 
 # ─── Stage 2: Build ──────────────────────────────────────────
 FROM node:20-bookworm-slim AS builder
