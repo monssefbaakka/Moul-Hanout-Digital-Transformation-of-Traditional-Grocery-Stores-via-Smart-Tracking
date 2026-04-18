@@ -3,12 +3,29 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { MovementType } from '@prisma/client';
+import { MovementType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { StockInDto, StockOutDto } from './dto/inventory.dto';
 
 const EXPIRING_SOON_DAYS = 5;
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
+type StockMovementWithRelations = Prisma.StockMovementGetPayload<{
+  include: {
+    product: {
+      select: {
+        id: true;
+        name: true;
+      };
+    };
+    user: {
+      select: {
+        id: true;
+        name: true;
+      };
+    };
+  };
+}>;
 
 @Injectable()
 export class InventoryService {
@@ -151,7 +168,7 @@ export class InventoryService {
   }
 
   async findRecentMovements(shopId: string) {
-    const movements = await this.prisma.stockMovement.findMany({
+    const movements = (await this.prisma.stockMovement.findMany({
       where: {
         product: {
           shopId,
@@ -175,7 +192,7 @@ export class InventoryService {
         createdAt: 'desc',
       },
       take: 50,
-    } as never);
+    } as never)) as StockMovementWithRelations[];
 
     return movements.map((movement) => ({
       id: movement.id,
