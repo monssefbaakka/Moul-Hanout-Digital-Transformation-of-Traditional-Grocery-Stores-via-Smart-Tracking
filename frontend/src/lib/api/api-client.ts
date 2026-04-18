@@ -7,8 +7,12 @@ import type {
   CreateCategoryInput,
   CreateProductInput,
   CreateUserInput,
+  InventoryItem,
   LogoutResponse,
   Product,
+  StockInInput,
+  StockMovementEntry,
+  StockOutInput,
   UpdateProductInput,
 } from '@moul-hanout/shared-types';
 
@@ -137,4 +141,14 @@ export const productsApi = {
     request<Product>('/products', { method: 'POST', body: payload }),
   update: (productId: string, payload: UpdateProductInput) =>
     request<Product>(`/products/${productId}`, { method: 'PATCH', body: payload }),
+};
+
+export const inventoryApi = {
+  list: () => request<InventoryItem[]>('/inventory'),
+  stockIn: (payload: StockInInput) =>
+    request<InventoryItem>('/inventory/stock-in', { method: 'POST', body: payload }),
+  stockOut: (payload: StockOutInput) =>
+    request<InventoryItem>('/inventory/stock-out', { method: 'POST', body: payload }),
+  expiringSoon: () => request<InventoryItem[]>('/inventory/expiring-soon'),
+  movements: () => request<StockMovementEntry[]>('/inventory/movements'),
 };

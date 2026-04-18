@@ -142,6 +142,7 @@ model Product {
   costPrice         Float? // Maps to cost_price
   lowStockThreshold Int     @default(5)
   currentStock      Int     @default(0) // Cache to avoid SUM(movements) every time
+  expirationDate    DateTime?
 
   shop           Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
   category       Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)

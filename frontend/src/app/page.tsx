@@ -7,18 +7,18 @@ export default function HomePage() {
     <main className="page stack">
       <section className="hero">
         <span className="eyebrow">Phase 1</span>
-        <h1>Backend foundation only.</h1>
+        <h1>Operations foundation in progress.</h1>
         <p>
-          The backend has been reset to auth, users, and health only. Later business
-          modules stay disabled until they are intentionally rebuilt.
+          Authentication, users, categories, products, and inventory are now available for
+          MVP assembly. Sales, payments, dashboard, and receipt flows still need to be built.
         </p>
       </section>
 
       <section className="panel">
         <h2>Available UI</h2>
         <p>
-          The login flow is now wired to the backend auth contract. Product, stock, sales,
-          and report routes are still disabled.
+          Owners can manage categories, products, users, and inventory. Cashiers are redirected
+          to the inventory workspace after login.
         </p>
         <Link href="/login" className="button-link secondary">
           Open login

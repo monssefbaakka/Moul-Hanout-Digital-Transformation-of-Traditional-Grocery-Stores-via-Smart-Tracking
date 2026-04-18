@@ -84,6 +84,7 @@ export interface Product {
   costPrice?: number | null;
   lowStockThreshold: number;
   currentStock: number;
+  expirationDate?: string | null;
   category?: Category;
 }
 
@@ -98,9 +99,51 @@ export interface CreateProductInput {
   unit?: string;
   photo?: string;
   lowStockThreshold?: number;
+  expirationDate?: string;
 }
 
 export type UpdateProductInput = Partial<CreateProductInput>;
+
+export type StockMovementType = 'IN' | 'OUT' | 'ADJUST';
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  categoryId: string;
+  categoryName: string;
+  barcode?: string | null;
+  unit?: string | null;
+  currentStock: number;
+  lowStockThreshold: number;
+  expirationDate?: string | null;
+  isLowStock: boolean;
+  isExpiringSoon: boolean;
+}
+
+export interface StockMovementEntry {
+  id: string;
+  productId: string;
+  productName: string;
+  type: StockMovementType;
+  quantityDelta: number;
+  reason?: string | null;
+  createdBy: string;
+  createdByName: string;
+  createdAt: string;
+}
+
+export interface StockInInput {
+  productId: string;
+  quantity: number;
+  reason: string;
+  expirationDate?: string;
+}
+
+export interface StockOutInput {
+  productId: string;
+  quantity: number;
+  reason: string;
+}
 
 export interface CreateCategoryInput {
   name: string;

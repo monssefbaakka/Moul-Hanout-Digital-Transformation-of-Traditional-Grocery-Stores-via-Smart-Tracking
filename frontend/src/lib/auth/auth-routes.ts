@@ -12,13 +12,11 @@ export function isAuthRoute(pathname: string) {
 }
 
 export function getPostLoginRedirect(role: Role) {
-  // Both OWNER and CASHIER land on / for now.
-  // Expand here when owner-dashboard and cashier-pos routes are built.
   switch (role) {
     case 'OWNER':
       return '/';
     case 'CASHIER':
-      return '/';
+      return '/inventaire';
     default:
       return '/';
   }

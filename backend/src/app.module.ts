@@ -11,6 +11,7 @@ import Redis from 'ioredis';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
 import { ProductsModule } from './modules/products/products.module';
 import { UsersModule } from './modules/users/users.module';
 import { HealthModule } from './modules/health/health.module';
@@ -55,6 +56,7 @@ export class RedisClient extends Redis implements OnApplicationShutdown {
     // Feature modules
     AuthModule,
     CategoriesModule,
+    InventoryModule,
     ProductsModule,
     UsersModule,
     HealthModule,

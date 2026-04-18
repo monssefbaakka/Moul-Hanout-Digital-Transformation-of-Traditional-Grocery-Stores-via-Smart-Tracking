@@ -119,6 +119,8 @@ async function main() {
       unit: 'bottle',
       photo: 'https://example.com/products/eau-minerale-1-5l.jpg',
       lowStockThreshold: 8,
+      currentStock: 20,
+      expirationDate: null,
     },
     {
       name: 'Jus Orange 1L',
@@ -130,6 +132,8 @@ async function main() {
       unit: 'carton',
       photo: 'https://example.com/products/jus-orange-1l.jpg',
       lowStockThreshold: 6,
+      currentStock: 4,
+      expirationDate: new Date('2026-04-21T00:00:00.000Z'),
     },
     {
       name: 'Chips Salees',
@@ -141,6 +145,8 @@ async function main() {
       unit: 'bag',
       photo: 'https://example.com/products/chips-salees.jpg',
       lowStockThreshold: 10,
+      currentStock: 11,
+      expirationDate: null,
     },
     {
       name: 'Biscuits Chocolat',
@@ -152,6 +158,8 @@ async function main() {
       unit: 'pack',
       photo: 'https://example.com/products/biscuits-chocolat.jpg',
       lowStockThreshold: 9,
+      currentStock: 6,
+      expirationDate: new Date('2026-04-23T00:00:00.000Z'),
     },
     {
       name: 'Lait Demi-Ecreme 1L',
@@ -163,6 +171,8 @@ async function main() {
       unit: 'carton',
       photo: 'https://example.com/products/lait-demi-ecreme-1l.jpg',
       lowStockThreshold: 7,
+      currentStock: 14,
+      expirationDate: new Date('2026-04-28T00:00:00.000Z'),
     },
   ];
 
@@ -190,6 +200,8 @@ async function main() {
         salePrice: productSeed.salePrice,
         costPrice: productSeed.costPrice,
         lowStockThreshold: productSeed.lowStockThreshold,
+        currentStock: productSeed.currentStock,
+        expirationDate: productSeed.expirationDate,
       },
       create: {
         shopId: shop.id,
@@ -203,6 +215,8 @@ async function main() {
         salePrice: productSeed.salePrice,
         costPrice: productSeed.costPrice,
         lowStockThreshold: productSeed.lowStockThreshold,
+        currentStock: productSeed.currentStock,
+        expirationDate: productSeed.expirationDate,
       },
     });
   }

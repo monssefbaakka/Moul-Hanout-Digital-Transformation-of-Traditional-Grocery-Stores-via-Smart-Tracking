@@ -18,6 +18,9 @@ export function OwnerQuickLinks() {
         <Link href="/categories" className="button-link secondary">
           Categories
         </Link>
+        <Link href="/inventaire" className="button-link secondary">
+          Inventaire
+        </Link>
         <Link href="/produits" className="button-link secondary">
           Produits
         </Link>

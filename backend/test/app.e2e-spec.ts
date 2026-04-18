@@ -9,7 +9,7 @@ import {
   MemoryHealthIndicator,
   PrismaHealthIndicator,
 } from '@nestjs/terminus';
-import { Role } from '@prisma/client';
+import { MovementType, Role } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -63,6 +63,28 @@ type ProductRecord = {
   costPrice?: number | null;
   lowStockThreshold: number;
   currentStock: number;
+  expirationDate?: Date | null;
+};
+
+type StockMovementRecord = {
+  id: string;
+  productId: string;
+  type: MovementType;
+  qtyDelta: number;
+  reason?: string | null;
+  createdBy: string;
+  createdAt: Date;
+};
+
+type AuditLogRecord = {
+  id: string;
+  shopId: string;
+  userId: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  payload?: Record<string, unknown> | null;
+  createdAt: Date;
 };
 
 function selectFields<T extends Record<string, unknown>>(
@@ -184,6 +206,8 @@ function matchProduct(product: ProductRecord, where?: any) {
 
 async function createPrismaMock() {
   const now = new Date('2026-03-18T00:00:00.000Z');
+  const expiringSoon = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+  const expiresLater = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
   const ownerPassword = await bcrypt.hash('Admin@123!', 12);
   const cashierPassword = await bcrypt.hash('Cashier@123!', 12);
 
@@ -260,6 +284,7 @@ async function createPrismaMock() {
       costPrice: 4,
       lowStockThreshold: 5,
       currentStock: 10,
+      expirationDate: expiringSoon,
     },
     {
       id: 'product-inactive',
@@ -275,6 +300,7 @@ async function createPrismaMock() {
       costPrice: 2,
       lowStockThreshold: 5,
       currentStock: 3,
+      expirationDate: null,
     },
     {
       id: 'product-other-shop',
@@ -290,15 +316,19 @@ async function createPrismaMock() {
       costPrice: 5,
       lowStockThreshold: 5,
       currentStock: 12,
+      expirationDate: expiresLater,
     },
   ];
 
+  const stockMovements: StockMovementRecord[] = [];
+  const auditLogs: AuditLogRecord[] = [];
   const sessions: SessionRecord[] = [];
 
   const getCategory = (categoryId: string) =>
     categories.find((category) => category.id === categoryId) ?? null;
+  const getUser = (userId: string) => users.find((user) => user.id === userId) ?? null;
 
-  return {
+  const prismaMock: any = {
     user: {
       findUnique: jest.fn(async (args: any) => {
         const user =
@@ -463,6 +493,7 @@ async function createPrismaMock() {
           costPrice: args.data.costPrice ?? null,
           lowStockThreshold: args.data.lowStockThreshold ?? 5,
           currentStock: args.data.currentStock ?? 0,
+          expirationDate: args.data.expirationDate ?? null,
         };
         products.push(product);
         return {
@@ -483,7 +514,79 @@ async function createPrismaMock() {
         };
       }),
     },
+    stockMovement: {
+      create: jest.fn(async (args: any) => {
+        const movement: StockMovementRecord = {
+          id: `movement-${stockMovements.length + 1}`,
+          productId: args.data.productId,
+          type: args.data.type,
+          qtyDelta: args.data.qtyDelta,
+          reason: args.data.reason ?? null,
+          createdBy: args.data.createdBy,
+          createdAt: new Date(),
+        };
+        stockMovements.push(movement);
+        return { ...movement };
+      }),
+      findMany: jest.fn(async (args?: any) => {
+        const results = stockMovements
+          .filter((movement) => {
+            const product = products.find((candidate) => candidate.id === movement.productId);
+            if (!product) {
+              return false;
+            }
+
+            if (args?.where?.product?.shopId && product.shopId !== args.where.product.shopId) {
+              return false;
+            }
+
+            return true;
+          })
+          .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
+          .slice(0, args?.take ?? stockMovements.length)
+          .map((movement) => ({
+            ...movement,
+            ...(args?.include?.product
+              ? { product: products.find((product) => product.id === movement.productId) }
+              : {}),
+            ...(args?.include?.user ? { user: getUser(movement.createdBy) } : {}),
+          }));
+
+        return results;
+      }),
+    },
+    auditLog: {
+      create: jest.fn(async (args: any) => {
+        const auditLog: AuditLogRecord = {
+          id: `audit-${auditLogs.length + 1}`,
+          shopId: args.data.shopId,
+          userId: args.data.userId,
+          action: args.data.action,
+          entityType: args.data.entityType,
+          entityId: args.data.entityId,
+          payload: args.data.payload ?? null,
+          createdAt: new Date(),
+        };
+        auditLogs.push(auditLog);
+        return { ...auditLog };
+      }),
+    },
   };
+
+  prismaMock.$transaction = jest.fn(async (input: any) => {
+    if (typeof input === 'function') {
+      return input(prismaMock);
+    }
+
+    return Promise.all(input);
+  });
+
+  prismaMock.__state = {
+    stockMovements,
+    auditLogs,
+  };
+
+  return prismaMock;
 }
 
 async function loginAs(
@@ -501,6 +604,7 @@ async function loginAs(
 
 describe('Phase 1 e2e', () => {
   let app: INestApplication<App>;
+  let prismaMock: any;
 
   beforeEach(async () => {
     process.env.NODE_ENV = 'test';
@@ -509,7 +613,7 @@ describe('Phase 1 e2e', () => {
     process.env.JWT_SECRET = 'test-access-secret';
     process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
 
-    const prismaMock = await createPrismaMock();
+    prismaMock = await createPrismaMock();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -726,6 +830,203 @@ describe('Phase 1 e2e', () => {
       .expect(200);
 
     expect(response.body.data).toEqual([]);
+  });
+
+  it('GET /api/v1/inventory allows both owner and cashier to see stock', async () => {
+    const ownerToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+    const cashierToken = await loginAs(
+      app,
+      'cashier@moulhanout.ma',
+      'Cashier@123!',
+    );
+
+    const ownerResponse = await request(app.getHttpServer())
+      .get('/api/v1/inventory')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(200);
+
+    const cashierResponse = await request(app.getHttpServer())
+      .get('/api/v1/inventory')
+      .set('Authorization', `Bearer ${cashierToken}`)
+      .expect(200);
+
+    expect(ownerResponse.body.data).toHaveLength(1);
+    expect(ownerResponse.body.data[0]).toMatchObject({
+      id: 'product-active',
+      currentStock: 10,
+      isExpiringSoon: true,
+    });
+    expect(cashierResponse.body.data).toHaveLength(1);
+  });
+
+  it('POST /api/v1/inventory/stock-in denies cashier and increases stock for owner', async () => {
+    const cashierToken = await loginAs(
+      app,
+      'cashier@moulhanout.ma',
+      'Cashier@123!',
+    );
+
+    await request(app.getHttpServer())
+      .post('/api/v1/inventory/stock-in')
+      .set('Authorization', `Bearer ${cashierToken}`)
+      .send({
+        productId: 'product-active',
+        quantity: 3,
+        reason: 'Unauthorized restock attempt',
+      })
+      .expect(403);
+
+    const ownerToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/inventory/stock-in')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({
+        productId: 'product-active',
+        quantity: 5,
+        reason: 'Morning delivery',
+        expirationDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+      })
+      .expect(201);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.currentStock).toBe(15);
+    expect(response.body.data.expirationDate).toBeTruthy();
+    expect(prismaMock.__state.stockMovements).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          productId: 'product-active',
+          type: MovementType.IN,
+          qtyDelta: 5,
+        }),
+      ]),
+    );
+    expect(prismaMock.__state.auditLogs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          action: 'STOCK_IN',
+          entityId: 'product-active',
+        }),
+      ]),
+    );
+  });
+
+  it('POST /api/v1/inventory/stock-out denies cashier, rejects oversell, and records valid stock-out', async () => {
+    const cashierToken = await loginAs(
+      app,
+      'cashier@moulhanout.ma',
+      'Cashier@123!',
+    );
+
+    await request(app.getHttpServer())
+      .post('/api/v1/inventory/stock-out')
+      .set('Authorization', `Bearer ${cashierToken}`)
+      .send({
+        productId: 'product-active',
+        quantity: 2,
+        reason: 'Unauthorized removal',
+      })
+      .expect(403);
+
+    const ownerToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+
+    const invalidResponse = await request(app.getHttpServer())
+      .post('/api/v1/inventory/stock-out')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({
+        productId: 'product-active',
+        quantity: 99,
+        reason: 'Impossible removal',
+      })
+      .expect(422);
+
+    expect(invalidResponse.body.error).toBe(
+      'Cannot remove more stock than is currently available',
+    );
+
+    const validResponse = await request(app.getHttpServer())
+      .post('/api/v1/inventory/stock-out')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({
+        productId: 'product-active',
+        quantity: 4,
+        reason: 'Damaged bottles',
+      })
+      .expect(201);
+
+    expect(validResponse.body.data.currentStock).toBe(6);
+    expect(prismaMock.__state.stockMovements).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          productId: 'product-active',
+          type: MovementType.OUT,
+          qtyDelta: -4,
+        }),
+      ]),
+    );
+    expect(prismaMock.__state.auditLogs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          action: 'STOCK_OUT',
+          entityId: 'product-active',
+        }),
+      ]),
+    );
+  });
+
+  it('GET /api/v1/inventory/expiring-soon returns only owner-visible products expiring within 5 days', async () => {
+    const ownerToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+    const cashierToken = await loginAs(
+      app,
+      'cashier@moulhanout.ma',
+      'Cashier@123!',
+    );
+
+    await request(app.getHttpServer())
+      .get('/api/v1/inventory/expiring-soon')
+      .set('Authorization', `Bearer ${cashierToken}`)
+      .expect(403);
+
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/inventory/expiring-soon')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(200);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].id).toBe('product-active');
+  });
+
+  it('GET /api/v1/inventory/movements returns recent movement history for owners', async () => {
+    const ownerToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+
+    await request(app.getHttpServer())
+      .post('/api/v1/inventory/stock-in')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({
+        productId: 'product-active',
+        quantity: 2,
+        reason: 'Backroom refill',
+      })
+      .expect(201);
+
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/inventory/movements')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(200);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          productId: 'product-active',
+          productName: 'Water 1L',
+          type: MovementType.IN,
+          quantityDelta: 2,
+          createdByName: 'Store Owner',
+        }),
+      ]),
+    );
   });
 
   it('GET /api/v1/users requires authentication', async () => {

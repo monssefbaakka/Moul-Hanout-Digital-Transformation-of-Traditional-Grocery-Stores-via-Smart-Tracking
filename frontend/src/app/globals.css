@@ -837,6 +837,119 @@ body {
   font-weight: 700;
 }
 
+.inventory-kpi {
+  margin: 0.35rem 0 0;
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 800;
+  color: #17352e;
+}
+
+.inventory-owner-layout {
+  align-items: start;
+}
+
+.inventory-expiring-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.inventory-expiring-card {
+  padding: 1rem;
+  border: 1px solid rgba(93, 83, 71, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 250, 241, 0.8);
+}
+
+.inventory-expiring-card h3 {
+  margin: 0;
+}
+
+.inventory-expiring-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+}
+
+.inventory-expiring-card dt,
+.inventory-table th {
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6d7c91;
+}
+
+.inventory-expiring-card dd {
+  margin: 0.35rem 0 0;
+  font-weight: 700;
+}
+
+.inventory-table-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.inventory-table-wrapper {
+  overflow-x: auto;
+}
+
+.inventory-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+.inventory-table th,
+.inventory-table td {
+  padding: 0.95rem 0.8rem;
+  border-bottom: 1px solid rgba(93, 83, 71, 0.12);
+  text-align: left;
+  vertical-align: top;
+}
+
+.inventory-table td strong,
+.inventory-table td span {
+  display: block;
+}
+
+.inventory-table td span {
+  margin-top: 0.25rem;
+  color: var(--text-soft);
+  font-size: 0.9rem;
+}
+
+.inventory-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.inventory-status-success {
+  background: #dff5ec;
+  color: #18684d;
+}
+
+.inventory-status-warning {
+  background: #fff0d6;
+  color: #8b5b1d;
+}
+
+.inventory-status-danger {
+  background: #fde7df;
+  color: #9a3f2d;
+}
+
 @media (max-width: 640px) {
   .topbar-inner {
     align-items: flex-start;
@@ -865,6 +978,10 @@ body {
   .category-library-card__header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .inventory-table {
+    min-width: 640px;
   }
 
   .category-action {

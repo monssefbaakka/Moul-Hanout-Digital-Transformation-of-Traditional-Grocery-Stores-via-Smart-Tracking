@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import {
   IsBoolean,
+  IsDateString,
   IsInt,
   IsNotEmpty,
   IsNumber,
@@ -67,6 +68,11 @@ export class CreateProductDto {
   @IsInt()
   @Min(0, { message: 'Low stock threshold must be greater than or equal to 0' })
   lowStockThreshold?: number;
+
+  @ApiPropertyOptional({ example: '2026-04-25T00:00:00.000Z' })
+  @IsOptional()
+  @IsDateString({}, { message: 'Expiration date must be a valid ISO date string' })
+  expirationDate?: string;
 }
 
 export class UpdateProductDto extends PartialType(CreateProductDto) {}

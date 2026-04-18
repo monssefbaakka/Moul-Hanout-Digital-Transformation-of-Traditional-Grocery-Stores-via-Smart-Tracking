@@ -44,6 +44,7 @@ export class ProductsService {
         salePrice: dto.salePrice,
         costPrice: dto.costPrice,
         lowStockThreshold: dto.lowStockThreshold ?? 5,
+        expirationDate: dto.expirationDate ? new Date(dto.expirationDate) : undefined,
       },
       include: {
         category: true,
@@ -92,6 +93,12 @@ export class ProductsService {
         salePrice: dto.salePrice,
         costPrice: dto.costPrice,
         lowStockThreshold: dto.lowStockThreshold,
+        expirationDate:
+          dto.expirationDate === undefined
+            ? undefined
+            : dto.expirationDate
+              ? new Date(dto.expirationDate)
+              : null,
       },
       include: {
         category: true,
