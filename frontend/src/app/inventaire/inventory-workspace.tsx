@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { InventoryItem } from '@moul-hanout/shared-types';
 import { ApiError, inventoryApi } from '@/lib/api/api-client';
+import { AppPageHeader } from '@/components/layout/app-page-header';
 import { useAuthStore } from '@/store/auth.store';
 
 type StockInFormState = {
@@ -241,31 +242,31 @@ export function InventoryWorkspace() {
   const lowStockCount = inventory.filter((item) => item.isLowStock).length;
 
   return (
-    <main className="page stack">
-      <section className="hero">
-        <span className="eyebrow">Inventaire</span>
-        <h1>{isOwner ? 'Inventory control center' : 'Live stock visibility'}</h1>
-        <p>
-          {isOwner
-            ? 'Track current stock, register stock movements, and monitor products nearing expiration.'
-            : 'View current stock levels before checkout. Inventory changes remain owner-only.'}
-        </p>
-      </section>
+    <main className="page stack app-page">
+      <AppPageHeader
+        eyebrow="Inventaire"
+        title={isOwner ? 'Suivi du stock magasin' : 'Lecture du stock disponible'}
+        description={
+          isOwner
+            ? 'Suivez les quantites disponibles, enregistrez les entrees et sorties, et surveillez les produits a risque.'
+            : 'Consultez rapidement les niveaux de stock avant la vente. Les modifications restent reservees au proprietaire.'
+        }
+      />
 
       <section className="status-grid">
         <article className="panel">
-          <h2>Total active products</h2>
+          <h2>Produits actifs</h2>
           <p className="inventory-kpi">{inventory.length}</p>
         </article>
 
         <article className="panel">
-          <h2>Low stock items</h2>
+          <h2>Stock bas</h2>
           <p className="inventory-kpi">{lowStockCount}</p>
         </article>
 
         <article className="panel">
-          <h2>Expiring in 5 days</h2>
-          <p className="inventory-kpi">{isOwner ? expiringSoon.length : 'Owner only'}</p>
+          <h2>Expiration 5 jours</h2>
+          <p className="inventory-kpi">{isOwner ? expiringSoon.length : 'Reserve owner'}</p>
         </article>
       </section>
 
@@ -275,10 +276,10 @@ export function InventoryWorkspace() {
       {isOwner ? (
         <section className="products-layout inventory-owner-layout">
           <article className="panel">
-            <h2>Stock In</h2>
+            <h2>Entree de stock</h2>
             <form className="form-grid" onSubmit={handleStockIn}>
               <label className="field">
-                <span>Product</span>
+                <span>Produit</span>
                 <select
                   value={stockInForm.productId}
                   onChange={(event) =>
@@ -296,7 +297,7 @@ export function InventoryWorkspace() {
               </label>
 
               <label className="field">
-                <span>Quantity</span>
+                <span>Quantite</span>
                 <input
                   type="number"
                   min="1"
@@ -311,7 +312,7 @@ export function InventoryWorkspace() {
               </label>
 
               <label className="field field-wide">
-                <span>Reason</span>
+                <span>Motif</span>
                 <input
                   value={stockInForm.reason}
                   onChange={(event) =>
@@ -324,7 +325,7 @@ export function InventoryWorkspace() {
               </label>
 
               <label className="field field-wide">
-                <span>Expiration Date</span>
+                <span>Date d&apos;expiration</span>
                 <input
                   type="date"
                   value={stockInForm.expirationDate}
@@ -337,17 +338,17 @@ export function InventoryWorkspace() {
 
               <div className="form-actions field-wide">
                 <button className="button-link" type="submit" disabled={isSubmitting || !inventory.length}>
-                  {isSubmitting ? 'Saving...' : 'Confirm stock in'}
+                  {isSubmitting ? 'Enregistrement...' : 'Valider entree'}
                 </button>
               </div>
             </form>
           </article>
 
           <article className="panel">
-            <h2>Stock Out</h2>
+            <h2>Sortie de stock</h2>
             <form className="form-grid" onSubmit={handleStockOut}>
               <label className="field">
-                <span>Product</span>
+                <span>Produit</span>
                 <select
                   value={stockOutForm.productId}
                   onChange={(event) =>
@@ -365,7 +366,7 @@ export function InventoryWorkspace() {
               </label>
 
               <label className="field">
-                <span>Quantity</span>
+                <span>Quantite</span>
                 <input
                   type="number"
                   min="1"
@@ -380,7 +381,7 @@ export function InventoryWorkspace() {
               </label>
 
               <label className="field field-wide">
-                <span>Reason</span>
+                <span>Motif</span>
                 <input
                   value={stockOutForm.reason}
                   onChange={(event) =>
@@ -394,7 +395,7 @@ export function InventoryWorkspace() {
 
               <div className="form-actions field-wide">
                 <button className="button-link secondary" type="submit" disabled={isSubmitting || !inventory.length}>
-                  {isSubmitting ? 'Saving...' : 'Confirm stock out'}
+                  {isSubmitting ? 'Enregistrement...' : 'Valider sortie'}
                 </button>
               </div>
             </form>
@@ -404,7 +405,7 @@ export function InventoryWorkspace() {
 
       {isOwner ? (
         <section className="panel">
-          <h2>Expiring Soon</h2>
+          <h2>Produits a surveiller</h2>
           <div className="inventory-expiring-grid">
             {expiringSoon.length === 0 ? (
               <p>No active products are expiring within the next 5 days.</p>
@@ -435,11 +436,11 @@ export function InventoryWorkspace() {
       <section className="panel">
         <div className="inventory-table-head">
           <div>
-            <h2>Current Stock</h2>
+            <h2>Stock actuel</h2>
             <p>
               {isOwner
-                ? 'Track low stock and expiration risk before moving to sales and reporting.'
-                : 'Use this read-only table to confirm availability before building a sale.'}
+                ? "Suivez les quantites faibles et les dates sensibles avant les operations de vente."
+                : "Consultez ce tableau pour verifier la disponibilite avant de lancer une vente."}
             </p>
           </div>
         </div>

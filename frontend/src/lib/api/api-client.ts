@@ -137,6 +137,7 @@ export const categoriesApi = {
 
 export const productsApi = {
   list: () => request<Product[]>('/products'),
+  listAll: () => request<Product[]>('/products/manage'),
   create: (payload: CreateProductInput) =>
     request<Product>('/products', { method: 'POST', body: payload }),
   update: (productId: string, payload: UpdateProductInput) =>

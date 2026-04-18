@@ -22,6 +22,13 @@ import { ProductsService } from './products.service';
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
+  @Roles(Role.OWNER)
+  @Get('manage')
+  @ApiOkResponse({ description: 'Returns all products for the authenticated shop owner.' })
+  findAllForOwner(@CurrentUser('shopId') shopId: string) {
+    return this.productsService.findAllByShop(shopId);
+  }
+
   @Get()
   @ApiOkResponse({ description: 'Returns active products for the authenticated shop.' })
   findAll(@CurrentUser('shopId') shopId: string) {

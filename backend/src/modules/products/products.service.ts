@@ -11,6 +11,18 @@ import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
 export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  findAllByShop(shopId: string) {
+    return this.prisma.product.findMany({
+      where: {
+        shopId,
+      },
+      include: {
+        category: true,
+      },
+      orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
+    });
+  }
+
   findActiveByShop(shopId: string) {
     return this.prisma.product.findMany({
       where: {

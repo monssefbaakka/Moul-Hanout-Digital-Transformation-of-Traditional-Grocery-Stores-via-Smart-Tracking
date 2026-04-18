@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { AdminUser } from '@moul-hanout/shared-types';
 import { ApiError, authApi, usersApi } from '@/lib/api/api-client';
+import { AppPageHeader } from '@/components/layout/app-page-header';
 import { useAuthStore } from '@/store/auth.store';
 
 type CreateUserFormState = {
@@ -151,23 +152,19 @@ export function UsersWorkspace() {
   }
 
   return (
-    <main className="page stack">
-      <section className="hero">
-        <span className="eyebrow">Utilisateurs</span>
-        <h1>Owner user management</h1>
-        <p>
-          Create accounts for cashiers and deactivate users that should no longer access the
-          shop. Account creation is restricted to owners.
-        </p>
-        <p>Inactive users stay visible here and can be reactivated at any time.</p>
-      </section>
+    <main className="page stack app-page">
+      <AppPageHeader
+        eyebrow="Utilisateurs"
+        title="Gestion de l&apos;equipe magasin"
+        description="Creez les acces du personnel, bloquez les comptes inactifs et gardez une lecture simple des utilisateurs autorises."
+      />
 
       <section className="products-layout">
         <article className="panel">
-          <h2>Create a user</h2>
+          <h2>Creer un utilisateur</h2>
           <form className="form-grid" onSubmit={handleCreate}>
             <label className="field">
-              <span>Name</span>
+              <span>Nom</span>
               <input
                 value={form.name}
                 onChange={(event) => setForm({ ...form, name: event.target.value })}
@@ -191,7 +188,7 @@ export function UsersWorkspace() {
             </label>
 
             <label className="field field-wide">
-              <span>Temporary password</span>
+              <span>Mot de passe provisoire</span>
               <input
                 type="password"
                 value={form.password}
@@ -204,7 +201,7 @@ export function UsersWorkspace() {
 
             <div className="form-actions field-wide">
               <button className="button-link" type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Creating...' : 'Create user'}
+                {isSubmitting ? 'Creation...' : 'Creer utilisateur'}
               </button>
             </div>
           </form>
@@ -214,10 +211,10 @@ export function UsersWorkspace() {
         </article>
 
         <article className="panel">
-          <h2>Shop users</h2>
+          <h2>Equipe du magasin</h2>
           <p>
-            Active users can sign in. Inactive users are blocked from login until you reactivate
-            them.
+            Les utilisateurs actifs peuvent se connecter. Les comptes inactifs restent bloques
+            jusqu&apos;a reactivation.
           </p>
           <div className="product-list">
             {users.length === 0 ? <p>No users yet.</p> : null}
@@ -231,11 +228,11 @@ export function UsersWorkspace() {
                 </div>
                 <dl>
                   <div>
-                    <dt>Status</dt>
+                    <dt>Statut</dt>
                     <dd>{member.isActive ? 'Active' : 'Inactive'}</dd>
                   </div>
                   <div>
-                    <dt>Created</dt>
+                    <dt>Cree le</dt>
                     <dd>{new Date(member.createdAt).toLocaleDateString()}</dd>
                   </div>
                 </dl>
@@ -247,7 +244,7 @@ export function UsersWorkspace() {
                       onClick={() => handleDeactivate(member.id)}
                       disabled={pendingActionUserId === member.id}
                     >
-                      {pendingActionUserId === member.id ? 'Updating...' : 'Deactivate'}
+                      {pendingActionUserId === member.id ? 'Mise a jour...' : 'Desactiver'}
                     </button>
                   </div>
                 ) : null}
@@ -259,7 +256,7 @@ export function UsersWorkspace() {
                       onClick={() => handleActivate(member.id)}
                       disabled={pendingActionUserId === member.id}
                     >
-                      {pendingActionUserId === member.id ? 'Updating...' : 'Reactivate'}
+                      {pendingActionUserId === member.id ? 'Mise a jour...' : 'Reactiver'}
                     </button>
                   </div>
                 ) : null}

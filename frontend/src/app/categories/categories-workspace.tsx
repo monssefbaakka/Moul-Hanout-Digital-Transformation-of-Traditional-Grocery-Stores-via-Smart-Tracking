@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import type { Category } from '@moul-hanout/shared-types';
 import { ApiError, categoriesApi } from '@/lib/api/api-client';
+import { AppPageHeader } from '@/components/layout/app-page-header';
 import { useAuthStore } from '@/store/auth.store';
 
 type CategoryFormState = {
@@ -34,7 +35,7 @@ const INITIAL_FORM: CategoryFormState = {
 };
 
 const CATEGORY_ICON_OPTIONS: CategoryIconOption[] = [
-  { id: 'produce', label: 'Produce', Icon: Leaf },
+  { id: 'produce', label: 'Fruits', Icon: Leaf },
   { id: 'bakery', label: 'Bakery', Icon: Croissant },
   { id: 'dairy', label: 'Dairy', Icon: Milk },
   { id: 'drinks', label: 'Drinks', Icon: Coffee },
@@ -177,42 +178,31 @@ export function CategoriesWorkspace() {
   const slugPreview = createCategorySlug(form.name);
   const previewName = form.name.trim() || EMPTY_CATEGORY_LABEL;
   const previewDescription = form.description.trim() || EMPTY_DESCRIPTION_LABEL;
-  const activeCategoryCount = categories.filter((category) => category.isActive).length;
 
   return (
-    <main className="page categories-page">
-      <section className="categories-studio-header">
-        <div>
-          <span className="eyebrow">Categories</span>
-          <h1>Add New Category</h1>
-          <p>
-            Define a clean category identity for your catalog, POS tiles, and reporting screens.
-          </p>
-        </div>
+    <main className="page stack app-page">
+      <AppPageHeader
+        eyebrow="Categories"
+        title="Creer une categorie"
+        description="Organisez le catalogue avec des categories simples, faciles a reconnaitre et adaptees a votre equipe."
+      />
 
-        <div className="categories-header-pill">
-          <strong>{isLoading ? 'Loading catalog...' : `${activeCategoryCount} active categories`}</strong>
-          <span>Ready for product assignment and checkout navigation.</span>
-        </div>
-      </section>
+      {statusMessage ? <p className="status-success">{statusMessage}</p> : null}
+      {errorMessage ? <p className="status-error">{errorMessage}</p> : null}
 
       <section className="categories-studio">
-        <form
-          id="category-create-form"
-          className="categories-editor-column"
-          onSubmit={handleSubmit}
-        >
+        <form id="category-create-form" className="categories-editor-column" onSubmit={handleSubmit}>
           <article className="categories-card">
             <div className="categories-card-head">
               <div>
-                <h2>Category Information</h2>
-                <p>Define the core identity of this product group.</p>
+                <h2>Information categorie</h2>
+                <p>Definissez l&apos;identite principale du groupe de produits.</p>
               </div>
             </div>
 
             <div className="categories-form-layout">
               <label className="field">
-                <span>Category Name</span>
+                <span>Nom categorie</span>
                 <input
                   value={form.name}
                   onChange={(event) => setForm({ ...form, name: event.target.value })}
@@ -225,7 +215,7 @@ export function CategoriesWorkspace() {
               </label>
 
               <label className="field">
-                <span>URL Slug</span>
+                <span>Slug URL</span>
                 <div className="categories-slug-preview">/cat/{slugPreview}</div>
               </label>
 
@@ -246,12 +236,12 @@ export function CategoriesWorkspace() {
           <article className="categories-card">
             <div className="categories-card-head categories-card-head-inline">
               <div>
-                <h2>Visual Identity</h2>
-                <p>Preview the icon that best represents this category on the POS grid.</p>
+                <h2>Identite visuelle</h2>
+                <p>Choisissez une icone simple pour le point de vente.</p>
               </div>
               <div className="categories-icon-badge">
-                <strong>{CATEGORY_ICON_OPTIONS.length} icons</strong>
-                <span>Available</span>
+                <strong>{CATEGORY_ICON_OPTIONS.length} Icones</strong>
+                <span>Disponibles</span>
               </div>
             </div>
 
@@ -278,15 +268,12 @@ export function CategoriesWorkspace() {
               })}
             </div>
           </article>
-
-          {statusMessage ? <p className="status-success">{statusMessage}</p> : null}
-          {errorMessage ? <p className="status-error">{errorMessage}</p> : null}
         </form>
 
         <aside className="categories-preview-column">
           <article className="categories-preview-card">
             <div className="categories-preview-card__top">
-              <span>POS Dashboard Preview</span>
+              <span>Apercu caisse</span>
               <div className="categories-preview-card__dots" aria-hidden="true">
                 <i />
                 <i />
@@ -295,7 +282,7 @@ export function CategoriesWorkspace() {
             </div>
 
             <div className="categories-preview-card__body">
-              <h2>Checkout Station</h2>
+              <h2>Poste de caisse</h2>
 
               <div className="categories-preview-grid">
                 <article className="categories-preview-tile is-active">
@@ -310,8 +297,8 @@ export function CategoriesWorkspace() {
                   <span className="categories-preview-tile__icon">
                     <Package />
                   </span>
-                  <strong>Reserved</strong>
-                  <span>Next category</span>
+                  <strong>Reserve</strong>
+                  <span>Prochaine categorie</span>
                 </article>
               </div>
 
@@ -333,11 +320,8 @@ export function CategoriesWorkspace() {
               <Lightbulb />
             </div>
             <div>
-              <h3>Merchant Pro Tip</h3>
-              <p>
-                Use distinct names and icons for your highest-frequency categories to speed up
-                checkout and simplify cashier training.
-              </p>
+              <h3>Conseil utile</h3>
+              <p>Utilisez des noms courts et des icones simples pour aider l&apos;equipe en caisse.</p>
             </div>
           </article>
         </aside>
@@ -350,7 +334,7 @@ export function CategoriesWorkspace() {
           onClick={handleDiscard}
           disabled={isSubmitting}
         >
-          Discard
+          Annuler
         </button>
 
         <button
@@ -359,15 +343,15 @@ export function CategoriesWorkspace() {
           className="category-action category-action-primary"
           disabled={isSubmitting || form.name.trim().length === 0}
         >
-          {isSubmitting ? 'Creating Category...' : 'Create Category'}
+          {isSubmitting ? 'Creation...' : 'Creer la categorie'}
         </button>
       </div>
 
-      <section className="panel categories-library">
+      <section className="categories-library">
         <div className="categories-card-head">
           <div>
-            <h2>Active Categories</h2>
-            <p>Review the current catalog groups already available for product creation.</p>
+            <h2>Categories actives</h2>
+            <p>Relisez les groupes deja disponibles pour la creation de produits.</p>
           </div>
         </div>
 

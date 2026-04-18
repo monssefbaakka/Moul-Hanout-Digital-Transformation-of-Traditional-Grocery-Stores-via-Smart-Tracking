@@ -1,14 +1,16 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
+import '../styles/theme.css';
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { appTheme } from '@/styles/theme';
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
-  title: 'Moul Hanout',
-  description: 'Minimum base shell for parallel module development.',
+  title: appTheme.brand,
+  description: appTheme.description,
 };
 
 export default function RootLayout({
@@ -18,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={cn("font-sans", geist.variable)}>
-      <body>{children}</body>
+      <body data-theme={appTheme.id}>{children}</body>
     </html>
   );
 }
