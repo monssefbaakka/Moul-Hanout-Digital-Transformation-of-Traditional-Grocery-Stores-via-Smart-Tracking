@@ -7,9 +7,8 @@ export default function HomePage() {
   return (
     <main className="page stack app-page">
       <AppPageHeader
-        eyebrow="Accueil"
         title="Gestion simple du magasin"
-        description="Retrouvez vos espaces principaux en un seul endroit pour suivre le stock, organiser le catalogue et gerer l&apos;equipe sans complexite."
+        subtitle="Retrouvez vos espaces principaux en un seul endroit pour suivre le stock, organiser le catalogue et gerer l&apos;equipe sans complexite."
         actions={
           <Link href="/inventaire" className="button-link">
             Ouvrir l&apos;inventaire

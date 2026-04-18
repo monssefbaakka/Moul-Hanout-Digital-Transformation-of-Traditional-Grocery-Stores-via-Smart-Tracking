@@ -378,9 +378,8 @@ export function ProductsWorkspace() {
   return (
     <main className="page stack app-page">
       <AppPageHeader
-        eyebrow="Produits"
         title="Ajouter un produit"
-        description="Remplissez les informations du produit, verifiez le prix et preparez le stock initial dans une vue claire et simple."
+        subtitle="Remplissez les informations du produit, verifiez le prix et preparez le stock initial dans une vue claire et simple."
         actions={
           <>
             <span className="products-studio-avatar">{userInitials}</span>

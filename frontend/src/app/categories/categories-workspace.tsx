@@ -182,9 +182,8 @@ export function CategoriesWorkspace() {
   return (
     <main className="page stack app-page">
       <AppPageHeader
-        eyebrow="Categories"
         title="Creer une categorie"
-        description="Organisez le catalogue avec des categories simples, faciles a reconnaitre et adaptees a votre equipe."
+        subtitle="Organisez le catalogue avec des categories simples, faciles a reconnaitre et adaptees a votre equipe."
       />
 
       {statusMessage ? <p className="status-success">{statusMessage}</p> : null}

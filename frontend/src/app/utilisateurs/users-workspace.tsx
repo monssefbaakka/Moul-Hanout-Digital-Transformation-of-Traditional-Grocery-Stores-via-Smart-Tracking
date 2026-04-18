@@ -154,9 +154,8 @@ export function UsersWorkspace() {
   return (
     <main className="page stack app-page">
       <AppPageHeader
-        eyebrow="Utilisateurs"
         title="Gestion de l&apos;equipe magasin"
-        description="Creez les acces du personnel, bloquez les comptes inactifs et gardez une lecture simple des utilisateurs autorises."
+        subtitle="Creez les acces du personnel, bloquez les comptes inactifs et gardez une lecture simple des utilisateurs autorises."
       />
 
       <section className="products-layout">

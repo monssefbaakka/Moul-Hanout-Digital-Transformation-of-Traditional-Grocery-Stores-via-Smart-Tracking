@@ -244,9 +244,8 @@ export function InventoryWorkspace() {
   return (
     <main className="page stack app-page">
       <AppPageHeader
-        eyebrow="Inventaire"
         title={isOwner ? 'Suivi du stock magasin' : 'Lecture du stock disponible'}
-        description={
+        subtitle={
           isOwner
             ? 'Suivez les quantites disponibles, enregistrez les entrees et sorties, et surveillez les produits a risque.'
             : 'Consultez rapidement les niveaux de stock avant la vente. Les modifications restent reservees au proprietaire.'
