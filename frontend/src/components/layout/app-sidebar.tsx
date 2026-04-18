@@ -98,7 +98,6 @@ export function AppSidebar() {
             <span className="app-sidebar__icon">{item.icon}</span>
             <span className="app-sidebar__copy">
               <strong>{item.label}</strong>
-              <small>{item.description}</small>
             </span>
           </Link>
         ))}

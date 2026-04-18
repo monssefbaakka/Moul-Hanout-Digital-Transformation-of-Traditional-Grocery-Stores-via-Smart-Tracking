@@ -1,27 +1,26 @@
 import type { ReactNode } from 'react';
 
 type AppPageHeaderProps = {
-  eyebrow?: string;
   title: string;
-  description: string;
+  subtitle?: string; // optional now
   actions?: ReactNode;
 };
 
 export function AppPageHeader({
-  eyebrow,
   title,
-  description,
+  subtitle,
   actions,
 }: AppPageHeaderProps) {
   return (
     <section className="app-page-header">
       <div className="app-page-header__main">
-        {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
         <h1>{title}</h1>
-        <p>{description}</p>
+        {subtitle ? <p className="text-muted">{subtitle}</p> : null}
       </div>
 
-      {actions ? <div className="app-page-header__actions">{actions}</div> : null}
+      {actions ? (
+        <div className="app-page-header__actions">{actions}</div>
+      ) : null}
     </section>
   );
 }

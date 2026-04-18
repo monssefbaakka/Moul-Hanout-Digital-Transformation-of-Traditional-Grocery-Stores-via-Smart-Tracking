@@ -1,22 +1,26 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { usePathname } from 'next/navigation';
 import { AppSidebar } from './app-sidebar';
+import { AppTopbar } from './app-topbar';
 
 type AuthenticatedShellProps = {
   children: ReactNode;
 };
 
 export function AuthenticatedShell({ children }: AuthenticatedShellProps) {
-  const pathname = usePathname();
-  const showSidebar = !(pathname === '/categories' || pathname.startsWith('/categories/'));
-
   return (
-    <div className={`app-shell${showSidebar ? '' : ' app-shell--full'}`}>
-      {showSidebar ? <AppSidebar /> : null}
-      <div className="app-shell__content">
-        <div className="app-shell__content-inner">{children}</div>
+    <div className="app-shell flex h-screen">
+      {/* Sidebar ALWAYS visible */}
+      <AppSidebar />
+
+      {/* Main content */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <AppTopbar />
+
+        <main className="flex-1 overflow-y-auto p-6">
+          {children}
+        </main>
       </div>
     </div>
   );
