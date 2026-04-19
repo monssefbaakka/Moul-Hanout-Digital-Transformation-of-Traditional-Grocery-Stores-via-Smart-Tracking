@@ -133,6 +133,24 @@ export interface Sale {
   itemCount: number;
 }
 
+export interface SalesListPagination {
+  page: number;
+  limit: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+export interface SalesListFilters {
+  from?: string | null;
+  to?: string | null;
+}
+
+export interface SalesListResponse {
+  items: Sale[];
+  pagination: SalesListPagination;
+  filters: SalesListFilters;
+}
+
 export interface SaleDetailCashier {
   id: string;
   name: string;
@@ -220,6 +238,36 @@ export interface StockMovementEntry {
   createdBy: string;
   createdByName: string;
   createdAt: string;
+}
+
+export interface SalesReportDay {
+  date: string;
+  revenue: number;
+  transactions: number;
+}
+
+export interface SalesReport {
+  days: SalesReportDay[];
+  totalRevenue: number;
+  totalTransactions: number;
+}
+
+export interface InventoryReportProduct {
+  id: string;
+  name: string;
+  currentStock: number;
+  lowStockThreshold: number;
+  unit?: string | null;
+  categoryName: string;
+}
+
+export interface ExpiringProduct extends InventoryReportProduct {
+  expirationDate: string | null;
+}
+
+export interface InventoryReport {
+  lowStock: InventoryReportProduct[];
+  expiringSoon: ExpiringProduct[];
 }
 
 export interface StockInInput {

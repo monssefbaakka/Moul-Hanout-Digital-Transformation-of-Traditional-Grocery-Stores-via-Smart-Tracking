@@ -16,6 +16,7 @@ import { ProductsModule } from './modules/products/products.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { UsersModule } from './modules/users/users.module';
 import { HealthModule } from './modules/health/health.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 import { appConfig } from './config/app.config';
 import { jwtConfig } from './config/jwt.config';
@@ -62,6 +63,7 @@ export class RedisClient extends Redis implements OnApplicationShutdown {
     SalesModule,
     UsersModule,
     HealthModule,
+    ReportsModule,
   ],
   providers: [
     {

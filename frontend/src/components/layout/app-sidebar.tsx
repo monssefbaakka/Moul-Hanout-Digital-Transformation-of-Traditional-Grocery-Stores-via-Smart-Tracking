@@ -3,11 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  BarChart2,
   Boxes,
   FolderPlus,
   House,
   Package2,
   PackagePlus,
+  ReceiptText,
   Tag,
   Users,
   Warehouse,
@@ -30,6 +32,12 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Tableau de bord',
     description: 'Vue generale',
     icon: <House size={18} />,
+  },
+  {
+    href: '/vente',
+    label: 'Vente',
+    description: 'Point de caisse',
+    icon: <ReceiptText size={18} />,
   },
   {
     href: '/inventaire',
@@ -56,6 +64,13 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Utilisateurs',
     description: 'Equipe magasin',
     icon: <Users size={18} />,
+    ownerOnly: true,
+  },
+  {
+    href: '/rapports',
+    label: 'Rapports',
+    description: 'Ventes et stock',
+    icon: <BarChart2 size={18} />,
     ownerOnly: true,
   },
 ];

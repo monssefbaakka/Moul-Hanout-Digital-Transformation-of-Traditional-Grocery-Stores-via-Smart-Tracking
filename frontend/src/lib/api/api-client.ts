@@ -4,12 +4,19 @@ import type {
   AuthResponse,
   AuthTokens,
   Category,
+  CreateSaleInput,
   CreateCategoryInput,
   CreateProductInput,
   CreateUserInput,
+  DailySummary,
   InventoryItem,
+  InventoryReport,
   LogoutResponse,
   Product,
+  Sale,
+  SaleDetail,
+  SalesListResponse,
+  SalesReport,
   StockInInput,
   StockMovementEntry,
   StockOutInput,
@@ -24,6 +31,23 @@ interface RequestOptions {
   method?: HttpMethod;
   body?: unknown;
   headers?: Record<string, string>;
+}
+
+function buildQuery(params?: Record<string, string | number | undefined>) {
+  if (!params) {
+    return '';
+  }
+
+  const searchParams = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') {
+      searchParams.set(key, String(value));
+    }
+  }
+
+  const queryString = searchParams.toString();
+  return queryString ? `?${queryString}` : '';
 }
 
 let accessToken: string | null = null;
@@ -144,6 +168,18 @@ export const productsApi = {
     request<Product>(`/products/${productId}`, { method: 'PATCH', body: payload }),
 };
 
+export const reportsApi = {
+  salesReport: (params?: { from?: string; to?: string }) =>
+    request<SalesReport>(`/reports/sales${buildQuery(params)}`),
+  inventoryReport: (params?: { days?: number }) =>
+    request<InventoryReport>(`/reports/inventory${buildQuery(params)}`),
+  exportSalesCsv: (params?: { from?: string; to?: string }) =>
+    downloadBlob(
+      `/reports/sales/export${buildQuery(params)}`,
+      `ventes-${params?.from ?? 'debut'}-${params?.to ?? 'fin'}.csv`,
+    ),
+};
+
 export const inventoryApi = {
   list: () => request<InventoryItem[]>('/inventory'),
   stockIn: (payload: StockInInput) =>
@@ -152,4 +188,31 @@ export const inventoryApi = {
     request<InventoryItem>('/inventory/stock-out', { method: 'POST', body: payload }),
   expiringSoon: () => request<InventoryItem[]>('/inventory/expiring-soon'),
   movements: () => request<StockMovementEntry[]>('/inventory/movements'),
+};
+
+async function downloadBlob(endpoint: string, filename: string): Promise<void> {
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    headers: {
+      ...(typeof window !== 'undefined' && accessToken
+        ? { Authorization: `Bearer ${accessToken}` }
+        : {}),
+    },
+  });
+  if (!response.ok) throw new Error('Export failed');
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export const salesApi = {
+  create: (payload: CreateSaleInput) =>
+    request<SaleDetail>('/sales', { method: 'POST', body: payload }),
+  list: (params?: { from?: string; to?: string; page?: number; limit?: number }) =>
+    request<SalesListResponse>(`/sales${buildQuery(params)}`),
+  getById: (id: string) => request<SaleDetail>(`/sales/${id}`),
+  dailySummary: () => request<DailySummary>('/sales/summary/daily'),
 };
