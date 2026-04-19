@@ -11,11 +11,82 @@ import {
 } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
-import { CreateSaleDto } from './dto/sale.dto';
+import { CreateSaleDto, GetSalesQueryDto } from './dto/sale.dto';
+
+type SalesListEntry = Prisma.SaleGetPayload<{
+  include: {
+    cashier: {
+      select: {
+        id: true;
+        name: true;
+      };
+    };
+    items: {
+      select: {
+        qty: true;
+      };
+    };
+  };
+}>;
 
 @Injectable()
 export class SalesService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async findAll(shopId: string, query: GetSalesQueryDto) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const where = this.buildSaleListWhereClause(shopId, query);
+
+    const [totalCount, sales] = (await this.prisma.$transaction([
+      this.prisma.sale.count({ where } as never),
+      this.prisma.sale.findMany({
+        where,
+        include: {
+          cashier: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          items: {
+            select: {
+              qty: true,
+            },
+          },
+        },
+        orderBy: {
+          soldAt: 'desc',
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      } as never),
+    ])) as [number, SalesListEntry[]];
+
+    return {
+      items: sales.map((sale) => ({
+        id: sale.id,
+        receiptNumber: sale.receiptNumber,
+        soldAt: sale.soldAt,
+        status: sale.status,
+        paymentMode: sale.paymentMode,
+        cashierId: sale.cashier.id,
+        cashierName: sale.cashier.name,
+        total: sale.totalAmount,
+        itemCount: sale.items.reduce((count, item) => count + item.qty, 0),
+      })),
+      pagination: {
+        page,
+        limit,
+        totalItems: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+      },
+      filters: {
+        from: query.from ?? null,
+        to: query.to ?? null,
+      },
+    };
+  }
 
   async create(shopId: string, userId: string, dto: CreateSaleDto) {
     return this.prisma.$transaction(async (tx) => {
@@ -206,10 +277,64 @@ export class SalesService {
     return requiredQuantities;
   }
 
+  private buildSaleListWhereClause(
+    shopId: string,
+    query: GetSalesQueryDto,
+  ): Prisma.SaleWhereInput {
+    const soldAt = this.buildSoldAtDateFilter(query);
+
+    return {
+      shopId,
+      ...(soldAt ? { soldAt } : {}),
+    };
+  }
+
+  private buildSoldAtDateFilter(query: GetSalesQueryDto) {
+    if (!query.from && !query.to) {
+      return undefined;
+    }
+
+    const soldAtFilter: Prisma.DateTimeFilter = {};
+
+    if (query.from) {
+      soldAtFilter.gte = this.normalizeStartDate(query.from);
+    }
+
+    if (query.to) {
+      soldAtFilter.lte = this.normalizeEndDate(query.to);
+    }
+
+    return soldAtFilter;
+  }
+
   private generateReceiptNumber() {
     const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const shortUuid = randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase();
 
     return `MAH-${datePart}-${shortUuid}`;
+  }
+
+  private normalizeStartDate(value: string) {
+    const date = new Date(value);
+
+    if (this.isDateOnlyValue(value)) {
+      date.setUTCHours(0, 0, 0, 0);
+    }
+
+    return date;
+  }
+
+  private normalizeEndDate(value: string) {
+    const date = new Date(value);
+
+    if (this.isDateOnlyValue(value)) {
+      date.setUTCHours(23, 59, 59, 999);
+    }
+
+    return date;
+  }
+
+  private isDateOnlyValue(value: string) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(value);
   }
 }

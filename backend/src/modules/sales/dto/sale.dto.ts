@@ -4,12 +4,14 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
+  IsDateString,
   IsEnum,
   IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
+  Max,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -51,6 +53,33 @@ export class CreateSaleDto {
   @ValidateNested({ each: true })
   @Type(() => CreateSaleItemDto)
   items: CreateSaleItemDto[];
+}
+
+export class GetSalesQueryDto {
+  @ApiPropertyOptional({ example: 1, default: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'Page must be an integer' })
+  @Min(1, { message: 'Page must be greater than 0' })
+  page?: number;
+
+  @ApiPropertyOptional({ example: 20, default: 20 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'Limit must be an integer' })
+  @Min(1, { message: 'Limit must be greater than 0' })
+  @Max(100, { message: 'Limit cannot exceed 100' })
+  limit?: number;
+
+  @ApiPropertyOptional({ example: '2026-04-01' })
+  @IsOptional()
+  @IsDateString({}, { message: 'From date must be a valid ISO date string' })
+  from?: string;
+
+  @ApiPropertyOptional({ example: '2026-04-19' })
+  @IsOptional()
+  @IsDateString({}, { message: 'To date must be a valid ISO date string' })
+  to?: string;
 }
 
 export class UpdateSaleDto extends PartialType(CreateSaleDto) {}
