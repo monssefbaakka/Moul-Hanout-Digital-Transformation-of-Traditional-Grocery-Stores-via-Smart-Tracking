@@ -29,9 +29,44 @@ type SalesListEntry = Prisma.SaleGetPayload<{
   };
 }>;
 
+type SaleDetail = Prisma.SaleGetPayload<{
+  include: {
+    cashier: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+      };
+    };
+    items: {
+      include: {
+        product: {
+          select: {
+            id: true;
+            name: true;
+            barcode: true;
+            unit: true;
+          };
+        };
+      };
+    };
+    payments: true;
+  };
+}>;
+
 @Injectable()
 export class SalesService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async findOne(shopId: string, saleId: string) {
+    const sale = await this.getSaleDetail(this.prisma, shopId, saleId);
+
+    if (!sale) {
+      throw new NotFoundException('Sale not found');
+    }
+
+    return sale;
+  }
 
   async findAll(shopId: string, query: GetSalesQueryDto) {
     const page = query.page ?? 1;
@@ -213,56 +248,7 @@ export class SalesService {
         },
       } as never);
 
-      return (await tx.sale.findUnique({
-        where: {
-          id: sale.id,
-        },
-        include: {
-          cashier: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          items: {
-            include: {
-              product: {
-                select: {
-                  id: true,
-                  name: true,
-                  barcode: true,
-                  unit: true,
-                },
-              },
-            },
-          },
-          payments: true,
-        },
-      } as never)) as Prisma.SaleGetPayload<{
-        include: {
-          cashier: {
-            select: {
-              id: true;
-              name: true;
-              email: true;
-            };
-          };
-          items: {
-            include: {
-              product: {
-                select: {
-                  id: true;
-                  name: true;
-                  barcode: true;
-                  unit: true;
-                };
-              };
-            };
-          };
-          payments: true;
-        };
-      }>;
+      return this.getSaleDetail(tx, shopId, sale.id) as Promise<SaleDetail>;
     });
   }
 
@@ -275,6 +261,41 @@ export class SalesService {
     }
 
     return requiredQuantities;
+  }
+
+  private getSaleDetail(
+    prismaClient: Prisma.TransactionClient | PrismaService,
+    shopId: string,
+    saleId: string,
+  ) {
+    return prismaClient.sale.findFirst({
+      where: {
+        id: saleId,
+        shopId,
+      },
+      include: {
+        cashier: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                barcode: true,
+                unit: true,
+              },
+            },
+          },
+        },
+        payments: true,
+      },
+    } as never) as Promise<SaleDetail | null>;
   }
 
   private buildSaleListWhereClause(

@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiTags,
   ApiUnprocessableEntityResponse,
@@ -20,6 +21,14 @@ import { SalesService } from './sales.service';
 @Controller('sales')
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}
+
+  @Roles(Role.OWNER, Role.CASHIER)
+  @Get(':id')
+  @ApiOkResponse({ description: 'Returns full sale details for the authenticated shop.' })
+  @ApiNotFoundResponse({ description: 'Sale not found.' })
+  findOne(@CurrentUser('shopId') shopId: string, @Param('id') saleId: string) {
+    return this.salesService.findOne(shopId, saleId);
+  }
 
   @Roles(Role.OWNER, Role.CASHIER)
   @Get()
