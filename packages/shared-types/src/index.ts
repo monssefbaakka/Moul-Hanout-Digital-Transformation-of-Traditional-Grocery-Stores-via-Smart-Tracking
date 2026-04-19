@@ -104,6 +104,96 @@ export interface CreateProductInput {
 
 export type UpdateProductInput = Partial<CreateProductInput>;
 
+export type PaymentMode = 'CASH' | 'CARD' | 'OTHER';
+
+export type SaleStatus = 'PENDING' | 'COMPLETED' | 'CANCELLED';
+
+export type PaymentStatus = 'PENDING' | 'COMPLETED' | 'CANCELLED';
+
+export interface CreateSaleItemInput {
+  productId: string;
+  quantity: number;
+  discount?: number;
+}
+
+export interface CreateSaleInput {
+  paymentMode: PaymentMode;
+  items: CreateSaleItemInput[];
+}
+
+export interface Sale {
+  id: string;
+  receiptNumber: string;
+  soldAt: string;
+  status: SaleStatus;
+  paymentMode: PaymentMode;
+  cashierId: string;
+  cashierName: string;
+  total: number;
+  itemCount: number;
+}
+
+export interface SaleDetailCashier {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface SaleDetailItemProduct {
+  id: string;
+  name: string;
+  barcode?: string | null;
+  unit?: string | null;
+}
+
+export interface SaleDetailItem {
+  id: string;
+  saleId: string;
+  productId: string;
+  qty: number;
+  unitPrice: number;
+  discount?: number | null;
+  product: SaleDetailItemProduct;
+}
+
+export interface SalePayment {
+  id: string;
+  saleId: string;
+  amount: number;
+  paymentMethod: PaymentMode;
+  status: PaymentStatus;
+  paidAt: string;
+}
+
+export interface SaleDetail {
+  id: string;
+  shopId: string;
+  cashierUserId: string;
+  receiptNumber: string;
+  subtotal: number;
+  totalAmount: number;
+  status: SaleStatus;
+  paymentMode: PaymentMode;
+  soldAt: string;
+  cashier: SaleDetailCashier;
+  items: SaleDetailItem[];
+  payments: SalePayment[];
+}
+
+export interface DailySummaryTopProduct {
+  productId: string;
+  productName: string;
+  quantitySold: number;
+  revenue: number;
+}
+
+export interface DailySummary {
+  date: string;
+  totalRevenue: number;
+  transactionCount: number;
+  topProducts: DailySummaryTopProduct[];
+}
+
 export type StockMovementType = 'IN' | 'OUT' | 'ADJUST';
 
 export interface InventoryItem {
