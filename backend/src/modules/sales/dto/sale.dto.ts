@@ -82,4 +82,16 @@ export class GetSalesQueryDto {
   to?: string;
 }
 
+export class GetDailySalesSummaryQueryDto {
+  @ApiPropertyOptional({ example: '2026-04-19' })
+  @IsOptional()
+  @IsDateString({}, { message: 'From date must be a valid ISO date string' })
+  from?: string;
+
+  @ApiPropertyOptional({ example: '2026-04-19' })
+  @IsOptional()
+  @IsDateString({}, { message: 'To date must be a valid ISO date string' })
+  to?: string;
+}
+
 export class UpdateSaleDto extends PartialType(CreateSaleDto) {}

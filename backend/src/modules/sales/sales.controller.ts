@@ -12,7 +12,11 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '../../common/enums';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { CreateSaleDto, GetSalesQueryDto } from './dto/sale.dto';
+import {
+  CreateSaleDto,
+  GetDailySalesSummaryQueryDto,
+  GetSalesQueryDto,
+} from './dto/sale.dto';
 import { SalesService } from './sales.service';
 
 @ApiTags('sales')
@@ -21,6 +25,16 @@ import { SalesService } from './sales.service';
 @Controller('sales')
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}
+
+  @Roles(Role.OWNER, Role.CASHIER)
+  @Get('summary/daily')
+  @ApiOkResponse({ description: 'Returns daily sales summary for the dashboard.' })
+  getDailySummary(
+    @CurrentUser('shopId') shopId: string,
+    @Query() query: GetDailySalesSummaryQueryDto,
+  ) {
+    return this.salesService.getDailySummary(shopId, query);
+  }
 
   @Roles(Role.OWNER, Role.CASHIER)
   @Get(':id')
