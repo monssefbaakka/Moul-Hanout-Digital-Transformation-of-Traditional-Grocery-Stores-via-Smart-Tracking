@@ -49,7 +49,7 @@ export function UsersWorkspace() {
       } catch (error) {
         if (!isMounted) return;
         setErrorMessage(
-          error instanceof Error ? error.message : 'Unable to load users.',
+          error instanceof Error ? error.message : 'Impossible de charger les utilisateurs.',
         );
       }
     }
@@ -77,14 +77,14 @@ export function UsersWorkspace() {
         [...current, created].sort((left, right) => left.name.localeCompare(right.name)),
       );
       setStatusMessage(
-        `Cashier account for ${created.name} was created and can sign in immediately.`,
+        `Compte caissier pour ${created.name} créé avec succès. Il peut se connecter immédiatement.`,
       );
       setForm(INITIAL_FORM);
     } catch (error) {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage('Unable to create the user right now.');
+        setErrorMessage("Impossible de créer l'utilisateur pour le moment.");
       }
     } finally {
       setIsSubmitting(false);
@@ -99,12 +99,12 @@ export function UsersWorkspace() {
     try {
       const updated = await usersApi.deactivate(userId);
       setUsers((current) => current.map((u) => (u.id === userId ? updated : u)));
-      setStatusMessage(`${updated.name} was deactivated and can no longer sign in.`);
+      setStatusMessage(`${updated.name} a été désactivé et ne peut plus se connecter.`);
     } catch (error) {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage('Unable to deactivate this user right now.');
+        setErrorMessage('Impossible de désactiver cet utilisateur pour le moment.');
       }
     } finally {
       setPendingActionUserId(null);
@@ -119,12 +119,12 @@ export function UsersWorkspace() {
     try {
       const updated = await usersApi.activate(userId);
       setUsers((current) => current.map((u) => (u.id === userId ? updated : u)));
-      setStatusMessage(`${updated.name} was reactivated and can sign in again.`);
+      setStatusMessage(`${updated.name} a été réactivé et peut de nouveau se connecter.`);
     } catch (error) {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage('Unable to reactivate this user right now.');
+        setErrorMessage('Impossible de réactiver cet utilisateur pour le moment.');
       }
     } finally {
       setPendingActionUserId(null);
@@ -135,7 +135,7 @@ export function UsersWorkspace() {
     return (
       <main className="page">
         <section className="panel">
-          <p>Loading workspace...</p>
+          <p>Chargement...</p>
         </section>
       </main>
     );
@@ -167,7 +167,7 @@ export function UsersWorkspace() {
               <input
                 value={form.name}
                 onChange={(event) => setForm({ ...form, name: event.target.value })}
-                placeholder="Cashier full name"
+                placeholder="Prénom et nom du caissier"
                 required
                 minLength={2}
                 maxLength={80}
@@ -205,8 +205,8 @@ export function UsersWorkspace() {
             </div>
           </form>
 
-          {statusMessage ? <p className="status-success">{statusMessage}</p> : null}
-          {errorMessage ? <p className="status-error">{errorMessage}</p> : null}
+          {statusMessage ? <p className="status-success" role="status">{statusMessage}</p> : null}
+          {errorMessage ? <p className="status-error" role="alert">{errorMessage}</p> : null}
         </article>
 
         <article className="panel">
@@ -216,7 +216,7 @@ export function UsersWorkspace() {
             jusqu&apos;a reactivation.
           </p>
           <div className="product-list">
-            {users.length === 0 ? <p>No users yet.</p> : null}
+            {users.length === 0 ? <p>Aucun utilisateur pour le moment.</p> : null}
             {users.map((member) => (
               <article key={member.id} className="product-card">
                 <div>
@@ -228,7 +228,7 @@ export function UsersWorkspace() {
                 <dl>
                   <div>
                     <dt>Statut</dt>
-                    <dd>{member.isActive ? 'Active' : 'Inactive'}</dd>
+                    <dd>{member.isActive ? 'Actif' : 'Inactif'}</dd>
                   </div>
                   <div>
                     <dt>Cree le</dt>

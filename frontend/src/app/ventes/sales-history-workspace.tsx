@@ -140,7 +140,7 @@ export function SalesHistoryWorkspace() {
         }
       />
 
-      {errorMessage ? <p className="status-error">{errorMessage}</p> : null}
+      {errorMessage ? <p className="status-error" role="alert">{errorMessage}</p> : null}
 
       <section className="panel">
         <div className="inventory-table-head">

@@ -13,6 +13,7 @@ import {
   Tag,
   Users,
   Warehouse,
+  X,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
@@ -21,55 +22,53 @@ import { useAuthStore } from '@/store/auth.store';
 type NavItem = {
   href: string;
   label: string;
-  description: string;
   icon: ReactNode;
   ownerOnly?: boolean;
+};
+
+type AppSidebarProps = {
+  id?: string;
+  isOpen?: boolean;
+  onClose?: () => void;
 };
 
 const NAV_ITEMS: NavItem[] = [
   {
     href: '/',
     label: 'Tableau de bord',
-    description: 'Vue generale',
     icon: <House size={18} />,
   },
   {
     href: '/vente',
     label: 'Vente',
-    description: 'Point de caisse',
     icon: <ReceiptText size={18} />,
   },
   {
     href: '/inventaire',
     label: 'Inventaire',
-    description: 'Stock en magasin',
     icon: <Warehouse size={18} />,
   },
   {
     href: '/produits',
     label: 'Produits',
-    description: 'Catalogue articles',
     icon: <Package2 size={18} />,
     ownerOnly: true,
   },
   {
     href: '/categories',
     label: 'Categories',
-    description: 'Organisation rayon',
     icon: <Tag size={18} />,
     ownerOnly: true,
   },
   {
     href: '/utilisateurs',
     label: 'Utilisateurs',
-    description: 'Equipe magasin',
     icon: <Users size={18} />,
     ownerOnly: true,
   },
   {
     href: '/rapports',
     label: 'Rapports',
-    description: 'Ventes et stock',
     icon: <BarChart2 size={18} />,
     ownerOnly: true,
   },
@@ -79,11 +78,10 @@ function isActive(pathname: string, href: string) {
   if (href === '/') {
     return pathname === '/';
   }
-
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function AppSidebar() {
+export function AppSidebar({ id, isOpen, onClose }: AppSidebarProps) {
   const pathname = usePathname();
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const user = useAuthStore((state) => state.user);
@@ -92,7 +90,7 @@ export function AppSidebar() {
   const visibleItems = NAV_ITEMS.filter((item) => !item.ownerOnly || (hasHydrated && isOwner));
 
   return (
-    <aside className="app-sidebar">
+    <aside id={id} className={cn('app-sidebar', isOpen && 'is-open')} aria-label="Navigation principale">
       <div className="app-sidebar__brand">
         <div className="app-sidebar__brand-mark">
           <Boxes size={18} />
@@ -101,6 +99,16 @@ export function AppSidebar() {
           <strong>Moul Hanout</strong>
           <span>Espace gestion magasin</span>
         </div>
+        {onClose && (
+          <button
+            type="button"
+            className="app-sidebar__close"
+            onClick={onClose}
+            aria-label="Fermer le menu"
+          >
+            <X size={16} />
+          </button>
+        )}
       </div>
 
       <nav className="app-sidebar__nav" aria-label="Navigation principale">

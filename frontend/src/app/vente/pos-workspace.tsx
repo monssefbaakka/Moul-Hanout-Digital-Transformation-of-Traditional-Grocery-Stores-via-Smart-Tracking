@@ -326,13 +326,13 @@ export function PosWorkspace() {
                 <span>Panier</span>
                 <strong>{totalQuantity}</strong>
               </div>
-              <span className="products-studio-avatar">{userInitials}</span>
+              <span className="app-sidebar__avatar">{userInitials}</span>
             </div>
           }
         />
 
-        {statusMessage ? <p className="status-success">{statusMessage}</p> : null}
-        {errorMessage ? <p className="status-error">{errorMessage}</p> : null}
+        {statusMessage ? <p className="status-success" role="status">{statusMessage}</p> : null}
+        {errorMessage ? <p className="status-error" role="alert">{errorMessage}</p> : null}
 
         <section className="pos-layout">
           <div className="pos-catalog">
@@ -523,7 +523,7 @@ export function PosWorkspace() {
 
                 <button
                   type="button"
-                  className="products-studio-primary-button pos-submit-button"
+                  className="app-btn app-btn--primary pos-submit-button"
                   onClick={() => void handleSubmitSale()}
                   disabled={isSubmitting || cartItems.length === 0}
                 >
@@ -538,7 +538,7 @@ export function PosWorkspace() {
       {receipt ? (
         <div
           className="app-modal-backdrop"
-          role="presentation"
+          role="none"
           onClick={() => setReceipt(null)}
         >
           <section
@@ -557,7 +557,7 @@ export function PosWorkspace() {
 
               <button
                 type="button"
-                className="products-studio-ghost-button"
+                className="app-btn app-btn--secondary"
                 onClick={() => setReceipt(null)}
               >
                 Fermer
@@ -602,7 +602,7 @@ export function PosWorkspace() {
               <p>Le stock a ete mis a jour et la caisse est prete pour une nouvelle vente.</p>
               <button
                 type="button"
-                className="products-studio-primary-button"
+                className="app-btn app-btn--primary"
                 onClick={() => setReceipt(null)}
               >
                 Nouvelle vente

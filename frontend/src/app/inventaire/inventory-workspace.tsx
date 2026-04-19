@@ -43,10 +43,10 @@ function toIsoDate(dateValue: string) {
 
 function formatDate(dateValue?: string | null) {
   if (!dateValue) {
-    return 'Not tracked';
+    return 'Non suivi';
   }
 
-  return new Date(dateValue).toLocaleDateString();
+  return new Date(dateValue).toLocaleDateString('fr-MA');
 }
 
 function getInventoryTone(item: InventoryItem) {
@@ -63,14 +63,14 @@ function getInventoryTone(item: InventoryItem) {
 
 function getInventoryLabel(item: InventoryItem) {
   if (item.isExpiringSoon) {
-    return 'Expiring soon';
+    return 'Expire bientôt';
   }
 
   if (item.isLowStock) {
-    return 'Low stock';
+    return 'Stock bas';
   }
 
-  return 'Healthy';
+  return 'Normal';
 }
 
 export function InventoryWorkspace() {
@@ -126,7 +126,7 @@ export function InventoryWorkspace() {
         }
 
         setErrorMessage(
-          error instanceof Error ? error.message : 'Unable to load inventory right now.',
+          error instanceof Error ? error.message : 'Impossible de charger le stock pour le moment.',
         );
       } finally {
         if (isMounted) {
@@ -181,7 +181,7 @@ export function InventoryWorkspace() {
       });
 
       await refreshInventory(updatedItem.id);
-      setStatusMessage(`Added stock to ${updatedItem.name}. New stock: ${updatedItem.currentStock}.`);
+      setStatusMessage(`Stock mis à jour pour ${updatedItem.name}. Nouveau stock : ${updatedItem.currentStock}.`);
       setStockInForm((current) => ({
         ...INITIAL_STOCK_IN_FORM,
         productId: current.productId || updatedItem.id,
@@ -190,7 +190,7 @@ export function InventoryWorkspace() {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage('Unable to add stock right now.');
+        setErrorMessage("Impossible d'ajouter le stock pour le moment.");
       }
     } finally {
       setIsSubmitting(false);
@@ -212,7 +212,7 @@ export function InventoryWorkspace() {
 
       await refreshInventory(updatedItem.id);
       setStatusMessage(
-        `Removed stock from ${updatedItem.name}. Remaining stock: ${updatedItem.currentStock}.`,
+        `Stock retiré pour ${updatedItem.name}. Stock restant : ${updatedItem.currentStock}.`,
       );
       setStockOutForm((current) => ({
         ...INITIAL_STOCK_OUT_FORM,
@@ -222,7 +222,7 @@ export function InventoryWorkspace() {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage('Unable to remove stock right now.');
+        setErrorMessage('Impossible de retirer le stock pour le moment.');
       }
     } finally {
       setIsSubmitting(false);
@@ -233,7 +233,7 @@ export function InventoryWorkspace() {
     return (
       <main className="page">
         <section className="panel">
-          <p>Loading inventory...</p>
+          <p>Chargement de l&apos;inventaire...</p>
         </section>
       </main>
     );
@@ -269,8 +269,8 @@ export function InventoryWorkspace() {
         </article>
       </section>
 
-      {statusMessage ? <p className="status-success">{statusMessage}</p> : null}
-      {errorMessage ? <p className="status-error">{errorMessage}</p> : null}
+      {statusMessage ? <p className="status-success" role="status">{statusMessage}</p> : null}
+      {errorMessage ? <p className="status-error" role="alert">{errorMessage}</p> : null}
 
       {isOwner ? (
         <section className="products-layout inventory-owner-layout">
@@ -317,7 +317,7 @@ export function InventoryWorkspace() {
                   onChange={(event) =>
                     setStockInForm({ ...stockInForm, reason: event.target.value })
                   }
-                  placeholder="Morning delivery received"
+                  placeholder="Livraison matinale reçue"
                   required
                   disabled={isSubmitting}
                 />
@@ -386,7 +386,7 @@ export function InventoryWorkspace() {
                   onChange={(event) =>
                     setStockOutForm({ ...stockOutForm, reason: event.target.value })
                   }
-                  placeholder="Damaged item removed"
+                  placeholder="Article endommagé retiré"
                   required
                   disabled={isSubmitting}
                 />
@@ -407,7 +407,7 @@ export function InventoryWorkspace() {
           <h2>Produits a surveiller</h2>
           <div className="inventory-expiring-grid">
             {expiringSoon.length === 0 ? (
-              <p>No active products are expiring within the next 5 days.</p>
+              <p>Aucun produit n&apos;expire dans les 5 prochains jours.</p>
             ) : (
               expiringSoon.map((item) => (
                 <article key={item.id} className="inventory-expiring-card">
@@ -421,7 +421,7 @@ export function InventoryWorkspace() {
                       <dd>{item.currentStock}</dd>
                     </div>
                     <div>
-                      <dt>Expires</dt>
+                      <dt>Expire le</dt>
                       <dd>{formatDate(item.expirationDate)}</dd>
                     </div>
                   </dl>
@@ -444,20 +444,20 @@ export function InventoryWorkspace() {
           </div>
         </div>
 
-        {isLoading ? <p>Loading stock data...</p> : null}
-        {!isLoading && inventory.length === 0 ? <p>No active inventory items found.</p> : null}
+        {isLoading ? <p>Chargement des stocks...</p> : null}
+        {!isLoading && inventory.length === 0 ? <p>Aucun article actif dans le stock.</p> : null}
 
         {!isLoading && inventory.length > 0 ? (
           <div className="inventory-table-wrapper">
             <table className="inventory-table">
               <thead>
                 <tr>
-                  <th>Product</th>
-                  <th>Category</th>
+                  <th>Produit</th>
+                  <th>Catégorie</th>
                   <th>Stock</th>
-                  <th>Threshold</th>
-                  <th>Expiry</th>
-                  <th>Status</th>
+                  <th>Seuil</th>
+                  <th>Expiration</th>
+                  <th>Statut</th>
                 </tr>
               </thead>
               <tbody>
@@ -465,7 +465,7 @@ export function InventoryWorkspace() {
                   <tr key={item.id}>
                     <td>
                       <strong>{item.name}</strong>
-                      <span>{item.barcode || item.unit || 'No barcode'}</span>
+                      <span>{item.barcode || item.unit || 'Sans code-barres'}</span>
                     </td>
                     <td>{item.categoryName}</td>
                     <td>{item.currentStock}</td>
