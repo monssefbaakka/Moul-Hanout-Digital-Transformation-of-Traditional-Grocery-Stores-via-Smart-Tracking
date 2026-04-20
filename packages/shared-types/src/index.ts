@@ -214,6 +214,8 @@ export interface DailySummary {
 
 export type StockMovementType = 'IN' | 'OUT' | 'ADJUST';
 
+export type AlertType = 'LOW_STOCK' | 'EXPIRY';
+
 export interface InventoryItem {
   id: string;
   name: string;
@@ -238,6 +240,19 @@ export interface StockMovementEntry {
   createdBy: string;
   createdByName: string;
   createdAt: string;
+}
+
+export interface AlertItem {
+  id: string;
+  type: AlertType;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  productId: string;
+  productName: string;
+  productCurrentStock: number;
+  productLowStockThreshold: number;
+  expirationDate?: string | null;
 }
 
 export interface SalesReportDay {

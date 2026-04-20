@@ -1,10 +1,13 @@
 import {
+  Inject,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { MovementType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
+import { ALERTS_PORT } from '../alerts/alerts.port';
+import type { AlertsPort } from '../alerts/alerts.port';
 import { StockInDto, StockOutDto } from './dto/inventory.dto';
 
 const EXPIRING_SOON_DAYS = 5;
@@ -29,7 +32,10 @@ type StockMovementWithRelations = Prisma.StockMovementGetPayload<{
 
 @Injectable()
 export class InventoryService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(ALERTS_PORT) private readonly alertsPort: AlertsPort,
+  ) {}
 
   async findInventory(shopId: string) {
     const products = await this.prisma.product.findMany({
@@ -49,10 +55,15 @@ export class InventoryService {
   }
 
   async stockIn(shopId: string, userId: string, dto: StockInDto) {
-    const product = await this.ensureActiveProductBelongsToShop(shopId, dto.productId);
+    const product = await this.ensureActiveProductBelongsToShop(
+      shopId,
+      dto.productId,
+    );
     const quantityDelta = dto.quantity;
     const updatedStock = product.currentStock + quantityDelta;
-    const expirationDate = dto.expirationDate ? new Date(dto.expirationDate) : undefined;
+    const expirationDate = dto.expirationDate
+      ? new Date(dto.expirationDate)
+      : undefined;
 
     return this.prisma.$transaction(async (tx) => {
       const updatedProduct = await tx.product.update({
@@ -93,12 +104,17 @@ export class InventoryService {
         },
       } as never);
 
+      await this.alertsPort.syncProductAlerts(tx, updatedProduct);
+
       return this.toInventoryItem(updatedProduct);
     });
   }
 
   async stockOut(shopId: string, userId: string, dto: StockOutDto) {
-    const product = await this.ensureActiveProductBelongsToShop(shopId, dto.productId);
+    const product = await this.ensureActiveProductBelongsToShop(
+      shopId,
+      dto.productId,
+    );
 
     if (dto.quantity > product.currentStock) {
       throw new UnprocessableEntityException(
@@ -146,6 +162,8 @@ export class InventoryService {
         },
       } as never);
 
+      await this.alertsPort.syncProductAlerts(tx, updatedProduct);
+
       return this.toInventoryItem(updatedProduct);
     });
   }
@@ -161,8 +179,12 @@ export class InventoryService {
           this.isExpiringSoon(item.expirationDate),
       )
       .sort((left, right) => {
-        const leftExpiry = left.expirationDate ? new Date(left.expirationDate).getTime() : 0;
-        const rightExpiry = right.expirationDate ? new Date(right.expirationDate).getTime() : 0;
+        const leftExpiry = left.expirationDate
+          ? new Date(left.expirationDate).getTime()
+          : 0;
+        const rightExpiry = right.expirationDate
+          ? new Date(right.expirationDate).getTime()
+          : 0;
         return leftExpiry - rightExpiry;
       });
   }
@@ -207,7 +229,10 @@ export class InventoryService {
     }));
   }
 
-  private async ensureActiveProductBelongsToShop(shopId: string, productId: string) {
+  private async ensureActiveProductBelongsToShop(
+    shopId: string,
+    productId: string,
+  ) {
     const product = await this.prisma.product.findFirst({
       where: {
         id: productId,
@@ -261,6 +286,9 @@ export class InventoryService {
 
     const timeUntilExpiry = new Date(expirationDate).getTime() - Date.now();
 
-    return timeUntilExpiry >= 0 && timeUntilExpiry <= EXPIRING_SOON_DAYS * MILLISECONDS_PER_DAY;
+    return (
+      timeUntilExpiry >= 0 &&
+      timeUntilExpiry <= EXPIRING_SOON_DAYS * MILLISECONDS_PER_DAY
+    );
   }
 }

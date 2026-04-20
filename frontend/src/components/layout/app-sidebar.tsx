@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   BarChart2,
+  Bell,
   Boxes,
   FolderPlus,
   House,
@@ -16,6 +17,8 @@ import {
   X,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { AlertsDropdown } from '@/components/alerts/alerts-dropdown';
+import { useAlerts } from '@/components/alerts/alerts-provider';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
 
@@ -67,6 +70,11 @@ const NAV_ITEMS: NavItem[] = [
     ownerOnly: true,
   },
   {
+    href: '/alertes',
+    label: 'Alertes',
+    icon: <Bell size={18} />,
+  },
+  {
     href: '/rapports',
     label: 'Rapports',
     icon: <BarChart2 size={18} />,
@@ -83,6 +91,7 @@ function isActive(pathname: string, href: string) {
 
 export function AppSidebar({ id, isOpen, onClose }: AppSidebarProps) {
   const pathname = usePathname();
+  const { unreadCount } = useAlerts();
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const user = useAuthStore((state) => state.user);
   const isOwner = user?.role === 'OWNER';
@@ -122,11 +131,15 @@ export function AppSidebar({ id, isOpen, onClose }: AppSidebarProps) {
             <span className="app-sidebar__copy">
               <strong>{item.label}</strong>
             </span>
+            {item.href === '/alertes' && unreadCount > 0 ? (
+              <span className="app-sidebar__badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+            ) : null}
           </Link>
         ))}
       </nav>
 
       <div className="app-sidebar__footer">
+        <AlertsDropdown />
         {hasHydrated && isOwner ? (
           <div className="app-sidebar__actions" aria-label="Actions rapides">
             <Link href="/categories" className="app-btn app-btn--secondary app-sidebar__action">

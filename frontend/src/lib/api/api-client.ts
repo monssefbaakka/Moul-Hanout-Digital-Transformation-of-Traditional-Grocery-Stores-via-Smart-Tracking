@@ -1,4 +1,5 @@
 import type {
+  AlertItem,
   AdminUser,
   ApiResponse,
   AuthResponse,
@@ -215,6 +216,12 @@ export const inventoryApi = {
     request<InventoryItem>('/inventory/stock-out', { method: 'POST', body: payload }),
   expiringSoon: () => request<InventoryItem[]>('/inventory/expiring-soon'),
   movements: () => request<StockMovementEntry[]>('/inventory/movements'),
+};
+
+export const alertsApi = {
+  list: () => request<AlertItem[]>('/alerts'),
+  markAsRead: (alertId: string) =>
+    request<AlertItem>(`/alerts/${alertId}/read`, { method: 'PATCH' }),
 };
 
 async function downloadBlob(endpoint: string, filename: string): Promise<void> {

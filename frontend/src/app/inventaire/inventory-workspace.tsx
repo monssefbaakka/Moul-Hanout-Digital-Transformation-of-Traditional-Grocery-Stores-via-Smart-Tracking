@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   AlertCircle,
   AlertTriangle,
@@ -67,10 +67,6 @@ function getStockBarWidth(item: InventoryItem): number {
   return Math.min(100, Math.round((item.currentStock / threshold) * 100));
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  default: 'inv-cat-default',
-};
-
 function getCategoryClass(name: string): string {
   const palette = [
     'inv-cat-1',
@@ -87,6 +83,7 @@ function getCategoryClass(name: string): string {
 
 export function InventoryWorkspace() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, isAuthenticated, hasHydrated } = useAuthStore();
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [expiringSoon, setExpiringSoon] = useState<InventoryItem[]>([]);
@@ -105,6 +102,7 @@ export function InventoryWorkspace() {
   const [dismissInsight, setDismissInsight] = useState(false);
 
   const isOwner = user?.role === 'OWNER';
+  const focusedProductId = searchParams.get('focus') ?? '';
 
   useEffect(() => {
     if (!hasHydrated) return;
@@ -223,6 +221,20 @@ export function InventoryWorkspace() {
       return matchesSearch && matchesCategory && matchesStock;
     });
   }, [inventory, searchQuery, categoryFilter, stockFilter]);
+
+  useEffect(() => {
+    if (!focusedProductId || isLoading) {
+      return;
+    }
+
+    const targetRow = document.getElementById(`inventory-item-${focusedProductId}`);
+
+    if (!targetRow) {
+      return;
+    }
+
+    targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [filteredInventory, focusedProductId, isLoading]);
 
   if (!hasHydrated || !isAuthenticated) {
     return (
@@ -567,7 +579,11 @@ export function InventoryWorkspace() {
                   const status = getStockStatus(item);
                   const barWidth = getStockBarWidth(item);
                   return (
-                    <tr key={item.id} className="inv-tr">
+                    <tr
+                      key={item.id}
+                      id={`inventory-item-${item.id}`}
+                      className={`inv-tr${focusedProductId === item.id ? ' is-highlighted' : ''}`}
+                    >
                       <td className="inv-td-product">
                         <div className="inv-product-icon">
                           <Package2 size={18} />

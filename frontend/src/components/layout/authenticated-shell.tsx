@@ -3,6 +3,8 @@
 import { type ReactNode, useEffect, useLayoutEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Boxes, Menu } from 'lucide-react';
+import { AlertsDropdown } from '@/components/alerts/alerts-dropdown';
+import { AlertsProvider } from '@/components/alerts/alerts-provider';
 import { registerAuthFailureHandler } from '@/lib/api/api-client';
 import { useAuthStore } from '@/store/auth.store';
 import { AppSidebar } from './app-sidebar';
@@ -14,7 +16,7 @@ type AuthenticatedShellProps = {
 export function AuthenticatedShell({ children }: AuthenticatedShellProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const showSidebar = !(pathname === '/categories' || pathname.startsWith('/categories/'));
+  const showSidebar = true;
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useLayoutEffect(() => {
@@ -46,48 +48,50 @@ export function AuthenticatedShell({ children }: AuthenticatedShellProps) {
   }, [sidebarOpen]);
 
   return (
-    <div className={`app-shell${showSidebar ? '' : ' app-shell--full'}`}>
-      {showSidebar ? (
-        <>
-          {/* Mobile-only sticky topbar */}
-          <header className="app-mobile-topbar" aria-label="Barre de navigation">
-            <div className="app-mobile-topbar__brand">
-              <span className="app-mobile-topbar__logo">
-                <Boxes size={13} />
-              </span>
-              <span>Moul Hanout</span>
-            </div>
-            <button
-              type="button"
-              className="app-mobile-topbar__toggle"
-              onClick={() => setSidebarOpen(true)}
-              aria-label="Ouvrir le menu"
-              aria-expanded={sidebarOpen}
-              aria-controls="app-sidebar"
-            >
-              <Menu size={20} />
-            </button>
-          </header>
+    <AlertsProvider>
+      <div className={`app-shell${showSidebar ? '' : ' app-shell--full'}`}>
+        {showSidebar ? (
+          <>
+            <header className="app-mobile-topbar" aria-label="Barre de navigation">
+              <div className="app-mobile-topbar__brand">
+                <span className="app-mobile-topbar__logo">
+                  <Boxes size={13} />
+                </span>
+                <span>Moul Hanout</span>
+              </div>
+              <div className="app-mobile-topbar__actions">
+                <AlertsDropdown compact />
+                <button
+                  type="button"
+                  className="app-mobile-topbar__toggle"
+                  onClick={() => setSidebarOpen(true)}
+                  aria-label="Ouvrir le menu"
+                  aria-expanded={sidebarOpen}
+                  aria-controls="app-sidebar"
+                >
+                  <Menu size={20} />
+                </button>
+              </div>
+            </header>
 
-          {/* Backdrop overlay */}
-          <div
-            className={`app-sidebar-overlay${sidebarOpen ? ' is-visible' : ''}`}
-            onClick={() => setSidebarOpen(false)}
-            aria-hidden="true"
-          />
+            <div
+              className={`app-sidebar-overlay${sidebarOpen ? ' is-visible' : ''}`}
+              onClick={() => setSidebarOpen(false)}
+              aria-hidden="true"
+            />
 
-          {/* Sidebar */}
-          <AppSidebar
-            id="app-sidebar"
-            isOpen={sidebarOpen}
-            onClose={() => setSidebarOpen(false)}
-          />
-        </>
-      ) : null}
+            <AppSidebar
+              id="app-sidebar"
+              isOpen={sidebarOpen}
+              onClose={() => setSidebarOpen(false)}
+            />
+          </>
+        ) : null}
 
-      <div className="app-shell__content">
-        <div className="app-shell__content-inner">{children}</div>
+        <div className="app-shell__content">
+          <div className="app-shell__content-inner">{children}</div>
+        </div>
       </div>
-    </div>
+    </AlertsProvider>
   );
 }
