@@ -2,24 +2,38 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Check, Mail, ArrowLeft } from 'lucide-react';
+import { ApiError, authApi } from '@/lib/api/api-client';
+import { Check, Mail, ArrowLeft, Loader2 } from 'lucide-react';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!email.trim()) return;
+
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail) return;
 
     setIsSubmitting(true);
-    
-    // Simulate API call to auth service for forgot password
-    setTimeout(() => {
+    setErrorMessage(null);
+
+    try {
+      const result = await authApi.forgotPassword({ email: normalizedEmail });
+      setSuccessMessage(result.message);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage(
+          'Unable to send a reset request right now. Please try again.',
+        );
+      }
+    } finally {
       setIsSubmitting(false);
-      setIsSuccess(true);
-    }, 1200);
+    }
   }
 
   return (
@@ -41,14 +55,17 @@ export default function ForgotPasswordPage() {
                 Reset Password
               </h2>
 
-              {isSuccess ? (
+              {successMessage ? (
                 <div className="mt-8 transition-all animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent)] text-[var(--primary)]">
                     <Check size={32} />
                   </div>
                   <h3 className="text-2xl font-semibold tracking-tight text-slate-900">Check your email</h3>
                   <p className="mt-3 auth-subtitle">
-                    We&apos;ve sent a password reset link to <strong>{email}</strong>. Please check your inbox and follow the instructions to reset your password.
+                    {successMessage}
+                  </p>
+                  <p className="mt-3 auth-helper">
+                    In local development, the backend logs the reset link to the console for demo use.
                   </p>
                   <div className="mt-10">
                     <Link href="/login" className="app-btn app-btn--secondary w-full">
@@ -87,11 +104,15 @@ export default function ForgotPasswordPage() {
                       disabled={isSubmitting || !email.trim()}
                       className="app-btn app-btn--primary w-full"
                     >
-                      {isSubmitting ? (
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      ) : null}
+                      {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : null}
                       <span>{isSubmitting ? 'Sending Request...' : 'Send Reset Link'}</span>
                     </button>
+
+                    {errorMessage ? (
+                      <div className="auth-error">
+                        {errorMessage}
+                      </div>
+                    ) : null}
                   </form>
                 </>
               )}

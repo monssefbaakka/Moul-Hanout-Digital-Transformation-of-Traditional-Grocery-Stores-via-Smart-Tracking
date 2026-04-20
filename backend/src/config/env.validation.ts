@@ -15,5 +15,16 @@ export function validateEnv(config: EnvRecord): EnvRecord {
     );
   }
 
+  const passwordResetExpiry = config.AUTH_PASSWORD_RESET_EXPIRES_IN_MINUTES;
+
+  if (
+    passwordResetExpiry &&
+    (!/^\d+$/.test(passwordResetExpiry) || Number(passwordResetExpiry) <= 0)
+  ) {
+    throw new Error(
+      'AUTH_PASSWORD_RESET_EXPIRES_IN_MINUTES must be a positive integer',
+    );
+  }
+
   return config;
 }

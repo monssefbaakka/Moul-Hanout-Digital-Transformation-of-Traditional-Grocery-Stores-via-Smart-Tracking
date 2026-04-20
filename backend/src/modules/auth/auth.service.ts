@@ -3,8 +3,10 @@
 // `ConflictException` is used when a resource already exists, like a duplicate email.
 import {
   Injectable,
+  Logger,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 
 // `JwtService` is NestJS's helper for signing and verifying JWT tokens.
@@ -17,7 +19,9 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 
 // `randomUUID` creates a unique temporary value for a newly created session row.
-import { randomUUID } from 'crypto';
+// `randomBytes` creates secure password reset tokens.
+// `createHash` lets us store a deterministic hash instead of the raw reset token.
+import { createHash, randomBytes, randomUUID } from 'crypto';
 
 // `StringValue` is a type helper for strings like `15m` or `7d` used in JWT expiration config.
 import type { StringValue } from 'ms';
@@ -26,7 +30,12 @@ import type { StringValue } from 'ms';
 import { PrismaService } from '../../database/prisma.service';
 
 // These DTOs define the shape of login, register, and password-recovery request bodies.
-import { LoginDto, RegisterDto } from './dto/auth.dto';
+import {
+  ForgotPasswordDto,
+  LoginDto,
+  RegisterDto,
+  ResetPasswordDto,
+} from './dto/auth.dto';
 
 // `Role` is the app-level enum for user roles.
 import { Role } from '../../common/enums';
@@ -81,6 +90,12 @@ export interface LogoutResponse {
 // This tells NestJS that `AuthService` can be injected into controllers and other services.
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+  private readonly passwordResetRequestedMessage =
+    'If an account exists for that email, a password reset link has been generated.';
+  private readonly passwordResetCompletedMessage =
+    'Password reset successful. Please sign in again.';
+
   // The constructor receives all dependencies needed by this service.
   constructor(
     // Database access dependency.
@@ -262,6 +277,105 @@ export class AuthService {
     return { message: 'Logged out successfully' } satisfies LogoutResponse;
   }
 
+  // This method starts the password reset flow with a generic success response.
+  async forgotPassword(dto: ForgotPasswordDto): Promise<LogoutResponse> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+      select: {
+        id: true,
+        email: true,
+        isActive: true,
+      },
+    });
+
+    if (!user || !user.isActive) {
+      return { message: this.passwordResetRequestedMessage };
+    }
+
+    const rawToken = this.generatePasswordResetToken();
+    const tokenHash = this.hashPasswordResetToken(rawToken);
+    const expiresAt = this.createPasswordResetExpiryDate();
+    const passwordResetLink = this.buildPasswordResetLink(rawToken);
+
+    await this.prisma.$transaction([
+      this.prisma.passwordResetToken.deleteMany({
+        where: { userId: user.id },
+      }),
+      this.prisma.passwordResetToken.create({
+        data: {
+          userId: user.id,
+          tokenHash,
+          expiresAt,
+        },
+      }),
+    ]);
+
+    this.deliverPasswordResetLink(user.email, passwordResetLink);
+
+    return { message: this.passwordResetRequestedMessage };
+  }
+
+  // This method validates a reset token, updates the password, and revokes sessions.
+  async resetPassword(dto: ResetPasswordDto): Promise<LogoutResponse> {
+    const tokenHash = this.hashPasswordResetToken(dto.token);
+    const passwordHash = await bcrypt.hash(dto.password, 12);
+    const now = new Date();
+
+    const passwordResetToken = await this.prisma.passwordResetToken.findUnique({
+      where: { tokenHash },
+      select: {
+        id: true,
+        userId: true,
+        expiresAt: true,
+        usedAt: true,
+        user: {
+          select: {
+            isActive: true,
+          },
+        },
+      },
+    });
+
+    if (
+      !passwordResetToken ||
+      !passwordResetToken.user.isActive ||
+      passwordResetToken.usedAt ||
+      passwordResetToken.expiresAt <= now
+    ) {
+      throw new BadRequestException('Invalid or expired password reset token');
+    }
+
+    const claimedToken = await this.prisma.passwordResetToken.updateMany({
+      where: {
+        id: passwordResetToken.id,
+        usedAt: null,
+        expiresAt: { gt: now },
+      },
+      data: {
+        usedAt: now,
+      },
+    });
+
+    if (claimedToken.count !== 1) {
+      throw new BadRequestException('Invalid or expired password reset token');
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: passwordResetToken.userId },
+        data: { password: passwordHash },
+      }),
+      this.prisma.session.deleteMany({
+        where: { userId: passwordResetToken.userId },
+      }),
+      this.prisma.passwordResetToken.deleteMany({
+        where: { userId: passwordResetToken.userId },
+      }),
+    ]);
+
+    return { message: this.passwordResetCompletedMessage };
+  }
+
   // This helper creates a session row and then generates tokens for that session.
   private async issueTokensForUser(user: AuthenticatedUser) {
     // Create the session first so we have a database id to embed inside the JWT payload.
@@ -428,6 +542,41 @@ export class AuthService {
 
     // Return the extracted token string.
     return token;
+  }
+
+  private generatePasswordResetToken() {
+    return randomBytes(32).toString('hex');
+  }
+
+  private hashPasswordResetToken(token: string) {
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  private createPasswordResetExpiryDate() {
+    const expiresInMinutes =
+      this.config.get<number>('auth.passwordResetExpiresInMinutes') ?? 30;
+
+    return new Date(Date.now() + expiresInMinutes * 60 * 1000);
+  }
+
+  private buildPasswordResetLink(token: string) {
+    const frontendUrl =
+      this.config.get<string>('app.frontendUrl') ?? 'http://localhost:3000';
+
+    return `${frontendUrl.replace(/\/$/, '')}/reset-password?token=${encodeURIComponent(token)}`;
+  }
+
+  private deliverPasswordResetLink(email: string, resetLink: string) {
+    const environment = this.config.get<string>('app.env') ?? 'development';
+
+    if (environment === 'production') {
+      this.logger.warn(
+        `Password reset requested for ${email}, but outbound email delivery is not configured in this build.`,
+      );
+      return;
+    }
+
+    this.logger.log(`Password reset link for ${email}: ${resetLink}`);
   }
 
   private buildAuthResponse(

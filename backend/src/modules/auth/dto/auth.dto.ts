@@ -76,3 +76,39 @@ export class RefreshTokenDto {
   @IsNotEmpty({ message: 'Refresh token is required' })
   refreshToken: string;
 }
+
+/**
+ * Data transfer object for initiating a password reset request.
+ */
+export class ForgotPasswordDto {
+  @ApiProperty({
+    description: 'The email address of the account requesting a password reset',
+    example: 'owner@moulhanout.ma',
+  })
+  @IsEmail({}, { message: 'Please provide a valid email address' })
+  @IsNotEmpty({ message: 'Email is required' })
+  email: string;
+}
+
+/**
+ * Data transfer object for completing a password reset.
+ */
+export class ResetPasswordDto {
+  @ApiProperty({
+    description: 'The raw password reset token received by email',
+    example: '1b4b9f6b2d53f2e6d8f0c2a9f6e7b4d2',
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'Reset token is required' })
+  token: string;
+
+  @ApiProperty({
+    description: 'The new password to save for the account',
+    example: 'NewPassword@123',
+    minLength: 8,
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'Password is required' })
+  @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  password: string;
+}

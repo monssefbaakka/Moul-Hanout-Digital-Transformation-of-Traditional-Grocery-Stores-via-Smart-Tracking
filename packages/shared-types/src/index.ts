@@ -61,6 +61,23 @@ export interface LogoutResponse {
   message: string;
 }
 
+export interface ForgotPasswordInput {
+  email: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+}
+
+export interface ResetPasswordInput {
+  token: string;
+  password: string;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+
 export interface Category {
   id: string;
   shopId: string;

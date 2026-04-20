@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../../database/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -19,6 +19,7 @@ describe('AuthService', () => {
     user: {
       findUnique: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
     },
     session: {
       create: jest.fn(),
@@ -26,6 +27,15 @@ describe('AuthService', () => {
       findUnique: jest.fn(),
       deleteMany: jest.fn(),
     },
+    passwordResetToken: {
+      create: jest.fn(),
+      deleteMany: jest.fn(),
+      findUnique: jest.fn(),
+      updateMany: jest.fn(),
+    },
+    $transaction: jest.fn((operations: Promise<unknown>[]) =>
+      Promise.all(operations),
+    ),
   };
 
   const jwt = {
@@ -41,6 +51,15 @@ describe('AuthService', () => {
         'jwt.refreshSecret': 'refresh-secret',
         'jwt.accessExpiresIn': '15m',
         'jwt.refreshExpiresIn': '7d',
+      };
+
+      return values[key];
+    }),
+    get: jest.fn((key: string) => {
+      const values: Record<string, string | number> = {
+        'app.env': 'development',
+        'app.frontendUrl': 'http://localhost:3000',
+        'auth.passwordResetExpiresInMinutes': 30,
       };
 
       return values[key];
@@ -192,6 +211,115 @@ describe('AuthService', () => {
       where: { id: 'session-1', userId: 'user-1' },
     });
     expect(result).toEqual({ message: 'Logged out successfully' });
+  });
+
+  it('creates a password reset token and logs a reset link for active users', async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: 'user-1',
+      email: 'owner@moulhanout.ma',
+      isActive: true,
+    });
+    prisma.passwordResetToken.deleteMany.mockResolvedValue({ count: 1 });
+    prisma.passwordResetToken.create.mockResolvedValue({ id: 'reset-1' });
+
+    const loggerSpy = jest
+      .spyOn((service as { logger: { log: (message: string) => void } }).logger, 'log')
+      .mockImplementation(() => undefined);
+
+    const result = await service.forgotPassword({
+      email: 'owner@moulhanout.ma',
+    });
+
+    expect(prisma.passwordResetToken.deleteMany).toHaveBeenCalledWith({
+      where: { userId: 'user-1' },
+    });
+    expect(prisma.passwordResetToken.create).toHaveBeenCalledWith({
+      data: {
+        userId: 'user-1',
+        tokenHash: expect.any(String),
+        expiresAt: expect.any(Date),
+      },
+    });
+    expect(loggerSpy).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Password reset link for owner@moulhanout.ma: http://localhost:3000/reset-password?token=',
+      ),
+    );
+    expect(result).toEqual({
+      message:
+        'If an account exists for that email, a password reset link has been generated.',
+    });
+  });
+
+  it('returns the generic forgot-password response when the account does not exist', async () => {
+    prisma.user.findUnique.mockResolvedValue(null);
+
+    const result = await service.forgotPassword({
+      email: 'missing@moulhanout.ma',
+    });
+
+    expect(prisma.passwordResetToken.create).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      message:
+        'If an account exists for that email, a password reset link has been generated.',
+    });
+  });
+
+  it('resets the password and revokes all sessions for a valid reset token', async () => {
+    prisma.passwordResetToken.findUnique.mockResolvedValue({
+      id: 'reset-1',
+      userId: 'user-1',
+      expiresAt: new Date('2099-01-01T00:00:00.000Z'),
+      usedAt: null,
+      user: {
+        isActive: true,
+      },
+    });
+    prisma.passwordResetToken.updateMany.mockResolvedValue({ count: 1 });
+    prisma.passwordResetToken.deleteMany.mockResolvedValue({ count: 1 });
+    prisma.user.update.mockResolvedValue({});
+    prisma.session.deleteMany.mockResolvedValue({ count: 2 });
+    (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-new-password');
+
+    const result = await service.resetPassword({
+      token: 'plain-reset-token',
+      password: 'NewPassword@123',
+    });
+
+    expect(prisma.passwordResetToken.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'reset-1',
+        usedAt: null,
+        expiresAt: { gt: expect.any(Date) },
+      },
+      data: {
+        usedAt: expect.any(Date),
+      },
+    });
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { password: 'hashed-new-password' },
+    });
+    expect(prisma.session.deleteMany).toHaveBeenCalledWith({
+      where: { userId: 'user-1' },
+    });
+    expect(prisma.passwordResetToken.deleteMany).toHaveBeenCalledWith({
+      where: { userId: 'user-1' },
+    });
+    expect(result).toEqual({
+      message: 'Password reset successful. Please sign in again.',
+    });
+  });
+
+  it('rejects password reset when the token is invalid or expired', async () => {
+    prisma.passwordResetToken.findUnique.mockResolvedValue(null);
+
+    await expect(
+      service.resetPassword({
+        token: 'invalid-token',
+        password: 'NewPassword@123',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('rejects refresh when the hashed token does not match the stored session token', async () => {

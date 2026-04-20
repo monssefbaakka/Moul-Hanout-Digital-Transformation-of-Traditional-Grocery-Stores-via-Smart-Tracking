@@ -15,9 +15,16 @@ import {
   ApiCreatedResponse,
   ApiUnauthorizedResponse,
   ApiConflictResponse,
+  ApiBadRequestResponse,
 } from '@nestjs/swagger';
 import { AuthResponse, AuthService, LogoutResponse } from './auth.service';
-import { LoginDto, RefreshTokenDto, RegisterDto } from './dto/auth.dto';
+import {
+  ForgotPasswordDto,
+  LoginDto,
+  RefreshTokenDto,
+  RegisterDto,
+  ResetPasswordDto,
+} from './dto/auth.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '../../common/enums';
@@ -71,6 +78,37 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: 'Invalid or expired refresh token.' })
   refresh(@Body() dto: RefreshTokenDto): Promise<AuthResponse> {
     return this.authService.refresh(dto.refreshToken);
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Create a password reset token for the matching account',
+  })
+  @ApiOkResponse({
+    description:
+      'Always returns a generic success message to avoid leaking account existence.',
+  })
+  forgotPassword(@Body() dto: ForgotPasswordDto): Promise<LogoutResponse> {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Validate a password reset token and save a new password',
+  })
+  @ApiOkResponse({
+    description:
+      'Password updated and all existing user sessions invalidated.',
+  })
+  @ApiBadRequestResponse({
+    description: 'The reset token is invalid, expired, or already used.',
+  })
+  resetPassword(@Body() dto: ResetPasswordDto): Promise<LogoutResponse> {
+    return this.authService.resetPassword(dto);
   }
 
   @ApiBearerAuth()

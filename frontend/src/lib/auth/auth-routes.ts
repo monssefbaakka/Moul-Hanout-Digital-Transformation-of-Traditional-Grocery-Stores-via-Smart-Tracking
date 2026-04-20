@@ -1,14 +1,24 @@
 import type { Role } from '@moul-hanout/shared-types';
 
 /**
- * Routes that are considered "auth pages".
- * Authenticated users visiting these are redirected to their dashboard.
- * Unauthenticated users visiting any other route are redirected to /login.
+ * Routes that are publicly reachable without an authenticated session.
  */
-export const AUTH_ROUTES = ['/login', '/forgot-password'] as const;
+export const AUTH_ROUTES = ['/login', '/forgot-password', '/reset-password'] as const;
+
+/**
+ * Routes that should redirect authenticated users away.
+ * `/reset-password` stays accessible so email links still work for signed-in users.
+ */
+export const GUEST_ONLY_ROUTES = ['/login', '/forgot-password'] as const;
 
 export function isAuthRoute(pathname: string) {
   return AUTH_ROUTES.some((route) => pathname === route || pathname.startsWith(route + '/'));
+}
+
+export function isGuestOnlyRoute(pathname: string) {
+  return GUEST_ONLY_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(route + '/'),
+  );
 }
 
 export function getPostLoginRedirect(role: Role) {

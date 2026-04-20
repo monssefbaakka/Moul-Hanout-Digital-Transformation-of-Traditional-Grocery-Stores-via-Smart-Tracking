@@ -20,6 +20,7 @@ import { HealthModule } from './modules/health/health.module';
 import { ReportsModule } from './modules/reports/reports.module';
 
 import { appConfig } from './config/app.config';
+import { authConfig } from './config/auth.config';
 import { jwtConfig } from './config/jwt.config';
 import { databaseConfig } from './config/database.config';
 import { validateEnv } from './config/env.validation';
@@ -41,7 +42,7 @@ export class RedisClient extends Redis implements OnApplicationShutdown {
     // Configuration — load env first
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, jwtConfig, databaseConfig],
+      load: [appConfig, authConfig, jwtConfig, databaseConfig],
       envFilePath: ['.env.local', '.env'],
       validate: validateEnv,
     }),

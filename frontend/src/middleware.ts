@@ -20,7 +20,10 @@ import type { NextRequest } from 'next/server';
  */
 
 /** Routes that do NOT require authentication. */
-const PUBLIC_ROUTES = ['/login', '/forgot-password'];
+const PUBLIC_ROUTES = ['/login', '/forgot-password', '/reset-password'];
+
+/** Routes that should bounce authenticated users back to the app. */
+const GUEST_ONLY_ROUTES = ['/login', '/forgot-password'];
 
 /** Routes that the auth middleware should skip entirely (Next.js internals, assets). */
 function isStaticOrInternal(pathname: string) {
@@ -33,6 +36,12 @@ function isStaticOrInternal(pathname: string) {
 
 function isPublicRoute(pathname: string) {
   return PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(route + '/'));
+}
+
+function isGuestOnlyRoute(pathname: string) {
+  return GUEST_ONLY_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(route + '/'),
+  );
 }
 
 /**
@@ -64,7 +73,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Rule 2: Authenticated user visiting an auth page → their home
-  if (authed && isPublicRoute(pathname)) {
+  if (authed && isGuestOnlyRoute(pathname)) {
     const homeUrl = request.nextUrl.clone();
     homeUrl.pathname = '/';
     homeUrl.search = '';

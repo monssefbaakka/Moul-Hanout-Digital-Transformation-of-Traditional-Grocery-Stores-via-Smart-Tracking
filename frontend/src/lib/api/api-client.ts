@@ -10,10 +10,14 @@ import type {
   CreateProductInput,
   CreateUserInput,
   DailySummary,
+  ForgotPasswordInput,
+  ForgotPasswordResponse,
   InventoryItem,
   InventoryReport,
   LogoutResponse,
   Product,
+  ResetPasswordInput,
+  ResetPasswordResponse,
   Sale,
   SaleDetail,
   SalesListResponse,
@@ -168,6 +172,16 @@ export const authApi = {
     request<AuthResponse>('/auth/login', { method: 'POST', body: { email, password } }),
   register: (payload: CreateUserInput) =>
     request<AdminUser>('/auth/register', { method: 'POST', body: payload }),
+  forgotPassword: (payload: ForgotPasswordInput) =>
+    request<ForgotPasswordResponse>('/auth/forgot-password', {
+      method: 'POST',
+      body: payload,
+    }),
+  resetPassword: (payload: ResetPasswordInput) =>
+    request<ResetPasswordResponse>('/auth/reset-password', {
+      method: 'POST',
+      body: payload,
+    }),
   logout: () => request<LogoutResponse>('/auth/logout', { method: 'POST' }),
   refresh: (token: string) =>
     request<AuthResponse>('/auth/refresh', { method: 'POST', body: { refreshToken: token } }),
