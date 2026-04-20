@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateCategoryDto {
   @ApiProperty({ example: 'Boissons' })
@@ -18,4 +24,19 @@ export class CreateCategoryDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+}
+
+export class UpdateCategoryDto {
+  @ApiPropertyOptional({ example: 'Boissons fraiches' })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty({ message: 'Category name cannot be empty' })
+  @MaxLength(80, { message: 'Category name cannot exceed 80 characters' })
+  name?: string;
+
+  @ApiPropertyOptional({ example: 'Updated shelf grouping for cold beverages' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300, { message: 'Description cannot exceed 300 characters' })
+  description?: string;
 }

@@ -2,8 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, ArrowRight, Boxes, ReceiptText, Users, Warehouse } from 'lucide-react';
-import { AppPageHeader } from '@/components/layout/app-page-header';
+import {
+  AlertTriangle,
+  ArrowRight,
+  Boxes,
+  ReceiptText,
+  ShoppingCart,
+  TrendingUp,
+  Users,
+  Warehouse,
+} from 'lucide-react';
 import { AuthSessionPanel } from '@/components/auth/auth-session-panel';
 import { OwnerQuickLinks } from '@/components/auth/owner-quick-links';
 import { inventoryApi, salesApi } from '@/lib/api/api-client';
@@ -12,6 +20,17 @@ import { useAuthStore } from '@/store/auth.store';
 
 function formatCurrency(amount: number) {
   return amount.toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MAD';
+}
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Bonjour';
+  if (h < 18) return 'Bon après-midi';
+  return 'Bonsoir';
+}
+
+function formatDate() {
+  return new Date().toLocaleDateString('fr-MA', { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
 export default function HomePage() {
@@ -36,55 +55,52 @@ export default function HomePage() {
           inventoryApi.list(),
         ]);
 
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
 
         setSummary(dailySummary);
         setLowStockItems(inventory.filter((item) => item.isLowStock));
       } catch {
-        if (!isMounted) {
-          return;
-        }
-
+        if (!isMounted) return;
         setSummary(null);
         setLowStockItems([]);
         setErrorMessage('Impossible de charger le tableau de bord pour le moment.');
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        if (isMounted) setLoading(false);
       }
     }
 
     void loadDashboard();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [reloadKey]);
+
+  const firstName = user?.name?.split(' ')[0] ?? 'Gérant';
+  const hasLowStock = !loading && !errorMessage && lowStockItems.length > 0;
 
   return (
     <main className="page stack app-page">
-      <AppPageHeader
-        title="Tableau de bord du magasin"
-        subtitle="Suivez les performances du jour, surveillez les priorites et ouvrez rapidement les espaces importants de l'application."
-        actions={
-          <Link href="/inventaire" className="app-btn app-btn--primary">
-            Ouvrir l&apos;inventaire
-          </Link>
-        }
-      />
 
+      {/* ── Welcome banner ── */}
+      <div className="db-welcome">
+        <div className="db-welcome__text">
+          <span className="db-welcome__greeting">{getGreeting()}, {firstName}</span>
+          <p className="db-welcome__date">{formatDate()}</p>
+        </div>
+        <Link href="/vente" className="app-btn db-welcome__cta">
+          <ShoppingCart size={16} />
+          Ouvrir la caisse
+        </Link>
+      </div>
+
+      {/* ── Error / alerts ── */}
       {errorMessage ? (
         <div className="app-alert app-alert--danger" role="alert">
           <span className="app-alert__content">{errorMessage}</span>
           <button
             type="button"
-            className="app-btn app-btn--secondary"
-            onClick={() => setReloadKey((current) => current + 1)}
+            className="app-btn app-btn--secondary app-btn--sm"
+            onClick={() => setReloadKey((c) => c + 1)}
           >
-            Reessayer
+            Réessayer
           </button>
         </div>
       ) : null}
@@ -92,9 +108,10 @@ export default function HomePage() {
       {!alertDismissed && lowStockItems.length > 0 ? (
         <div className="app-alert app-alert--danger" role="alert">
           <span className="app-alert__content">
-            <AlertTriangle size={18} />
-            <strong>{lowStockItems.length} article{lowStockItems.length > 1 ? 's' : ''}</strong> en stock faible.{' '}
-            <Link href="/inventaire" style={{ color: 'inherit', textDecoration: 'underline' }}>
+            <AlertTriangle size={16} />
+            <strong>{lowStockItems.length} article{lowStockItems.length > 1 ? 's' : ''}</strong>{' '}
+            en stock faible.{' '}
+            <Link href="/inventaire" style={{ textDecoration: 'underline' }}>
               Voir l&apos;inventaire
             </Link>
           </span>
@@ -104,101 +121,137 @@ export default function HomePage() {
             onClick={() => setAlertDismissed(true)}
             aria-label="Fermer"
           >
-            Fermer
+            ✕
           </button>
         </div>
       ) : null}
 
-      <section className="app-dashboard-grid">
-        <article className="panel app-stat-card">
-          <span className="eyebrow">Chiffre du jour</span>
-          <strong>{loading ? '...' : errorMessage ? '--' : formatCurrency(summary?.totalRevenue ?? 0)}</strong>
-          <p>{errorMessage ? 'Rechargez pour recuperer les donnees du jour.' : 'Revenu total encaisse aujourd&apos;hui.'}</p>
+      {/* ── KPI cards ── */}
+      <section className="db-kpi-grid" aria-label="Indicateurs du jour">
+        <article className="db-kpi-card">
+          <div className="db-kpi-icon db-kpi-icon--green">
+            <TrendingUp size={18} />
+          </div>
+          <div className="db-kpi-body">
+            <span className="db-kpi-label">Chiffre du jour</span>
+            <strong className="db-kpi-value">
+              {loading
+                ? <span className="db-kpi-skeleton" aria-hidden="true" />
+                : errorMessage
+                  ? '—'
+                  : formatCurrency(summary?.totalRevenue ?? 0)}
+            </strong>
+            <p className="db-kpi-hint">Revenu total encaissé aujourd&apos;hui</p>
+          </div>
         </article>
 
-        <article className="panel app-stat-card">
-          <span className="eyebrow">Transactions</span>
-          <strong>{loading ? '...' : errorMessage ? '--' : (summary?.transactionCount ?? 0)}</strong>
-          <p>{errorMessage ? 'Le total des ventes du jour est indisponible.' : 'Nombre de ventes enregistrees aujourd&apos;hui.'}</p>
+        <article className="db-kpi-card">
+          <div className="db-kpi-icon db-kpi-icon--blue">
+            <ReceiptText size={18} />
+          </div>
+          <div className="db-kpi-body">
+            <span className="db-kpi-label">Transactions</span>
+            <strong className="db-kpi-value">
+              {loading
+                ? <span className="db-kpi-skeleton" aria-hidden="true" />
+                : errorMessage
+                  ? '—'
+                  : (summary?.transactionCount ?? 0)}
+            </strong>
+            <p className="db-kpi-hint">Ventes enregistrées aujourd&apos;hui</p>
+          </div>
         </article>
 
-        <article className="panel app-stat-card">
-          <span className="eyebrow">Stock faible</span>
-          <strong>{loading ? '...' : errorMessage ? '--' : lowStockItems.length}</strong>
-          <p>
-            {errorMessage ? (
-              'L etat du stock n a pas pu etre charge.'
-            ) : lowStockItems.length > 0 ? (
-              <Link href="/inventaire" style={{ color: 'inherit', textDecoration: 'underline' }}>
-                Article{lowStockItems.length > 1 ? 's' : ''} a reapprovisionner
-              </Link>
-            ) : (
-              'Tous les articles sont bien approvisionnes.'
-            )}
-          </p>
+        <article className={`db-kpi-card${hasLowStock ? ' db-kpi-card--warning' : ''}`}>
+          <div className={`db-kpi-icon${hasLowStock ? ' db-kpi-icon--amber' : ' db-kpi-icon--green'}`}>
+            <Warehouse size={18} />
+          </div>
+          <div className="db-kpi-body">
+            <span className="db-kpi-label">Stock faible</span>
+            <strong className="db-kpi-value">
+              {loading
+                ? <span className="db-kpi-skeleton" aria-hidden="true" />
+                : errorMessage
+                  ? '—'
+                  : lowStockItems.length}
+            </strong>
+            <p className="db-kpi-hint">
+              {hasLowStock ? (
+                <Link href="/inventaire" style={{ textDecoration: 'underline', color: 'inherit' }}>
+                  Articles à réapprovisionner
+                </Link>
+              ) : (
+                'Tous les articles sont en ordre'
+              )}
+            </p>
+          </div>
         </article>
       </section>
 
-      <section className="dashboard-action-grid" aria-label="Acces rapides">
-        <article className="app-card dashboard-action-card">
-          <span className="dashboard-action-card__icon">
-            <ReceiptText size={20} />
-          </span>
-          <div>
-            <h2>Caisse</h2>
-            <p>Lancez une nouvelle vente et encaissez rapidement les clients du magasin.</p>
-          </div>
-          <Link href="/vente" className="app-btn app-btn--primary">
-            Ouvrir la caisse
-            <ArrowRight size={16} />
-          </Link>
-        </article>
+      {/* ── Quick actions ── */}
+      <section className="db-actions-section" aria-label="Accès rapides">
+        <h2 className="db-section-title">Accès rapides</h2>
+        <div className="db-actions-grid">
+          <article className="db-action-card db-action-card--featured">
+            <div className="db-action-card__icon">
+              <ReceiptText size={22} />
+            </div>
+            <div className="db-action-card__body">
+              <h3>Caisse</h3>
+              <p>Démarrez une vente et encaissez les clients.</p>
+            </div>
+            <Link href="/vente" className="app-btn app-btn--primary">
+              Ouvrir la caisse
+              <ArrowRight size={15} />
+            </Link>
+          </article>
 
-        <article className="app-card dashboard-action-card">
-          <span className="dashboard-action-card__icon">
-            <Warehouse size={20} />
-          </span>
-          <div>
-            <h2>Surveillance stock</h2>
-            <p>Consultez les ruptures, les seuils bas et les produits a surveiller.</p>
-          </div>
-          <Link href="/inventaire" className="app-btn app-btn--secondary">
-            Voir le stock
-            <ArrowRight size={16} />
-          </Link>
-        </article>
+          <article className="db-action-card">
+            <div className="db-action-card__icon">
+              <Warehouse size={22} />
+            </div>
+            <div className="db-action-card__body">
+              <h3>Stock</h3>
+              <p>Consultez les ruptures et niveaux bas.</p>
+            </div>
+            <Link href="/inventaire" className="app-btn app-btn--secondary">
+              Voir le stock
+              <ArrowRight size={15} />
+            </Link>
+          </article>
 
-        {user?.role === 'OWNER' ? (
-          <>
-            <article className="app-card dashboard-action-card">
-              <span className="dashboard-action-card__icon">
-                <Boxes size={20} />
-              </span>
-              <div>
-                <h2>Catalogue</h2>
-                <p>Ajoutez des produits, structurez les categories et gardez le catalogue propre.</p>
-              </div>
-              <Link href="/produits" className="app-btn app-btn--secondary">
-                Gerer le catalogue
-                <ArrowRight size={16} />
-              </Link>
-            </article>
+          {user?.role === 'OWNER' ? (
+            <>
+              <article className="db-action-card">
+                <div className="db-action-card__icon">
+                  <Boxes size={22} />
+                </div>
+                <div className="db-action-card__body">
+                  <h3>Catalogue</h3>
+                  <p>Gérez les produits et catégories.</p>
+                </div>
+                <Link href="/produits" className="app-btn app-btn--secondary">
+                  Gérer
+                  <ArrowRight size={15} />
+                </Link>
+              </article>
 
-            <article className="app-card dashboard-action-card">
-              <span className="dashboard-action-card__icon">
-                <Users size={20} />
-              </span>
-              <div>
-                <h2>Equipe</h2>
-                <p>Donnez les bons acces au personnel et desactivez les comptes inactifs.</p>
-              </div>
-              <Link href="/utilisateurs" className="app-btn app-btn--secondary">
-                Ouvrir les utilisateurs
-                <ArrowRight size={16} />
-              </Link>
-            </article>
-          </>
-        ) : null}
+              <article className="db-action-card">
+                <div className="db-action-card__icon">
+                  <Users size={22} />
+                </div>
+                <div className="db-action-card__body">
+                  <h3>Équipe</h3>
+                  <p>Gérez les accès du personnel.</p>
+                </div>
+                <Link href="/utilisateurs" className="app-btn app-btn--secondary">
+                  Gérer
+                  <ArrowRight size={15} />
+                </Link>
+              </article>
+            </>
+          ) : null}
+        </div>
       </section>
 
       <section className="panel">

@@ -4,7 +4,8 @@
       "Bash(npx tsc *)",
       "Bash(python skills/ui-ux-pro-max/scripts/search.py \"grocery POS SaaS retail dashboard inventory management\" --design-system -p \"Moul Hanout\" -f markdown)",
       "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"grocery POS SaaS retail dashboard inventory\" --design-system -p \"Moul Hanout\" -f markdown)",
-      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"accessibility touch loading animation\" --domain ux -n 8)"
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"accessibility touch loading animation\" --domain ux -n 8)",
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"grocery store management dashboard POS point-of-sale retail Morocco\" --design-system -p \"Moul Hanout\" -f markdown)"
     ]
   }
 }

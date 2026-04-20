@@ -540,6 +540,19 @@ async function createPrismaMock() {
           ) ?? null;
         return category ? selectFields(category, args.select) : null;
       }),
+      update: jest.fn(async (args: any) => {
+        const category = categories.find(
+          (candidate) => candidate.id === args.where.id,
+        );
+        if (!category) {
+          throw new Error(`Category ${args.where.id} not found`);
+        }
+
+        Object.assign(category, args.data);
+        return args.select
+          ? selectFields(category, args.select)
+          : { ...category };
+      }),
     },
     product: {
       findMany: jest.fn(async (args?: any) => {
@@ -1011,6 +1024,92 @@ describe('Phase 1 e2e', () => {
     expect(response.body.data.map((category: any) => category.id)).toEqual([
       'cat-active-1',
       'cat-active-2',
+    ]);
+  });
+
+  it('PATCH /api/v1/categories/:id denies cashier and allows owner to update a shop category', async () => {
+    const cashierToken = await loginAs(
+      app,
+      'cashier@moulhanout.ma',
+      'Cashier@123!',
+    );
+
+    await request(app.getHttpServer())
+      .patch('/api/v1/categories/cat-active-2')
+      .set('Authorization', `Bearer ${cashierToken}`)
+      .send({
+        name: 'Updated by Cashier',
+      })
+      .expect(403);
+
+    const ownerToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+
+    const response = await request(app.getHttpServer())
+      .patch('/api/v1/categories/cat-active-2')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({
+        name: 'Household Essentials',
+        description: 'Cleaning and home care items',
+      })
+      .expect(200);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.data).toMatchObject({
+      id: 'cat-active-2',
+      name: 'Household Essentials',
+      description: 'Cleaning and home care items',
+      isActive: true,
+    });
+  });
+
+  it('PATCH /api/v1/categories/:id returns 404 for a category outside the authenticated shop', async () => {
+    const ownerToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+
+    const response = await request(app.getHttpServer())
+      .patch('/api/v1/categories/cat-other-shop')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({
+        name: 'Should Fail',
+      })
+      .expect(404);
+
+    expect(response.body.error).toBe('Category not found');
+  });
+
+  it('PATCH /api/v1/categories/:id/deactivate blocks deactivation when active products still exist', async () => {
+    const ownerToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+
+    const response = await request(app.getHttpServer())
+      .patch('/api/v1/categories/cat-active-1/deactivate')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(422);
+
+    expect(response.body.error).toBe(
+      'Cannot deactivate a category with active products',
+    );
+  });
+
+  it('PATCH /api/v1/categories/:id/deactivate soft-deletes a category with no active products', async () => {
+    const ownerToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+
+    const deactivateResponse = await request(app.getHttpServer())
+      .patch('/api/v1/categories/cat-active-2/deactivate')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(200);
+
+    expect(deactivateResponse.body.success).toBe(true);
+    expect(deactivateResponse.body.data).toMatchObject({
+      id: 'cat-active-2',
+      isActive: false,
+    });
+
+    const listResponse = await request(app.getHttpServer())
+      .get('/api/v1/categories')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(200);
+
+    expect(listResponse.body.data.map((category: any) => category.id)).toEqual([
+      'cat-active-1',
     ]);
   });
 
