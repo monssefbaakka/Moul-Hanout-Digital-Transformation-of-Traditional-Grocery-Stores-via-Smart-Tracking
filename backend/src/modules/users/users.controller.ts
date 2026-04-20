@@ -16,8 +16,8 @@ export class UsersController {
 
   @Roles(Role.OWNER)
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@CurrentUser('shopId') shopId: string) {
+    return this.usersService.findAll(shopId);
   }
 
   @Roles(Role.OWNER)
@@ -32,10 +32,7 @@ export class UsersController {
 
   @Roles(Role.OWNER)
   @Patch(':id/activate')
-  activate(
-    @CurrentUser('shopId') shopId: string,
-    @Param('id') userId: string,
-  ) {
+  activate(@CurrentUser('shopId') shopId: string, @Param('id') userId: string) {
     return this.usersService.reactivate(shopId, userId);
   }
 }

@@ -9,6 +9,7 @@ import {
 import { PrismaClient } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { SetMetadata } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { IS_PUBLIC_KEY } from '../../common/guards/jwt-auth.guard';
 
 const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
@@ -24,6 +25,7 @@ export class HealthController {
   ) {}
 
   @Public()
+  @SkipThrottle({ short: true, medium: true, long: true })
   @Get()
   @HealthCheck()
   check() {

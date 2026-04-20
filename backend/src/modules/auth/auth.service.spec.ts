@@ -87,7 +87,7 @@ describe('AuthService', () => {
       email: 'owner@moulhanout.ma',
       password: 'stored-password',
       name: 'Owner',
-      shopRoles: [{ role: Role.OWNER }],
+      shopRoles: [{ role: Role.OWNER, shopId: 'shop-1' }],
       isActive: true,
       createdAt: new Date('2026-03-16T00:00:00.000Z'),
     });
@@ -133,7 +133,7 @@ describe('AuthService', () => {
       email: 'owner@moulhanout.ma',
       password: 'stored-password',
       name: 'Owner',
-      shopRoles: [{ role: Role.OWNER }],
+      shopRoles: [{ role: Role.OWNER, shopId: 'shop-1' }],
       isActive: true,
       createdAt: new Date('2026-03-16T00:00:00.000Z'),
     });
@@ -145,6 +145,26 @@ describe('AuthService', () => {
         password: 'WrongPassword@123',
       }),
     ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('fails to log in when the user has no shop assignment', async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: 'user-1',
+      email: 'owner@moulhanout.ma',
+      password: 'stored-password',
+      name: 'Owner',
+      shopRoles: [],
+      isActive: true,
+      createdAt: new Date('2026-03-16T00:00:00.000Z'),
+    });
+    (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+    await expect(
+      service.login({
+        email: 'owner@moulhanout.ma',
+        password: 'Admin@123!',
+      }),
+    ).rejects.toThrow(new UnauthorizedException('User has no shop assignment'));
   });
 
   it('rotates tokens during refresh when the stored refresh token hash matches', async () => {
@@ -162,7 +182,7 @@ describe('AuthService', () => {
         id: 'user-1',
         email: 'owner@moulhanout.ma',
         name: 'Owner',
-        shopRoles: [{ role: Role.OWNER }],
+        shopRoles: [{ role: Role.OWNER, shopId: 'shop-1' }],
         isActive: true,
         createdAt: new Date('2026-03-16T00:00:00.000Z'),
       },
@@ -223,7 +243,10 @@ describe('AuthService', () => {
     prisma.passwordResetToken.create.mockResolvedValue({ id: 'reset-1' });
 
     const loggerSpy = jest
-      .spyOn((service as { logger: { log: (message: string) => void } }).logger, 'log')
+      .spyOn(
+        (service as { logger: { log: (message: string) => void } }).logger,
+        'log',
+      )
       .mockImplementation(() => undefined);
 
     const result = await service.forgotPassword({
@@ -337,7 +360,7 @@ describe('AuthService', () => {
         id: 'user-1',
         email: 'owner@moulhanout.ma',
         name: 'Owner',
-        shopRoles: [{ role: Role.OWNER }],
+        shopRoles: [{ role: Role.OWNER, shopId: 'shop-1' }],
         isActive: true,
         createdAt: new Date('2026-03-16T00:00:00.000Z'),
       },
@@ -346,6 +369,33 @@ describe('AuthService', () => {
 
     await expect(service.refresh('refresh-token')).rejects.toBeInstanceOf(
       UnauthorizedException,
+    );
+  });
+
+  it('rejects refresh when the user has no shop assignment', async () => {
+    jwt.verify.mockReturnValue({
+      sub: 'user-1',
+      sid: 'session-1',
+      exp: 1770000000,
+    });
+    prisma.session.findUnique.mockResolvedValue({
+      id: 'session-1',
+      userId: 'user-1',
+      token: 'stored-hash',
+      expiresAt: new Date('2099-01-01T00:00:00.000Z'),
+      user: {
+        id: 'user-1',
+        email: 'owner@moulhanout.ma',
+        name: 'Owner',
+        shopRoles: [],
+        isActive: true,
+        createdAt: new Date('2026-03-16T00:00:00.000Z'),
+      },
+    });
+    (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+    await expect(service.refresh('refresh-token')).rejects.toThrow(
+      new UnauthorizedException('User has no shop assignment'),
     );
   });
 });

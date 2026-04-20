@@ -87,6 +87,11 @@ export interface LogoutResponse {
   message: string;
 }
 
+interface UserShopRole {
+  role: string;
+  shopId: string;
+}
+
 // This tells NestJS that `AuthService` can be injected into controllers and other services.
 @Injectable()
 export class AuthService {
@@ -129,6 +134,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    const shopRole = this.getAssignedShopRole(user.shopRoles);
+
     // Create a server-side session and return freshly issued access and refresh tokens.
     return this.issueTokensForUser({
       // Pass the user's id into the helper method.
@@ -140,8 +147,8 @@ export class AuthService {
       // Pass the user's name into the helper method.
       name: user.name,
 
-      role: user.shopRoles?.[0]?.role || Role.CASHIER,
-      shopId: user.shopRoles?.[0]?.shopId || 'default-shop-id',
+      role: shopRole.role,
+      shopId: shopRole.shopId,
 
       // Pass the active flag into the helper method.
       isActive: user.isActive,
@@ -239,6 +246,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
+    const shopRole = this.getAssignedShopRole(session.user.shopRoles);
+
     // Rotate the session tokens so the old refresh token can no longer be reused.
     return this.rotateSessionTokens(session.id, {
       // Pass the user id.
@@ -250,8 +259,8 @@ export class AuthService {
       // Pass the user name.
       name: session.user.name,
 
-      role: session.user.shopRoles?.[0]?.role || Role.CASHIER,
-      shopId: session.user.shopRoles?.[0]?.shopId || 'default-shop-id',
+      role: shopRole.role,
+      shopId: shopRole.shopId,
 
       // Pass the user active flag.
       isActive: session.user.isActive,
@@ -594,5 +603,15 @@ export class AuthService {
       },
       ...tokens,
     };
+  }
+
+  private getAssignedShopRole(shopRoles: UserShopRole[] | undefined) {
+    const shopRole = shopRoles?.[0];
+
+    if (!shopRole?.shopId) {
+      throw new UnauthorizedException('User has no shop assignment');
+    }
+
+    return shopRole;
   }
 }

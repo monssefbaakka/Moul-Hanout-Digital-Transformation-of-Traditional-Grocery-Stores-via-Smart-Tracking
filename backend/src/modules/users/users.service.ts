@@ -10,13 +10,25 @@ import { Role } from '../../common/enums';
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll() {
+  async findAll(shopId: string) {
     const users = await this.prisma.user.findMany({
+      where: {
+        shopRoles: {
+          some: {
+            shopId,
+          },
+        },
+      },
       select: {
         id: true,
         name: true,
         email: true,
-        shopRoles: { select: { role: true, shopId: true } },
+        shopRoles: {
+          where: {
+            shopId,
+          },
+          select: { role: true, shopId: true },
+        },
         isActive: true,
         createdAt: true,
       },

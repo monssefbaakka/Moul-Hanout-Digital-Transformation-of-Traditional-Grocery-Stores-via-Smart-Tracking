@@ -4,8 +4,9 @@ import {
   Injectable,
   OnApplicationShutdown,
 } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import Redis from 'ioredis';
 
 import { DatabaseModule } from './database/database.module';
@@ -69,6 +70,10 @@ export class RedisClient extends Redis implements OnApplicationShutdown {
     ReportsModule,
   ],
   providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: 'REDIS_CLIENT',
       useClass: RedisClient,

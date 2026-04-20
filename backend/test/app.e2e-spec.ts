@@ -115,9 +115,14 @@ function selectFields<T extends Record<string, unknown>>(
 
 function selectUser(user: UserRecord, args?: any) {
   if (args?.include?.shopRoles) {
+    const filteredShopRoles = user.shopRoles.filter((shopRole) => {
+      const scopedShopId = args.include.shopRoles.where?.shopId;
+      return !scopedShopId || shopRole.shopId === scopedShopId;
+    });
+
     return {
       ...user,
-      shopRoles: user.shopRoles.map((shopRole) =>
+      shopRoles: filteredShopRoles.map((shopRole) =>
         args.include.shopRoles === true
           ? { ...shopRole }
           : selectFields(shopRole, args.include.shopRoles.select),
@@ -129,9 +134,14 @@ function selectUser(user: UserRecord, args?: any) {
     const selected = selectFields(user, args.select);
 
     if (args.select.shopRoles) {
+      const filteredShopRoles = user.shopRoles.filter((shopRole) => {
+        const scopedShopId = args.select.shopRoles.where?.shopId;
+        return !scopedShopId || shopRole.shopId === scopedShopId;
+      });
+
       return {
         ...selected,
-        shopRoles: user.shopRoles.map((shopRole) =>
+        shopRoles: filteredShopRoles.map((shopRole) =>
           selectFields(shopRole, args.select.shopRoles.select),
         ),
       };
@@ -281,6 +291,26 @@ async function createPrismaMock() {
       createdAt: now,
       updatedAt: now,
     },
+    {
+      id: 'user-other-shop-owner',
+      email: 'other.owner@moulhanout.ma',
+      password: ownerPassword,
+      name: 'Other Shop Owner',
+      shopRoles: [{ role: Role.OWNER, shopId: 'other-shop-id' }],
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'user-unassigned',
+      email: 'unassigned@moulhanout.ma',
+      password: ownerPassword,
+      name: 'Unassigned User',
+      shopRoles: [],
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    },
   ];
 
   const categories: CategoryRecord[] = [
@@ -394,7 +424,9 @@ async function createPrismaMock() {
         return user ? selectUser(user, args) : null;
       }),
       findMany: jest.fn(async (args?: any) => {
-        return users.map((user) => selectUser(user, args));
+        return users
+          .filter((user) => matchUser(user, args?.where))
+          .map((user) => selectUser(user, args));
       }),
       create: jest.fn(async (args: any) => {
         const createdAt = new Date();
@@ -873,6 +905,16 @@ describe('Phase 1 e2e', () => {
     expect(response.body.data.status).toBe('ok');
   });
 
+  it('GET /api/v1/health is excluded from global throttling', async () => {
+    const responses = await Promise.all(
+      Array.from({ length: 12 }, () =>
+        request(app.getHttpServer()).get('/api/v1/health'),
+      ),
+    );
+
+    expect(responses.every((response) => response.status === 200)).toBe(true);
+  });
+
   it('POST /api/v1/auth/register requires authentication', async () => {
     await request(app.getHttpServer())
       .post('/api/v1/auth/register')
@@ -914,6 +956,18 @@ describe('Phase 1 e2e', () => {
     expect(response.body.success).toBe(true);
     expect(typeof response.body.data.accessToken).toBe('string');
     expect(typeof response.body.data.refreshToken).toBe('string');
+  });
+
+  it('POST /api/v1/auth/login rejects a user without a shop assignment', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({
+        email: 'unassigned@moulhanout.ma',
+        password: 'Admin@123!',
+      })
+      .expect(401);
+
+    expect(response.body.error).toBe('User has no shop assignment');
   });
 
   it('POST /api/v1/categories denies cashier and allows owner', async () => {
@@ -1302,6 +1356,18 @@ describe('Phase 1 e2e', () => {
     expect(response.body.success).toBe(true);
     expect(Array.isArray(response.body.data)).toBe(true);
     expect(response.body.data).toHaveLength(2);
+    expect(response.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ email: 'owner@moulhanout.ma' }),
+        expect.objectContaining({ email: 'cashier@moulhanout.ma' }),
+      ]),
+    );
+    expect(response.body.data).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ email: 'other.owner@moulhanout.ma' }),
+        expect.objectContaining({ email: 'unassigned@moulhanout.ma' }),
+      ]),
+    );
     expect(response.body.data[0]).toHaveProperty('role');
     expect(response.body.data[0]).not.toHaveProperty('shopRoles');
   });
@@ -1314,6 +1380,19 @@ describe('Phase 1 e2e', () => {
         password: 'wrongpassword',
       })
       .expect(401);
+  });
+
+  it('POST /api/v1/auth/login is rate limited after repeated attempts', async () => {
+    const responses = await Promise.all(
+      Array.from({ length: 12 }, () =>
+        request(app.getHttpServer()).post('/api/v1/auth/login').send({
+          email: 'missing@moulhanout.ma',
+          password: 'wrongpassword',
+        }),
+      ),
+    );
+
+    expect(responses.some((response) => response.status === 429)).toBe(true);
   });
 
   it('GET /api/v1/users denies an authenticated cashier', async () => {

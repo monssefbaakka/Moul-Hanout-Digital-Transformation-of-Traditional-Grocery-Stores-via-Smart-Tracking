@@ -561,7 +561,7 @@ export function PosWorkspace() {
           onClick={() => setReceipt(null)}
         >
           <section
-            className="app-modal pos-receipt-modal"
+            className="app-modal pos-v2__receipt-modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="receipt-modal-title"
@@ -582,7 +582,7 @@ export function PosWorkspace() {
               </button>
             </div>
 
-            <div className="pos-receipt-meta">
+            <div className="pos-v2__receipt-meta">
               <article>
                 <span>Encaissée le</span>
                 <strong>{formatDateTime(receipt.soldAt)}</strong>
@@ -597,9 +597,9 @@ export function PosWorkspace() {
               </article>
             </div>
 
-            <div className="pos-receipt-lines">
+            <div className="pos-v2__receipt-lines">
               {receipt.items.map((item) => (
-                <div key={item.id} className="pos-receipt-line">
+                <div key={item.id} className="pos-v2__receipt-line">
                   <div>
                     <strong>{item.product.name}</strong>
                     <span>{item.qty} × {formatMoney(item.unitPrice)}</span>
@@ -609,7 +609,7 @@ export function PosWorkspace() {
               ))}
             </div>
 
-            <div className="pos-receipt-total">
+            <div className="pos-v2__receipt-total">
               <span>Total</span>
               <strong>{formatMoney(receipt.totalAmount)}</strong>
             </div>
