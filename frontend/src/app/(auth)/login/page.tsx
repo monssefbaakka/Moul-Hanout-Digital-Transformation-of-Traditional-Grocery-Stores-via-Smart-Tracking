@@ -22,7 +22,7 @@ export default function MoulHanoutLoginPage() {
         <h1 className="auth-brand">Moul Hanout</h1>
 
         <span className="auth-badge">
-          Sign In
+          Acces securise magasin
         </span>
       </header>
 
@@ -33,10 +33,10 @@ export default function MoulHanoutLoginPage() {
 
             <div className="auth-hero-copy">
               <h2>
-                Elevate Your Local Commerce
+                Pilotez votre magasin avec clarte
               </h2>
               <p>
-                Join Morocco&apos;s premium network of digitized neighborhood grocers.
+                Suivez les ventes, le stock et les alertes depuis une interface simple pour l&apos;equipe.
               </p>
             </div>
           </div>
@@ -54,13 +54,9 @@ export default function MoulHanoutLoginPage() {
         <div className="auth-footer__inner">
           <span>&copy; 2026 Moul Hanout Digital</span>
           <span>&bull;</span>
-          <button type="button">
-            Privacy Policy
-          </button>
+          <span>Connexion reservee aux comptes autorises</span>
           <span>&bull;</span>
-          <button type="button">
-            Terms of Service
-          </button>
+          <span>Assistance via le proprietaire du magasin</span>
         </div>
       </footer>
     </div>

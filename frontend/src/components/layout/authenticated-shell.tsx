@@ -1,6 +1,7 @@
 'use client';
 
 import { type ReactNode, useEffect, useLayoutEffect, useState } from 'react';
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Boxes, Menu } from 'lucide-react';
 import { AlertsDropdown } from '@/components/alerts/alerts-dropdown';
@@ -47,18 +48,36 @@ export function AuthenticatedShell({ children }: AuthenticatedShellProps) {
     };
   }, [sidebarOpen]);
 
+  useEffect(() => {
+    if (!sidebarOpen) {
+      return;
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setSidebarOpen(false);
+      }
+    }
+
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [sidebarOpen]);
+
   return (
     <AlertsProvider>
       <div className={`app-shell${showSidebar ? '' : ' app-shell--full'}`}>
         {showSidebar ? (
           <>
             <header className="app-mobile-topbar" aria-label="Barre de navigation">
-              <div className="app-mobile-topbar__brand">
+              <Link href="/" className="app-mobile-topbar__brand">
                 <span className="app-mobile-topbar__logo">
                   <Boxes size={13} />
                 </span>
                 <span>Moul Hanout</span>
-              </div>
+              </Link>
               <div className="app-mobile-topbar__actions">
                 <AlertsDropdown compact />
                 <button

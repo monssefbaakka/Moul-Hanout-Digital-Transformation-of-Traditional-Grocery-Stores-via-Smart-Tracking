@@ -36,18 +36,18 @@ const INITIAL_FORM: CategoryFormState = {
 
 const CATEGORY_ICON_OPTIONS: CategoryIconOption[] = [
   { id: 'produce', label: 'Fruits', Icon: Leaf },
-  { id: 'bakery', label: 'Bakery', Icon: Croissant },
-  { id: 'dairy', label: 'Dairy', Icon: Milk },
-  { id: 'drinks', label: 'Drinks', Icon: Coffee },
-  { id: 'pantry', label: 'Pantry', Icon: UtensilsCrossed },
-  { id: 'home', label: 'Home', Icon: House },
-  { id: 'supplies', label: 'Supplies', Icon: Package },
+  { id: 'bakery', label: 'Boulangerie', Icon: Croissant },
+  { id: 'dairy', label: 'Laitiers', Icon: Milk },
+  { id: 'drinks', label: 'Boissons', Icon: Coffee },
+  { id: 'pantry', label: 'Epicerie', Icon: UtensilsCrossed },
+  { id: 'home', label: 'Maison', Icon: House },
+  { id: 'supplies', label: 'Fournitures', Icon: Package },
 ];
 
 const DEFAULT_ICON_ID = CATEGORY_ICON_OPTIONS[0]?.id ?? 'produce';
-const EMPTY_CATEGORY_LABEL = 'Fresh Produce';
+const EMPTY_CATEGORY_LABEL = 'Produits frais';
 const EMPTY_DESCRIPTION_LABEL =
-  'Describe the items in this category for reporting and customer receipts.';
+  'Decrivez les articles de cette categorie pour les rapports et les tickets clients.';
 
 function buildPayload(form: CategoryFormState) {
   const description = form.description.trim();
@@ -107,7 +107,7 @@ export function CategoriesWorkspace() {
           return;
         }
 
-        setErrorMessage(error instanceof Error ? error.message : 'Unable to load categories.');
+        setErrorMessage(error instanceof Error ? error.message : 'Impossible de charger les categories.');
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -131,14 +131,14 @@ export function CategoriesWorkspace() {
     try {
       const createdCategory = await categoriesApi.create(buildPayload(form));
       setCategories((current) => [...current, createdCategory]);
-      setStatusMessage(`Category ${createdCategory.name} created successfully.`);
+      setStatusMessage(`La categorie ${createdCategory.name} a ete creee avec succes.`);
       setForm(INITIAL_FORM);
       setSelectedIconId(DEFAULT_ICON_ID);
     } catch (error) {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage('Unable to create the category right now.');
+        setErrorMessage('Impossible de creer la categorie pour le moment.');
       }
     } finally {
       setIsSubmitting(false);
@@ -156,7 +156,7 @@ export function CategoriesWorkspace() {
     return (
       <main className="page">
         <section className="panel">
-          <p>Loading workspace...</p>
+          <p>Chargement de l&apos;espace categories...</p>
         </section>
       </main>
     );
@@ -166,7 +166,7 @@ export function CategoriesWorkspace() {
     return (
       <main className="page">
         <section className="panel">
-          <p>Redirecting...</p>
+          <p>Redirection...</p>
         </section>
       </main>
     );
@@ -205,7 +205,7 @@ export function CategoriesWorkspace() {
                 <input
                   value={form.name}
                   onChange={(event) => setForm({ ...form, name: event.target.value })}
-                  placeholder="Fresh Produce"
+                  placeholder="Ex : Produits frais"
                   required
                   minLength={2}
                   maxLength={80}
@@ -223,7 +223,7 @@ export function CategoriesWorkspace() {
                 <textarea
                   value={form.description}
                   onChange={(event) => setForm({ ...form, description: event.target.value })}
-                  placeholder="Describe the items in this category for reporting and customer receipts..."
+                  placeholder="Precisez quels produits doivent apparaitre dans cette categorie..."
                   rows={5}
                   maxLength={300}
                   disabled={isSubmitting}
@@ -244,7 +244,7 @@ export function CategoriesWorkspace() {
               </div>
             </div>
 
-            <div className="categories-icon-grid" aria-label="Category icon choices">
+            <div className="categories-icon-grid" aria-label="Choix des icones de categorie">
               {CATEGORY_ICON_OPTIONS.map((option) => {
                 const Icon = option.Icon;
                 const isSelected = option.id === selectedIconId;
@@ -289,7 +289,7 @@ export function CategoriesWorkspace() {
                     <SelectedIcon />
                   </span>
                   <strong>{previewName}</strong>
-                  <span>0 items</span>
+                  <span>0 article</span>
                 </article>
 
                 <article className="categories-preview-tile is-muted" aria-hidden="true">
@@ -355,9 +355,9 @@ export function CategoriesWorkspace() {
         </div>
 
         <div className="categories-library-grid">
-          {isLoading ? <p>Loading categories...</p> : null}
+          {isLoading ? <p>Chargement des categories...</p> : null}
           {!isLoading && categories.length === 0 ? (
-            <p>No categories yet. Create the first category to make it available in products.</p>
+            <p>Aucune categorie pour le moment. Creez la premiere pour l&apos;utiliser dans les produits.</p>
           ) : null}
           {!isLoading
             ? categories.map((category) => (
@@ -369,7 +369,7 @@ export function CategoriesWorkspace() {
                     </span>
                   </div>
 
-                  <p>{category.description?.trim() || 'No description provided.'}</p>
+                  <p>{category.description?.trim() || 'Aucune description fournie.'}</p>
 
                   <dl>
                     <div>
@@ -378,7 +378,7 @@ export function CategoriesWorkspace() {
                     </div>
                     <div>
                       <dt>Created</dt>
-                      <dd>{new Date(category.createdAt).toLocaleDateString()}</dd>
+                      <dd>{new Date(category.createdAt).toLocaleDateString('fr-MA')}</dd>
                     </div>
                   </dl>
                 </article>

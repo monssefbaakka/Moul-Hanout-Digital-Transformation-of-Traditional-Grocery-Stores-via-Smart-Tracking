@@ -81,7 +81,9 @@ function buildPayload(form: ProductFormState, intent: SubmitIntent): CreateProdu
 }
 
 function formatMoney(value: number) {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('fr-MA', {
+    style: 'currency',
+    currency: 'MAD',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
@@ -89,10 +91,10 @@ function formatMoney(value: number) {
 
 function formatDate(value?: string | null) {
   if (!value) {
-    return 'Not tracked';
+    return 'Non suivie';
   }
 
-  return new Date(value).toLocaleDateString();
+  return new Date(value).toLocaleDateString('fr-MA');
 }
 
 function getDraftState(form: ProductFormState, defaultCategoryId: string) {
@@ -113,14 +115,14 @@ function getDraftState(form: ProductFormState, defaultCategoryId: string) {
 
 function getProductStatusLabel(product: Product) {
   if (!product.isActive) {
-    return 'Draft';
+    return 'Brouillon';
   }
 
   if (product.currentStock <= product.lowStockThreshold) {
-    return 'Low stock';
+    return 'Stock bas';
   }
 
-  return 'Active';
+  return 'Actif';
 }
 
 function getProductStatusVariant(product: Product) {
@@ -198,7 +200,7 @@ export function ProductsWorkspace() {
         }
 
         setErrorMessage(
-          error instanceof Error ? error.message : 'Unable to load the product workspace.',
+          error instanceof Error ? error.message : "Impossible de charger l'espace produits.",
         );
       } finally {
         if (isMounted) {
@@ -240,27 +242,27 @@ export function ProductsWorkspace() {
     const hasInitialStock = !Number.isNaN(initialStockValue) && initialStockValue > 0;
 
     if (categories.length === 0) {
-      setErrorMessage('Create at least one category before adding products.');
+      setErrorMessage('Creez au moins une categorie avant d ajouter des produits.');
       return;
     }
 
     if (Number.isNaN(salePriceValue) || salePriceValue < 0) {
-      setErrorMessage('Sale price must be greater than or equal to 0.');
+      setErrorMessage('Le prix de vente doit etre superieur ou egal a 0.');
       return;
     }
 
     if (costPriceValue !== undefined && (Number.isNaN(costPriceValue) || costPriceValue < 0)) {
-      setErrorMessage('Cost price must be greater than or equal to 0.');
+      setErrorMessage("Le prix d'achat doit etre superieur ou egal a 0.");
       return;
     }
 
     if (costPriceValue !== undefined && costPriceValue > salePriceValue) {
-      setErrorMessage('Cost price cannot be greater than sale price.');
+      setErrorMessage("Le prix d'achat ne peut pas depasser le prix de vente.");
       return;
     }
 
     if (intent === 'draft' && hasInitialStock) {
-      setErrorMessage('Initial stock can only be applied when creating an active product.');
+      setErrorMessage("Le stock initial n'est possible que pour un produit cree comme actif.");
       return;
     }
 
@@ -289,16 +291,16 @@ export function ProductsWorkspace() {
       await refreshProducts(categoryIdFallback);
       setStatusMessage(
         intent === 'draft'
-          ? `Draft ${createdProduct.name} saved successfully.`
+          ? `Le brouillon ${createdProduct.name} a ete enregistre.`
           : hasInitialStock
-            ? `Product ${createdProduct.name} created and stocked successfully.`
-            : `Product ${createdProduct.name} created successfully.`,
+            ? `Le produit ${createdProduct.name} a ete cree et son stock initial a ete ajoute.`
+            : `Le produit ${createdProduct.name} a ete cree avec succes.`,
       );
     } catch (error) {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage('Unable to create the product right now.');
+        setErrorMessage('Impossible de creer le produit pour le moment.');
       }
     } finally {
       setIsSubmitting(false);
@@ -309,7 +311,7 @@ export function ProductsWorkspace() {
     return (
       <main className="page">
         <section className="panel">
-          <p>Loading workspace...</p>
+          <p>Chargement de l&apos;espace produits...</p>
         </section>
       </main>
     );
@@ -319,7 +321,7 @@ export function ProductsWorkspace() {
     return (
       <main className="page">
         <section className="panel">
-          <p>Redirecting...</p>
+          <p>Redirection...</p>
         </section>
       </main>
     );
@@ -366,11 +368,11 @@ export function ProductsWorkspace() {
       ? `${Math.round(((salePriceValue - costPriceValue) / salePriceValue) * 100)}%`
       : '-- %';
   const previewDescription =
-    form.description.trim() || 'Add a short description to make the product easier to identify.';
+    form.description.trim() || "Ajoutez une courte description pour reconnaitre le produit plus vite.";
   const validationMessage = pricingRuleViolated
-    ? 'Cost price cannot be greater than sale price.'
+    ? "Le prix d'achat ne peut pas depasser le prix de vente."
     : invalidNonNegativeField
-      ? 'Prices, stock, and alert thresholds must stay greater than or equal to 0.'
+      ? 'Les prix, le stock et le seuil d alerte doivent etre superieurs ou egaux a 0.'
       : null;
   const photoPreview = form.photo.trim();
   const userInitials = getInitials(user.name);
@@ -379,7 +381,7 @@ export function ProductsWorkspace() {
     <main className="page stack app-page">
       <AppPageHeader
         title="Ajouter un produit"
-        subtitle="Remplissez les informations du produit, verifiez le prix et preparez le stock initial dans une vue claire et simple."
+        subtitle="Renseignez les informations essentielles, verifiez la rentabilite et preparez le stock initial sans quitter la page."
         actions={
           <>
             <span className="products-studio-avatar">{userInitials}</span>
@@ -401,9 +403,9 @@ export function ProductsWorkspace() {
 
       {!isLoading && categories.length === 0 ? (
         <section className="products-studio-empty-state">
-          <h2>Creer une categorie d&apos;abord</h2>
+          <h2>Creez une categorie avant d&apos;ajouter des produits</h2>
           <p>
-            Les produits ont besoin d&apos;une categorie valide avant de pouvoir etre enregistres.
+            Les produits ont besoin d&apos;une categorie valide pour rester bien organises dans le catalogue.
           </p>
           <Link href="/categories" className="products-studio-secondary-button">
             Ouvrir les categories
@@ -421,7 +423,7 @@ export function ProductsWorkspace() {
                 </span>
                 <div>
                   <h2>Informations generales</h2>
-                  <p>Donnez un nom clair au produit et choisissez la bonne categorie.</p>
+                  <p>Donnez un nom clair au produit et rattachez-le a la bonne categorie.</p>
                 </div>
               </div>
 
@@ -431,7 +433,7 @@ export function ProductsWorkspace() {
                     <input
                       value={form.name}
                       onChange={(event) => setForm({ ...form, name: event.target.value })}
-                      placeholder="e.g. Organic Heritage Carrots"
+                      placeholder="Ex : Huile d'olive 1L"
                       required
                       maxLength={120}
                       disabled={isSubmitting || isLoading}
@@ -446,7 +448,7 @@ export function ProductsWorkspace() {
                       required
                       disabled={isSubmitting || isLoading || categories.length === 0}
                     >
-                      {categories.length === 0 ? <option value="">No categories available</option> : null}
+                      {categories.length === 0 ? <option value="">Aucune categorie disponible</option> : null}
                       {categories.map((category) => (
                         <option key={category.id} value={category.id}>
                           {category.name}
@@ -460,7 +462,7 @@ export function ProductsWorkspace() {
                     <textarea
                       value={form.description}
                       onChange={(event) => setForm({ ...form, description: event.target.value })}
-                      placeholder="Describe the origin, flavor profile, or unique selling points..."
+                      placeholder="Decrivez l'usage, l'origine ou les points utiles pour l'equipe."
                       rows={5}
                       maxLength={300}
                       disabled={isSubmitting || isLoading}
@@ -476,7 +478,7 @@ export function ProductsWorkspace() {
                 </span>
                 <div>
                   <h2>Stock et reference</h2>
-                  <p>Ajoutez les informations utiles pour suivre le produit en magasin.</p>
+                  <p>Ajoutez les informations utiles pour suivre le produit au quotidien en magasin.</p>
                 </div>
               </div>
 
@@ -500,7 +502,7 @@ export function ProductsWorkspace() {
                     <input
                       value={form.unit}
                       onChange={(event) => setForm({ ...form, unit: event.target.value })}
-                      placeholder="piece, kg, bottle"
+                      placeholder="piece, kg, bouteille"
                       maxLength={30}
                       disabled={isSubmitting || isLoading}
                     />
@@ -547,7 +549,7 @@ export function ProductsWorkspace() {
                     <p>
                       {hasInitialStock
                         ? "Le stock initial est ajoute seulement si le produit est cree comme actif."
-                        : "Laissez le stock initial a 0 si vous souhaitez enregistrer un brouillon."}
+                        : "Laissez le stock initial a 0 pour enregistrer le produit en brouillon."}
                     </p>
                   </div>
               </div>
@@ -559,7 +561,7 @@ export function ProductsWorkspace() {
               <div className="products-studio-pricing-head">
                 <div>
                   <h2>Tarification</h2>
-                  <p>Verifiez rapidement les prix avant la publication.</p>
+                  <p>Verifiez rapidement les prix et la marge attendue avant la publication.</p>
                 </div>
 
                 <span className="products-studio-section-icon is-primary">
@@ -571,7 +573,7 @@ export function ProductsWorkspace() {
                   <label className="products-studio-field">
                     <span>Prix d&apos;achat</span>
                     <div className="products-studio-currency-input">
-                      <i>$</i>
+                      <i>MAD</i>
                       <input
                         type="number"
                         min="0"
@@ -587,7 +589,7 @@ export function ProductsWorkspace() {
                   <label className="products-studio-field">
                     <span>Prix de vente</span>
                     <div className="products-studio-currency-input">
-                      <i>$</i>
+                      <i>MAD</i>
                       <input
                         type="number"
                         min="0"
@@ -622,13 +624,13 @@ export function ProductsWorkspace() {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={photoPreview}
-                        alt={form.name.trim() || 'Product preview'}
+                        alt={form.name.trim() || 'Apercu du produit'}
                         className="products-studio-media-preview__image"
                       />
                       <div className="products-studio-media-preview__overlay" />
 
                       <div className="products-studio-media-preview__content">
-                        <p>{form.name.trim() || 'Product preview'}</p>
+                        <p>{form.name.trim() || 'Apercu du produit'}</p>
                         <span>Apercu direct depuis l&apos;URL de l&apos;image.</span>
                       </div>
                     </>
@@ -648,7 +650,7 @@ export function ProductsWorkspace() {
                 <input
                   value={form.photo}
                   onChange={(event) => setForm({ ...form, photo: event.target.value })}
-                  placeholder="https://example.com/product.jpg"
+                  placeholder="https://exemple.com/produit.jpg"
                   maxLength={500}
                   disabled={isSubmitting || isLoading}
                 />
@@ -677,8 +679,7 @@ export function ProductsWorkspace() {
               <div>
                 <h3>Conseil utile</h3>
                 <p>
-                  Une description courte et une image propre rendent le produit plus facile a
-                  reconnaitre pour votre equipe.
+                  Une description courte et une image nette aident l&apos;equipe a reconnaitre plus vite le produit en caisse.
                 </p>
               </div>
             </aside>
@@ -734,7 +735,7 @@ export function ProductsWorkspace() {
         <div className="products-studio-catalog__header">
           <div>
             <h2>Catalogue actuel</h2>
-            <p>Relisez les produits actifs, les brouillons et les produits a surveiller.</p>
+            <p>Relisez les produits actifs, les brouillons et les references qui demandent un suivi.</p>
           </div>
 
           <div className="products-studio-header__stats">
@@ -753,9 +754,9 @@ export function ProductsWorkspace() {
           </div>
         </div>
 
-        {isLoading ? <p>Loading products...</p> : null}
+        {isLoading ? <p>Chargement des produits...</p> : null}
         {!isLoading && products.length === 0 ? (
-          <p>No products yet. Create the first item to start building the catalog.</p>
+          <p>Aucun produit pour le moment. Creez le premier article pour lancer le catalogue.</p>
         ) : null}
 
         {!isLoading && products.length > 0 ? (
@@ -765,7 +766,7 @@ export function ProductsWorkspace() {
                 <div className="products-studio-catalog-card__top">
                   <div>
                     <h3>{product.name}</h3>
-                    <p>{product.category?.name ?? 'No category assigned'}</p>
+                    <p>{product.category?.name ?? 'Aucune categorie assignee'}</p>
                   </div>
 
                   <span
@@ -778,12 +779,12 @@ export function ProductsWorkspace() {
                 <dl className="products-studio-catalog-metrics">
                   <div>
                     <dt>Prix vente</dt>
-                    <dd>${formatMoney(product.salePrice)}</dd>
+                    <dd>{formatMoney(product.salePrice)}</dd>
                   </div>
                   <div>
                     <dt>Prix achat</dt>
                     <dd>
-                      {product.costPrice != null ? `$${formatMoney(product.costPrice)}` : '--'}
+                      {product.costPrice != null ? formatMoney(product.costPrice) : '--'}
                     </dd>
                   </div>
                   <div>

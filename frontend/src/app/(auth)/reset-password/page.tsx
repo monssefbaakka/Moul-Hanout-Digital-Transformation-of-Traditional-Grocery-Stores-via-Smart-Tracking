@@ -36,13 +36,9 @@ export default function ResetPasswordPage() {
         <div className="auth-footer__inner">
           <span>&copy; 2026 Moul Hanout Digital</span>
           <span>&bull;</span>
-          <button type="button">
-            Privacy Policy
-          </button>
+          <span>Connexion reservee aux comptes autorises</span>
           <span>&bull;</span>
-          <button type="button">
-            Terms of Service
-          </button>
+          <span>Assistance via le proprietaire du magasin</span>
         </div>
       </footer>
     </div>

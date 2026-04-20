@@ -29,7 +29,7 @@ export function AuthSessionPanel() {
   if (!hasHydrated) {
     return (
       <div className="app-card px-5 py-4 text-sm text-[var(--text-soft)]">
-        Restoring your session...
+        Restauration de votre session...
       </div>
     );
   }
@@ -37,9 +37,9 @@ export function AuthSessionPanel() {
   if (!isAuthenticated || !user) {
     return (
       <div className="app-card px-5 py-4 text-slate-700">
-        <p className="font-semibold text-slate-900">You are not signed in.</p>
+        <p className="font-semibold text-slate-900">Aucune session active.</p>
         <p className="mt-1 text-sm text-[var(--text-soft)]">
-          Use the login page to start an authenticated session.
+          Connectez-vous pour acceder au tableau de bord et aux outils du magasin.
         </p>
       </div>
     );
@@ -49,10 +49,10 @@ export function AuthSessionPanel() {
     <div className="app-card px-5 py-5 text-slate-700">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm uppercase tracking-[0.14em] text-[var(--primary)]">Active Session</p>
+          <p className="text-sm uppercase tracking-[0.14em] text-[var(--primary)]">Session active</p>
           <h3 className="mt-1 text-xl font-semibold text-slate-900">{user.name}</h3>
           <p className="mt-1 text-sm text-[var(--text-soft)]">
-            {user.email} | Role: {user.role}
+            {user.email} | {user.role === 'OWNER' ? 'Proprietaire' : 'Caissier'}
           </p>
         </div>
 
@@ -63,7 +63,7 @@ export function AuthSessionPanel() {
           className="app-btn app-btn--primary"
         >
           {isLoggingOut ? <Loader2 size={16} className="animate-spin" /> : <LogOut size={16} />}
-          <span>{isLoggingOut ? 'Signing out...' : 'Logout'}</span>
+          <span>{isLoggingOut ? 'Deconnexion...' : 'Se deconnecter'}</span>
         </button>
       </div>
     </div>

@@ -27,9 +27,7 @@ export default function ForgotPasswordPage() {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage(
-          'Unable to send a reset request right now. Please try again.',
-        );
+        setErrorMessage("Impossible d'envoyer la demande de reinitialisation pour le moment.");
       }
     } finally {
       setIsSubmitting(false);
@@ -42,7 +40,7 @@ export default function ForgotPasswordPage() {
         <h1 className="auth-brand">Moul Hanout</h1>
         <div className="flex items-center gap-4">
           <Link href="/login" className="auth-link inline-flex items-center gap-2">
-            <ArrowLeft size={16} /> Back to Sign In
+            <ArrowLeft size={16} /> Retour a la connexion
           </Link>
         </div>
       </header>
@@ -52,7 +50,7 @@ export default function ForgotPasswordPage() {
           <div className="auth-surface">
             <div className="auth-form-shell">
               <h2 className="auth-title">
-                Reset Password
+                Mot de passe oublie
               </h2>
 
               {successMessage ? (
@@ -60,29 +58,29 @@ export default function ForgotPasswordPage() {
                   <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent)] text-[var(--primary)]">
                     <Check size={32} />
                   </div>
-                  <h3 className="text-2xl font-semibold tracking-tight text-slate-900">Check your email</h3>
+                  <h3 className="text-2xl font-semibold tracking-tight text-slate-900">Verifiez votre email</h3>
                   <p className="mt-3 auth-subtitle">
                     {successMessage}
                   </p>
                   <p className="mt-3 auth-helper">
-                    In local development, the backend logs the reset link to the console for demo use.
+                    En developpement local, le backend affiche aussi le lien de reinitialisation dans la console.
                   </p>
                   <div className="mt-10">
                     <Link href="/login" className="app-btn app-btn--secondary w-full">
-                      Return to Sign In
+                      Retour a la connexion
                     </Link>
                   </div>
                 </div>
               ) : (
                 <>
                   <p className="auth-subtitle">
-                    Enter your email address and we&apos;ll send you a link to reset your password.
+                    Saisissez votre adresse email pour recevoir un lien de reinitialisation.
                   </p>
 
                   <form className="auth-form" onSubmit={handleSubmit}>
                     <div>
                       <label htmlFor="email" className="auth-field-label">
-                        Email Address
+                        Adresse email
                       </label>
                       <div className="auth-input-wrap">
                         <Mail size={20} />
@@ -93,7 +91,7 @@ export default function ForgotPasswordPage() {
                           required
                           value={email}
                           onChange={(event) => setEmail(event.target.value)}
-                          placeholder="Enter your email"
+                          placeholder="nom@magasin.ma"
                           disabled={isSubmitting}
                         />
                       </div>
@@ -105,7 +103,7 @@ export default function ForgotPasswordPage() {
                       className="app-btn app-btn--primary w-full"
                     >
                       {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : null}
-                      <span>{isSubmitting ? 'Sending Request...' : 'Send Reset Link'}</span>
+                      <span>{isSubmitting ? 'Envoi en cours...' : 'Envoyer le lien'}</span>
                     </button>
 
                     {errorMessage ? (
@@ -125,13 +123,9 @@ export default function ForgotPasswordPage() {
         <div className="auth-footer__inner">
           <span>&copy; 2026 Moul Hanout Digital</span>
           <span>&bull;</span>
-          <button type="button">
-            Privacy Policy
-          </button>
+          <span>Connexion reservee aux comptes autorises</span>
           <span>&bull;</span>
-          <button type="button">
-            Terms of Service
-          </button>
+          <span>Assistance via le proprietaire du magasin</span>
         </div>
       </footer>
     </div>

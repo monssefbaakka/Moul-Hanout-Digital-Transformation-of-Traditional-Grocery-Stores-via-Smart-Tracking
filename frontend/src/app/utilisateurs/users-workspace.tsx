@@ -19,6 +19,10 @@ const INITIAL_FORM: CreateUserFormState = {
   password: '',
 };
 
+function formatRole(role: AdminUser['role']) {
+  return role === 'OWNER' ? 'Proprietaire' : 'Caissier';
+}
+
 export function UsersWorkspace() {
   const router = useRouter();
   const { user, isAuthenticated, hasHydrated } = useAuthStore();
@@ -44,10 +48,14 @@ export function UsersWorkspace() {
     async function loadData() {
       try {
         const list = await usersApi.list();
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
         setUsers(list);
       } catch (error) {
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
         setErrorMessage(
           error instanceof Error ? error.message : 'Impossible de charger les utilisateurs.',
         );
@@ -77,14 +85,14 @@ export function UsersWorkspace() {
         [...current, created].sort((left, right) => left.name.localeCompare(right.name)),
       );
       setStatusMessage(
-        `Compte caissier pour ${created.name} créé avec succès. Il peut se connecter immédiatement.`,
+        `Le compte caissier de ${created.name} a ete cree. Il peut se connecter immediatement.`,
       );
       setForm(INITIAL_FORM);
     } catch (error) {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage("Impossible de créer l'utilisateur pour le moment.");
+        setErrorMessage("Impossible de creer l'utilisateur pour le moment.");
       }
     } finally {
       setIsSubmitting(false);
@@ -98,13 +106,13 @@ export function UsersWorkspace() {
 
     try {
       const updated = await usersApi.deactivate(userId);
-      setUsers((current) => current.map((u) => (u.id === userId ? updated : u)));
-      setStatusMessage(`${updated.name} a été désactivé et ne peut plus se connecter.`);
+      setUsers((current) => current.map((member) => (member.id === userId ? updated : member)));
+      setStatusMessage(`${updated.name} a ete desactive et ne peut plus se connecter.`);
     } catch (error) {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage('Impossible de désactiver cet utilisateur pour le moment.');
+        setErrorMessage('Impossible de desactiver cet utilisateur pour le moment.');
       }
     } finally {
       setPendingActionUserId(null);
@@ -118,13 +126,13 @@ export function UsersWorkspace() {
 
     try {
       const updated = await usersApi.activate(userId);
-      setUsers((current) => current.map((u) => (u.id === userId ? updated : u)));
-      setStatusMessage(`${updated.name} a été réactivé et peut de nouveau se connecter.`);
+      setUsers((current) => current.map((member) => (member.id === userId ? updated : member)));
+      setStatusMessage(`${updated.name} a ete reactive et peut de nouveau se connecter.`);
     } catch (error) {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage('Impossible de réactiver cet utilisateur pour le moment.');
+        setErrorMessage('Impossible de reactiver cet utilisateur pour le moment.');
       }
     } finally {
       setPendingActionUserId(null);
@@ -135,7 +143,7 @@ export function UsersWorkspace() {
     return (
       <main className="page">
         <section className="panel">
-          <p>Chargement...</p>
+          <p>Chargement des utilisateurs...</p>
         </section>
       </main>
     );
@@ -145,29 +153,54 @@ export function UsersWorkspace() {
     return (
       <main className="page">
         <section className="panel">
-          <p>Redirecting...</p>
+          <p>Redirection...</p>
         </section>
       </main>
     );
   }
 
+  const activeUsers = users.filter((member) => member.isActive).length;
+  const inactiveUsers = users.filter((member) => !member.isActive).length;
+
   return (
     <main className="page stack app-page">
       <AppPageHeader
-        title="Gestion de l&apos;equipe magasin"
-        subtitle="Creez les acces du personnel, bloquez les comptes inactifs et gardez une lecture simple des utilisateurs autorises."
+        title="Gestion de l'equipe magasin"
+        subtitle="Creez les acces du personnel, bloquez les comptes inactifs et gardez une vue claire des utilisateurs autorises."
       />
+
+      <section className="app-dashboard-grid" aria-label="Resume des utilisateurs">
+        <article className="panel app-stat-card">
+          <span className="eyebrow">Comptes actifs</span>
+          <strong>{activeUsers}</strong>
+          <p>Utilisateurs qui peuvent se connecter immediatement.</p>
+        </article>
+        <article className="panel app-stat-card">
+          <span className="eyebrow">Comptes inactifs</span>
+          <strong>{inactiveUsers}</strong>
+          <p>Acces bloques en attente de reactivation.</p>
+        </article>
+        <article className="panel app-stat-card">
+          <span className="eyebrow">Equipe totale</span>
+          <strong>{users.length}</strong>
+          <p>Vue complete des membres enregistres dans le magasin.</p>
+        </article>
+      </section>
 
       <section className="products-layout">
         <article className="panel">
           <h2>Creer un utilisateur</h2>
+          <p>
+            Ajoutez un compte caissier avec un mot de passe provisoire. Le collaborateur pourra se connecter des la creation.
+          </p>
+
           <form className="form-grid" onSubmit={handleCreate}>
             <label className="field">
               <span>Nom</span>
               <input
                 value={form.name}
                 onChange={(event) => setForm({ ...form, name: event.target.value })}
-                placeholder="Prénom et nom du caissier"
+                placeholder="Prenom et nom du caissier"
                 required
                 minLength={2}
                 maxLength={80}
@@ -180,7 +213,7 @@ export function UsersWorkspace() {
                 type="email"
                 value={form.email}
                 onChange={(event) => setForm({ ...form, email: event.target.value })}
-                placeholder="cashier@moulhanout.ma"
+                placeholder="caissier@magasin.ma"
                 required
                 autoComplete="off"
               />
@@ -195,6 +228,7 @@ export function UsersWorkspace() {
                 minLength={8}
                 required
                 autoComplete="new-password"
+                placeholder="Minimum 8 caracteres"
               />
             </label>
 
@@ -212,19 +246,21 @@ export function UsersWorkspace() {
         <article className="panel">
           <h2>Equipe du magasin</h2>
           <p>
-            Les utilisateurs actifs peuvent se connecter. Les comptes inactifs restent bloques
-            jusqu&apos;a reactivation.
+            Les utilisateurs actifs peuvent se connecter. Les comptes inactifs restent bloques jusqu&apos;a reactivation.
           </p>
+
           <div className="product-list">
             {users.length === 0 ? <p>Aucun utilisateur pour le moment.</p> : null}
+
             {users.map((member) => (
               <article key={member.id} className="product-card">
                 <div>
                   <h3>{member.name}</h3>
                   <p>
-                    {member.email} | {member.role}
+                    {member.email} | {formatRole(member.role)}
                   </p>
                 </div>
+
                 <dl>
                   <div>
                     <dt>Statut</dt>
@@ -232,10 +268,11 @@ export function UsersWorkspace() {
                   </div>
                   <div>
                     <dt>Cree le</dt>
-                    <dd>{new Date(member.createdAt).toLocaleDateString()}</dd>
+                    <dd>{new Date(member.createdAt).toLocaleDateString('fr-MA')}</dd>
                   </div>
                 </dl>
-                {member.isActive && member.id !== user?.id ? (
+
+                {member.isActive && member.id !== user.id ? (
                   <div className="form-actions">
                     <button
                       type="button"
@@ -247,6 +284,7 @@ export function UsersWorkspace() {
                     </button>
                   </div>
                 ) : null}
+
                 {!member.isActive ? (
                   <div className="form-actions">
                     <button

@@ -2,17 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { AlertTriangle, ArrowRight, Boxes, ReceiptText, Users, Warehouse } from 'lucide-react';
 import { AppPageHeader } from '@/components/layout/app-page-header';
 import { AuthSessionPanel } from '@/components/auth/auth-session-panel';
 import { OwnerQuickLinks } from '@/components/auth/owner-quick-links';
 import { inventoryApi, salesApi } from '@/lib/api/api-client';
 import type { DailySummary, InventoryItem } from '@moul-hanout/shared-types';
+import { useAuthStore } from '@/store/auth.store';
 
 function formatCurrency(amount: number) {
   return amount.toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MAD';
 }
 
 export default function HomePage() {
+  const user = useAuthStore((state) => state.user);
   const [summary, setSummary] = useState<DailySummary | null>(null);
   const [lowStockItems, setLowStockItems] = useState<InventoryItem[]>([]);
   const [alertDismissed, setAlertDismissed] = useState(false);
@@ -64,8 +67,8 @@ export default function HomePage() {
   return (
     <main className="page stack app-page">
       <AppPageHeader
-        title="Gestion simple du magasin"
-        subtitle="Retrouvez vos espaces principaux en un seul endroit pour suivre le stock, organiser le catalogue et gerer l&apos;equipe sans complexite."
+        title="Tableau de bord du magasin"
+        subtitle="Suivez les performances du jour, surveillez les priorites et ouvrez rapidement les espaces importants de l'application."
         actions={
           <Link href="/inventaire" className="button-link">
             Ouvrir l&apos;inventaire
@@ -75,8 +78,12 @@ export default function HomePage() {
 
       {errorMessage ? (
         <div className="app-alert app-alert--danger" role="alert">
-          <span style={{ flex: 1 }}>{errorMessage}</span>
-          <button type="button" className="button-link" onClick={() => setReloadKey((current) => current + 1)}>
+          <span className="app-alert__content">{errorMessage}</span>
+          <button
+            type="button"
+            className="app-btn app-btn--secondary"
+            onClick={() => setReloadKey((current) => current + 1)}
+          >
             Reessayer
           </button>
         </div>
@@ -84,7 +91,8 @@ export default function HomePage() {
 
       {!alertDismissed && lowStockItems.length > 0 ? (
         <div className="app-alert app-alert--danger" role="alert">
-          <span style={{ flex: 1 }}>
+          <span className="app-alert__content">
+            <AlertTriangle size={18} />
             <strong>{lowStockItems.length} article{lowStockItems.length > 1 ? 's' : ''}</strong> en stock faible.{' '}
             <Link href="/inventaire" style={{ color: 'inherit', textDecoration: 'underline' }}>
               Voir l&apos;inventaire
@@ -92,19 +100,11 @@ export default function HomePage() {
           </span>
           <button
             type="button"
+            className="app-alert__dismiss"
             onClick={() => setAlertDismissed(true)}
             aria-label="Fermer"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '1.1rem',
-              lineHeight: 1,
-              padding: 0,
-              color: 'inherit',
-            }}
           >
-            x
+            Fermer
           </button>
         </div>
       ) : null}
@@ -137,6 +137,68 @@ export default function HomePage() {
             )}
           </p>
         </article>
+      </section>
+
+      <section className="dashboard-action-grid" aria-label="Acces rapides">
+        <article className="app-card dashboard-action-card">
+          <span className="dashboard-action-card__icon">
+            <ReceiptText size={20} />
+          </span>
+          <div>
+            <h2>Caisse</h2>
+            <p>Lancez une nouvelle vente et encaissez rapidement les clients du magasin.</p>
+          </div>
+          <Link href="/vente" className="app-btn app-btn--primary">
+            Ouvrir la caisse
+            <ArrowRight size={16} />
+          </Link>
+        </article>
+
+        <article className="app-card dashboard-action-card">
+          <span className="dashboard-action-card__icon">
+            <Warehouse size={20} />
+          </span>
+          <div>
+            <h2>Surveillance stock</h2>
+            <p>Consultez les ruptures, les seuils bas et les produits a surveiller.</p>
+          </div>
+          <Link href="/inventaire" className="app-btn app-btn--secondary">
+            Voir le stock
+            <ArrowRight size={16} />
+          </Link>
+        </article>
+
+        {user?.role === 'OWNER' ? (
+          <>
+            <article className="app-card dashboard-action-card">
+              <span className="dashboard-action-card__icon">
+                <Boxes size={20} />
+              </span>
+              <div>
+                <h2>Catalogue</h2>
+                <p>Ajoutez des produits, structurez les categories et gardez le catalogue propre.</p>
+              </div>
+              <Link href="/produits" className="app-btn app-btn--secondary">
+                Gerer le catalogue
+                <ArrowRight size={16} />
+              </Link>
+            </article>
+
+            <article className="app-card dashboard-action-card">
+              <span className="dashboard-action-card__icon">
+                <Users size={20} />
+              </span>
+              <div>
+                <h2>Equipe</h2>
+                <p>Donnez les bons acces au personnel et desactivez les comptes inactifs.</p>
+              </div>
+              <Link href="/utilisateurs" className="app-btn app-btn--secondary">
+                Ouvrir les utilisateurs
+                <ArrowRight size={16} />
+              </Link>
+            </article>
+          </>
+        ) : null}
       </section>
 
       <section className="panel">

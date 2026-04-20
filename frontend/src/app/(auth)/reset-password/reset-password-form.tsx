@@ -32,22 +32,22 @@ export default function ResetPasswordForm() {
     event.preventDefault();
 
     if (!token) {
-      setErrorMessage('The reset link is missing a token. Please request a new one.');
+      setErrorMessage('Le lien de reinitialisation est incomplet. Demandez un nouveau lien.');
       return;
     }
 
     if (!password.trim() || !confirmPassword.trim()) {
-      setErrorMessage('Both password fields are required.');
+      setErrorMessage('Les deux champs mot de passe sont obligatoires.');
       return;
     }
 
     if (password.length < 8) {
-      setErrorMessage('Password must be at least 8 characters long.');
+      setErrorMessage('Le mot de passe doit contenir au moins 8 caracteres.');
       return;
     }
 
     if (password !== confirmPassword) {
-      setErrorMessage('Passwords do not match.');
+      setErrorMessage('Les mots de passe ne correspondent pas.');
       return;
     }
 
@@ -64,9 +64,7 @@ export default function ResetPasswordForm() {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage(
-          'Unable to reset your password right now. Please try again.',
-        );
+        setErrorMessage('Impossible de reinitialiser le mot de passe pour le moment.');
       }
     } finally {
       setIsSubmitting(false);
@@ -77,12 +75,12 @@ export default function ResetPasswordForm() {
     <div className="auth-form-shell">
       <div className="mb-6">
         <Link href="/login" className="auth-link inline-flex items-center gap-2">
-          <ArrowLeft size={16} /> Back to Sign In
+          <ArrowLeft size={16} /> Retour a la connexion
         </Link>
       </div>
 
       <h2 className="auth-title">
-        Set a New Password
+        Choisir un nouveau mot de passe
       </h2>
 
       {successMessage ? (
@@ -91,33 +89,33 @@ export default function ResetPasswordForm() {
             <Check size={32} />
           </div>
           <h3 className="text-2xl font-semibold tracking-tight text-slate-900">
-            Password updated
+            Mot de passe mis a jour
           </h3>
           <p className="mt-3 auth-subtitle">
             {successMessage}
           </p>
           <div className="mt-10">
             <Link href="/login" className="app-btn app-btn--secondary w-full">
-              Sign In Again
+              Se reconnecter
             </Link>
           </div>
         </div>
       ) : (
         <>
           <p className="auth-subtitle">
-            Choose a new password for your account. This will sign you out of all current sessions.
+            Choisissez un nouveau mot de passe pour votre compte. Toutes les sessions actuelles seront fermees.
           </p>
 
           {!token ? (
             <div className="auth-error mt-8">
-              This reset link is incomplete or invalid. Please request a new password reset email.
+              Ce lien de reinitialisation est incomplet ou invalide. Demandez un nouvel email.
             </div>
           ) : null}
 
           <form className="auth-form" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="password" className="auth-field-label">
-                New Password
+                Nouveau mot de passe
               </label>
               <div className="auth-input-wrap">
                 <Lock size={20} />
@@ -127,14 +125,14 @@ export default function ResetPasswordForm() {
                   autoComplete="new-password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  placeholder="Enter your new password"
+                  placeholder="Entrez votre nouveau mot de passe"
                   disabled={isSubmitting}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((current) => !current)}
                   className="auth-input-action"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -143,7 +141,7 @@ export default function ResetPasswordForm() {
 
             <div>
               <label htmlFor="confirmPassword" className="auth-field-label">
-                Confirm Password
+                Confirmer le mot de passe
               </label>
               <div className="auth-input-wrap">
                 <Lock size={20} />
@@ -153,7 +151,7 @@ export default function ResetPasswordForm() {
                   autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
-                  placeholder="Re-enter your new password"
+                  placeholder="Saisissez a nouveau le mot de passe"
                   disabled={isSubmitting}
                 />
                 <button
@@ -161,7 +159,9 @@ export default function ResetPasswordForm() {
                   onClick={() => setShowConfirmPassword((current) => !current)}
                   className="auth-input-action"
                   aria-label={
-                    showConfirmPassword ? 'Hide confirmation password' : 'Show confirmation password'
+                    showConfirmPassword
+                      ? 'Masquer la confirmation du mot de passe'
+                      : 'Afficher la confirmation du mot de passe'
                   }
                 >
                   {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -181,7 +181,7 @@ export default function ResetPasswordForm() {
               className="app-btn app-btn--primary w-full"
             >
               {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : null}
-              <span>{isSubmitting ? 'Resetting Password...' : 'Reset Password'}</span>
+              <span>{isSubmitting ? 'Reinitialisation...' : 'Reinitialiser le mot de passe'}</span>
             </button>
           </form>
         </>

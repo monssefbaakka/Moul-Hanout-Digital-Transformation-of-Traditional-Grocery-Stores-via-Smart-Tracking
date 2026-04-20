@@ -97,6 +97,10 @@ function toCartItem(product: Product): CartItem {
 
 const TAX_RATE = 0.2;
 
+function createOrderNumber() {
+  return `CMD-${String(Math.floor(Math.random() * 90000) + 10000)}`;
+}
+
 export function PosWorkspace() {
   const router = useRouter();
   const { user, isAuthenticated, hasHydrated } = useAuthStore();
@@ -111,6 +115,7 @@ export function PosWorkspace() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderNumber, setOrderNumber] = useState(createOrderNumber);
 
   const deferredSearchTerm = useDeferredValue(searchTerm);
 
@@ -257,6 +262,7 @@ export function PosWorkspace() {
       setCartItems([]);
       setPaymentMode('CASH');
       setSearchTerm('');
+      setOrderNumber(createOrderNumber());
       setStatusMessage(`La vente ${created.receiptNumber} a bien été enregistrée.`);
     } catch (err) {
       setErrorMessage(
@@ -276,8 +282,6 @@ export function PosWorkspace() {
       </main>
     );
   }
-
-  const orderNumber = `CMD-${String(Math.floor(Math.random() * 90000) + 10000)}`;
 
   return (
     <>

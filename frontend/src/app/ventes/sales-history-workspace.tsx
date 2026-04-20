@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { Sale, SaleStatus, SalesListPagination } from '@moul-hanout/shared-types';
@@ -102,7 +102,7 @@ export function SalesHistoryWorkspace() {
         }
 
         setErrorMessage(
-          error instanceof Error ? error.message : 'Impossible de charger l’historique des ventes.',
+          error instanceof Error ? error.message : "Impossible de charger l'historique des ventes.",
         );
       } finally {
         if (isMounted) {
@@ -117,6 +117,11 @@ export function SalesHistoryWorkspace() {
       isMounted = false;
     };
   }, [currentPage, hasHydrated, isAuthenticated, router]);
+
+  const pageRevenue = useMemo(
+    () => sales.reduce((sum, sale) => sum + sale.total, 0),
+    [sales],
+  );
 
   if (!hasHydrated || !isAuthenticated) {
     return (
@@ -141,6 +146,24 @@ export function SalesHistoryWorkspace() {
       />
 
       {errorMessage ? <p className="status-error" role="alert">{errorMessage}</p> : null}
+
+      <section className="app-dashboard-grid" aria-label="Resume des ventes">
+        <article className="panel app-stat-card">
+          <span className="eyebrow">Ventes chargees</span>
+          <strong>{isLoading ? '...' : sales.length}</strong>
+          <p>Nombre de tickets actuellement affiches sur cette page.</p>
+        </article>
+        <article className="panel app-stat-card">
+          <span className="eyebrow">Historique total</span>
+          <strong>{isLoading ? '...' : pagination.totalItems}</strong>
+          <p>Nombre total de ventes disponibles dans l&apos;historique.</p>
+        </article>
+        <article className="panel app-stat-card">
+          <span className="eyebrow">Montant page</span>
+          <strong>{isLoading ? '...' : formatMoney(pageRevenue)}</strong>
+          <p>Total cumule des tickets visibles sur la page actuelle.</p>
+        </article>
+      </section>
 
       <section className="panel">
         <div className="inventory-table-head">
@@ -194,8 +217,7 @@ export function SalesHistoryWorkspace() {
             <div className="inventory-table-head">
               <div>
                 <p>
-                  Page {pagination.page} sur {Math.max(pagination.totalPages, 1)} ·{' '}
-                  {pagination.totalItems} vente(s)
+                  Page {pagination.page} sur {Math.max(pagination.totalPages, 1)} | {pagination.totalItems} vente(s)
                 </p>
               </div>
 

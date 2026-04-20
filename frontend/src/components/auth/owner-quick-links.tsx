@@ -13,8 +13,11 @@ export function OwnerQuickLinks() {
 
   return (
     <section className="panel">
-      <h2>Owner sections</h2>
-      <nav className="app-quick-links" aria-label="Owner sections">
+      <h2>Raccourcis proprietaire</h2>
+      <p>
+        Accedez rapidement aux espaces de configuration les plus utilises pour garder le magasin a jour.
+      </p>
+      <nav className="app-quick-links" aria-label="Raccourcis proprietaire">
         <Link href="/categories" className="button-link secondary">
           Categories
         </Link>

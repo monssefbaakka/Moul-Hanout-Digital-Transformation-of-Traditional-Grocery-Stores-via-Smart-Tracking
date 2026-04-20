@@ -259,9 +259,9 @@ export function InventoryWorkspace() {
           </p>
         </div>
         <div className="inv-header-actions">
-          <button className="inv-btn-secondary" type="button">
+          <button className="inv-btn-secondary" type="button" disabled title="Export d'inventaire bientot disponible">
             <Download size={16} />
-            <span>Exporter</span>
+            <span>Export bientot</span>
           </button>
           {isOwner && (
             <button
@@ -270,7 +270,7 @@ export function InventoryWorkspace() {
               onClick={() => { setShowForms((v) => !v); setActiveFormTab('in'); }}
             >
               <Plus size={16} />
-              <span>Mouvement de stock</span>
+              <span>{showForms ? 'Masquer le formulaire' : 'Mouvement de stock'}</span>
             </button>
           )}
         </div>

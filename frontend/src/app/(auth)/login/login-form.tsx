@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Check, Eye, EyeOff, Info, Loader2, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Info, Loader2, Lock, Mail } from 'lucide-react';
 import { ApiError } from '@/lib/api/api-client';
 import { loginWithPassword } from '@/lib/auth/auth-actions';
 import { getPostLoginRedirect } from '@/lib/auth/auth-routes';
@@ -23,7 +23,6 @@ export default function LoginForm() {
   const [email, setEmail] = useState(() => (DEMO_CREDENTIALS_ENABLED ? DEMO_EMAIL : ''));
   const [password, setPassword] = useState(() => (DEMO_CREDENTIALS_ENABLED ? DEMO_PASSWORD : ''));
   const [showPassword, setShowPassword] = useState(false);
-  const [keepSignedIn, setKeepSignedIn] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -40,7 +39,7 @@ export default function LoginForm() {
     event.preventDefault();
 
     if (!email.trim() || !password.trim()) {
-      setErrorMessage('Email and password are required.');
+      setErrorMessage("L'email et le mot de passe sont obligatoires.");
       return;
     }
 
@@ -55,7 +54,7 @@ export default function LoginForm() {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage('Unable to sign in right now. Please try again.');
+        setErrorMessage("Connexion impossible pour le moment. Reessayez dans un instant.");
       }
     } finally {
       setIsSubmitting(false);
@@ -65,10 +64,10 @@ export default function LoginForm() {
   return (
     <div className="auth-form-shell">
       <h2 className="auth-title">
-        Welcome Back
+        Connexion
       </h2>
       <p className="auth-subtitle">
-        Manage your inventory and sales with editorial precision.
+        Connectez-vous pour gerer le stock, les ventes et les alertes du magasin.
       </p>
 
       {DEMO_CREDENTIALS_ENABLED ? (
@@ -78,13 +77,13 @@ export default function LoginForm() {
           </div>
 
           <div>
-            <p className="auth-note__label">Demo Credentials</p>
+            <p className="auth-note__label">Compte de demonstration</p>
             <div className="mt-2 space-y-1">
               <p>
-                <span className="font-semibold">User:</span> {DEMO_EMAIL}
+                <span className="font-semibold">Utilisateur :</span> {DEMO_EMAIL}
               </p>
               <p>
-                <span className="font-semibold">Pass:</span> {DEMO_PASSWORD}
+                <span className="font-semibold">Mot de passe :</span> {DEMO_PASSWORD}
               </p>
             </div>
           </div>
@@ -94,7 +93,7 @@ export default function LoginForm() {
       <form className="auth-form" onSubmit={handleSubmit}>
         <div>
           <label htmlFor="email" className="auth-field-label">
-            Email Address
+            Adresse email
           </label>
           <div className="auth-input-wrap">
             <Mail size={20} />
@@ -104,7 +103,7 @@ export default function LoginForm() {
               autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="Enter your email"
+              placeholder="nom@magasin.ma"
               disabled={isSubmitting}
             />
           </div>
@@ -113,10 +112,10 @@ export default function LoginForm() {
         <div>
           <div className="auth-row">
             <label htmlFor="password" className="auth-field-label">
-              Password
+              Mot de passe
             </label>
             <Link href="/forgot-password" className="auth-link">
-              Forgot?
+              Mot de passe oublie ?
             </Link>
           </div>
 
@@ -128,37 +127,23 @@ export default function LoginForm() {
               autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="Enter your password"
+              placeholder="Entrez votre mot de passe"
               disabled={isSubmitting}
             />
             <button
               type="button"
               onClick={() => setShowPassword((current) => !current)}
               className="auth-input-action"
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
 
           <p className="auth-helper">
-            Minimum 8 characters required
+            Minimum 8 caracteres
           </p>
         </div>
-
-        <label className="auth-checkbox">
-          <input
-            type="checkbox"
-            checked={keepSignedIn}
-            onChange={(event) => setKeepSignedIn(event.target.checked)}
-          />
-          <div className="auth-checkbox__control">
-            <Check size={16} />
-          </div>
-          <span className="text-base text-slate-700">
-            Keep me signed in for 30 days
-          </span>
-        </label>
 
         {errorMessage ? (
           <div className="auth-error">
@@ -172,12 +157,12 @@ export default function LoginForm() {
           className="app-btn app-btn--primary w-full"
         >
           {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : null}
-          <span>{isSubmitting ? 'Signing in...' : 'Sign in to Dashboard'}</span>
+          <span>{isSubmitting ? 'Connexion...' : 'Se connecter'}</span>
         </button>
       </form>
 
       <div className="mt-8 text-center auth-caption">
-        Access is managed by your store owner.
+        Les acces sont geres par le proprietaire du magasin.
       </div>
     </div>
   );
