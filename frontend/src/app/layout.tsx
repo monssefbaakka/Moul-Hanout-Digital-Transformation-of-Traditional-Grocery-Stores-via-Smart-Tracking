@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
-import '../styles/theme.css';
 import { Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { appTheme } from '@/styles/theme';
@@ -25,7 +24,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className={cn("font-sans", inter.variable)}>
-      <body data-theme={appTheme.id}>{children}</body>
+      <body>{children}</body>
     </html>
   );
 }
+
