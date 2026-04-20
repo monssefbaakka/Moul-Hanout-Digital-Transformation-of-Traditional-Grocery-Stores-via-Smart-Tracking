@@ -9,8 +9,9 @@ import { loginWithPassword } from '@/lib/auth/auth-actions';
 import { getPostLoginRedirect } from '@/lib/auth/auth-routes';
 import { useAuthStore } from '@/store/auth.store';
 
-const DEMO_EMAIL = 'owner@moulhanout.ma';
-const DEMO_PASSWORD = 'Admin@123!';
+const DEMO_CREDENTIALS_ENABLED = process.env.NEXT_PUBLIC_ENABLE_DEMO_CREDENTIALS === 'true';
+const DEMO_EMAIL = process.env.NEXT_PUBLIC_DEMO_EMAIL ?? '';
+const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? '';
 
 export default function LoginForm() {
   const router = useRouter();
@@ -19,8 +20,8 @@ export default function LoginForm() {
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const user = useAuthStore((state) => state.user);
 
-  const [email, setEmail] = useState(DEMO_EMAIL);
-  const [password, setPassword] = useState(DEMO_PASSWORD);
+  const [email, setEmail] = useState(() => (DEMO_CREDENTIALS_ENABLED ? DEMO_EMAIL : ''));
+  const [password, setPassword] = useState(() => (DEMO_CREDENTIALS_ENABLED ? DEMO_PASSWORD : ''));
   const [showPassword, setShowPassword] = useState(false);
   const [keepSignedIn, setKeepSignedIn] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -70,23 +71,25 @@ export default function LoginForm() {
         Manage your inventory and sales with editorial precision.
       </p>
 
-      <div className="auth-note">
-        <div className="auth-note__icon">
-          <Info size={16} />
-        </div>
+      {DEMO_CREDENTIALS_ENABLED ? (
+        <div className="auth-note">
+          <div className="auth-note__icon">
+            <Info size={16} />
+          </div>
 
-        <div>
-          <p className="auth-note__label">Demo Credentials</p>
-          <div className="mt-2 space-y-1">
-            <p>
-              <span className="font-semibold">User:</span> {DEMO_EMAIL}
-            </p>
-            <p>
-              <span className="font-semibold">Pass:</span> {DEMO_PASSWORD}
-            </p>
+          <div>
+            <p className="auth-note__label">Demo Credentials</p>
+            <div className="mt-2 space-y-1">
+              <p>
+                <span className="font-semibold">User:</span> {DEMO_EMAIL}
+              </p>
+              <p>
+                <span className="font-semibold">Pass:</span> {DEMO_PASSWORD}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
 
       <form className="auth-form" onSubmit={handleSubmit}>
         <div>

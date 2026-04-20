@@ -9,7 +9,7 @@ import {
   MemoryHealthIndicator,
   PrismaHealthIndicator,
 } from '@nestjs/terminus';
-import { MovementType, Role } from '@prisma/client';
+import { AlertType, MovementType, Role } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -73,6 +73,17 @@ type StockMovementRecord = {
   qtyDelta: number;
   reason?: string | null;
   createdBy: string;
+  createdAt: Date;
+};
+
+type AlertRecord = {
+  id: string;
+  shopId: string;
+  type: AlertType;
+  productId: string;
+  batchId?: string | null;
+  message: string;
+  isRead: boolean;
   createdAt: Date;
 };
 
@@ -146,7 +157,9 @@ function matchUser(user: UserRecord, where?: any) {
   }
 
   if (where.shopRoles?.some?.shopId) {
-    return user.shopRoles.some((role) => role.shopId === where.shopRoles.some.shopId);
+    return user.shopRoles.some(
+      (role) => role.shopId === where.shopRoles.some.shopId,
+    );
   }
 
   return true;
@@ -198,6 +211,42 @@ function matchProduct(product: ProductRecord, where?: any) {
   }
 
   if (where.id?.not && product.id === where.id.not) {
+    return false;
+  }
+
+  return true;
+}
+
+function matchAlert(alert: AlertRecord, where?: any) {
+  if (!where) {
+    return true;
+  }
+
+  if (where.id && typeof where.id === 'string' && alert.id !== where.id) {
+    return false;
+  }
+
+  if (where.id?.in && !where.id.in.includes(alert.id)) {
+    return false;
+  }
+
+  if (where.shopId && alert.shopId !== where.shopId) {
+    return false;
+  }
+
+  if (where.productId && alert.productId !== where.productId) {
+    return false;
+  }
+
+  if (
+    where.type &&
+    typeof where.type === 'string' &&
+    alert.type !== where.type
+  ) {
+    return false;
+  }
+
+  if (where.type?.in && !where.type.in.includes(alert.type)) {
     return false;
   }
 
@@ -321,12 +370,16 @@ async function createPrismaMock() {
   ];
 
   const stockMovements: StockMovementRecord[] = [];
+  const alerts: AlertRecord[] = [];
   const auditLogs: AuditLogRecord[] = [];
   const sessions: SessionRecord[] = [];
 
   const getCategory = (categoryId: string) =>
     categories.find((category) => category.id === categoryId) ?? null;
-  const getUser = (userId: string) => users.find((user) => user.id === userId) ?? null;
+  const getProduct = (productId: string) =>
+    products.find((product) => product.id === productId) ?? null;
+  const getUser = (userId: string) =>
+    users.find((user) => user.id === userId) ?? null;
 
   const prismaMock: any = {
     user: {
@@ -345,7 +398,8 @@ async function createPrismaMock() {
       }),
       create: jest.fn(async (args: any) => {
         const createdAt = new Date();
-        const shopId = args.data.shopRoles?.create?.shop?.connect?.id ?? 'default-shop-id';
+        const shopId =
+          args.data.shopRoles?.create?.shop?.connect?.id ?? 'default-shop-id';
         const user: UserRecord = {
           id: `user-${users.length + 1}`,
           email: args.data.email,
@@ -404,7 +458,8 @@ async function createPrismaMock() {
         }
 
         if (args.include?.user) {
-          const user = users.find((entry) => entry.id === session.userId) ?? null;
+          const user =
+            users.find((entry) => entry.id === session.userId) ?? null;
           return {
             ...session,
             user: user ? selectUser(user, args.include.user) : null,
@@ -448,8 +503,9 @@ async function createPrismaMock() {
       }),
       findFirst: jest.fn(async (args: any) => {
         const category =
-          categories.find((candidate) => matchCategory(candidate, args.where)) ??
-          null;
+          categories.find((candidate) =>
+            matchCategory(candidate, args.where),
+          ) ?? null;
         return category ? selectFields(category, args.select) : null;
       }),
     },
@@ -459,12 +515,15 @@ async function createPrismaMock() {
           .filter((product) => matchProduct(product, args?.where))
           .map((product) => ({
             ...product,
-            ...(args?.include?.category ? { category: getCategory(product.categoryId) } : {}),
+            ...(args?.include?.category
+              ? { category: getCategory(product.categoryId) }
+              : {}),
           }));
       }),
       findFirst: jest.fn(async (args: any) => {
         const product =
-          products.find((candidate) => matchProduct(candidate, args.where)) ?? null;
+          products.find((candidate) => matchProduct(candidate, args.where)) ??
+          null;
         if (!product) {
           return null;
         }
@@ -476,7 +535,9 @@ async function createPrismaMock() {
           };
         }
 
-        return args.select ? selectFields(product, args.select) : { ...product };
+        return args.select
+          ? selectFields(product, args.select)
+          : { ...product };
       }),
       create: jest.fn(async (args: any) => {
         const product: ProductRecord = {
@@ -498,11 +559,15 @@ async function createPrismaMock() {
         products.push(product);
         return {
           ...product,
-          ...(args.include?.category ? { category: getCategory(product.categoryId) } : {}),
+          ...(args.include?.category
+            ? { category: getCategory(product.categoryId) }
+            : {}),
         };
       }),
       update: jest.fn(async (args: any) => {
-        const product = products.find((candidate) => candidate.id === args.where.id);
+        const product = products.find(
+          (candidate) => candidate.id === args.where.id,
+        );
         if (!product) {
           throw new Error(`Product ${args.where.id} not found`);
         }
@@ -510,7 +575,9 @@ async function createPrismaMock() {
         Object.assign(product, args.data);
         return {
           ...product,
-          ...(args.include?.category ? { category: getCategory(product.categoryId) } : {}),
+          ...(args.include?.category
+            ? { category: getCategory(product.categoryId) }
+            : {}),
         };
       }),
     },
@@ -531,28 +598,144 @@ async function createPrismaMock() {
       findMany: jest.fn(async (args?: any) => {
         const results = stockMovements
           .filter((movement) => {
-            const product = products.find((candidate) => candidate.id === movement.productId);
+            const product = products.find(
+              (candidate) => candidate.id === movement.productId,
+            );
             if (!product) {
               return false;
             }
 
-            if (args?.where?.product?.shopId && product.shopId !== args.where.product.shopId) {
+            if (
+              args?.where?.product?.shopId &&
+              product.shopId !== args.where.product.shopId
+            ) {
               return false;
             }
 
             return true;
           })
-          .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
+          .sort(
+            (left, right) =>
+              right.createdAt.getTime() - left.createdAt.getTime(),
+          )
           .slice(0, args?.take ?? stockMovements.length)
           .map((movement) => ({
             ...movement,
             ...(args?.include?.product
-              ? { product: products.find((product) => product.id === movement.productId) }
+              ? {
+                  product: products.find(
+                    (product) => product.id === movement.productId,
+                  ),
+                }
               : {}),
-            ...(args?.include?.user ? { user: getUser(movement.createdBy) } : {}),
+            ...(args?.include?.user
+              ? { user: getUser(movement.createdBy) }
+              : {}),
           }));
 
         return results;
+      }),
+    },
+    alert: {
+      findMany: jest.fn(async (args?: any) => {
+        return alerts
+          .filter((alert) => matchAlert(alert, args?.where))
+          .sort((left, right) => {
+            const orderBy = args?.orderBy ?? [];
+            for (const rule of Array.isArray(orderBy) ? orderBy : [orderBy]) {
+              if (!rule) {
+                continue;
+              }
+
+              if (rule.isRead) {
+                if (left.isRead !== right.isRead) {
+                  return rule.isRead === 'asc'
+                    ? Number(left.isRead) - Number(right.isRead)
+                    : Number(right.isRead) - Number(left.isRead);
+                }
+              }
+
+              if (rule.createdAt) {
+                return rule.createdAt === 'asc'
+                  ? left.createdAt.getTime() - right.createdAt.getTime()
+                  : right.createdAt.getTime() - left.createdAt.getTime();
+              }
+            }
+
+            return 0;
+          })
+          .map((alert) => {
+            const product = getProduct(alert.productId);
+            return {
+              ...alert,
+              ...(args?.include?.product && product
+                ? {
+                    product: selectFields(product, args.include.product.select),
+                  }
+                : {}),
+            };
+          });
+      }),
+      findFirst: jest.fn(async (args?: any) => {
+        const alert =
+          alerts.find((candidate) => matchAlert(candidate, args?.where)) ??
+          null;
+        if (!alert) {
+          return null;
+        }
+
+        if (args?.include?.product) {
+          const product = getProduct(alert.productId);
+          return {
+            ...alert,
+            ...(product
+              ? { product: selectFields(product, args.include.product.select) }
+              : {}),
+          };
+        }
+
+        return args?.select ? selectFields(alert, args.select) : { ...alert };
+      }),
+      create: jest.fn(async (args: any) => {
+        const alert: AlertRecord = {
+          id: `alert-${alerts.length + 1}`,
+          shopId: args.data.shopId,
+          type: args.data.type,
+          productId: args.data.productId,
+          batchId: args.data.batchId ?? null,
+          message: args.data.message,
+          isRead: args.data.isRead ?? false,
+          createdAt: new Date(),
+        };
+        alerts.push(alert);
+        return { ...alert };
+      }),
+      update: jest.fn(async (args: any) => {
+        const alert = alerts.find(
+          (candidate) => candidate.id === args.where.id,
+        );
+        if (!alert) {
+          throw new Error(`Alert ${args.where.id} not found`);
+        }
+
+        Object.assign(alert, args.data);
+        const product = getProduct(alert.productId);
+        return {
+          ...alert,
+          ...(args.include?.product && product
+            ? { product: selectFields(product, args.include.product.select) }
+            : {}),
+        };
+      }),
+      deleteMany: jest.fn(async (args?: any) => {
+        const before = alerts.length;
+        for (let index = alerts.length - 1; index >= 0; index -= 1) {
+          if (matchAlert(alerts[index], args?.where)) {
+            alerts.splice(index, 1);
+          }
+        }
+
+        return { count: before - alerts.length };
       }),
     },
     auditLog: {
@@ -582,6 +765,7 @@ async function createPrismaMock() {
   });
 
   prismaMock.__state = {
+    alerts,
     stockMovements,
     auditLogs,
   };
@@ -885,7 +1069,9 @@ describe('Phase 1 e2e', () => {
         productId: 'product-active',
         quantity: 5,
         reason: 'Morning delivery',
-        expirationDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+        expirationDate: new Date(
+          Date.now() + 2 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
       })
       .expect(201);
 
@@ -1024,6 +1210,78 @@ describe('Phase 1 e2e', () => {
           type: MovementType.IN,
           quantityDelta: 2,
           createdByName: 'Store Owner',
+        }),
+      ]),
+    );
+  });
+
+  it('GET /api/v1/alerts returns synced expiry alerts for the shop', async () => {
+    const ownerToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/alerts')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(200);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          productId: 'product-active',
+          type: AlertType.EXPIRY,
+          isRead: false,
+        }),
+      ]),
+    );
+    expect(prismaMock.__state.alerts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          productId: 'product-active',
+          type: AlertType.EXPIRY,
+        }),
+      ]),
+    );
+  });
+
+  it('PATCH /api/v1/alerts/:id/read marks an alert as read', async () => {
+    const ownerToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+
+    const listResponse = await request(app.getHttpServer())
+      .get('/api/v1/alerts')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(200);
+
+    const [alert] = listResponse.body.data;
+
+    const response = await request(app.getHttpServer())
+      .patch(`/api/v1/alerts/${alert.id}/read`)
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(200);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.id).toBe(alert.id);
+    expect(response.body.data.isRead).toBe(true);
+  });
+
+  it('POST /api/v1/inventory/stock-out creates a low-stock alert when the threshold is crossed', async () => {
+    const ownerToken = await loginAs(app, 'owner@moulhanout.ma', 'Admin@123!');
+
+    await request(app.getHttpServer())
+      .post('/api/v1/inventory/stock-out')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({
+        productId: 'product-active',
+        quantity: 6,
+        reason: 'Shelf shrinkage',
+      })
+      .expect(201);
+
+    expect(prismaMock.__state.alerts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          productId: 'product-active',
+          type: AlertType.LOW_STOCK,
+          isRead: false,
         }),
       ]),
     );

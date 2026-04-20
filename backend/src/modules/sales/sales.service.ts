@@ -1,4 +1,5 @@
 import {
+  Inject,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
@@ -11,6 +12,8 @@ import {
 } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
+import { ALERTS_PORT } from '../alerts/alerts.port';
+import type { AlertsPort } from '../alerts/alerts.port';
 import {
   CreateSaleDto,
   GetDailySalesSummaryQueryDto,
@@ -76,7 +79,10 @@ type SummarySaleItem = Prisma.SaleItemGetPayload<{
 
 @Injectable()
 export class SalesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(ALERTS_PORT) private readonly alertsPort: AlertsPort,
+  ) {}
 
   async getDailySummary(shopId: string, query: GetDailySalesSummaryQueryDto) {
     const shop = await this.prisma.shop.findUnique({
@@ -102,24 +108,25 @@ export class SalesService {
       },
     };
 
-    const [transactionCount, revenueAggregate] = (await this.prisma.$transaction([
-      this.prisma.sale.count({
-        where: saleWhere,
-      } as never),
-      this.prisma.sale.aggregate({
-        where: saleWhere,
-        _sum: {
-          totalAmount: true,
+    const [transactionCount, revenueAggregate] =
+      (await this.prisma.$transaction([
+        this.prisma.sale.count({
+          where: saleWhere,
+        } as never),
+        this.prisma.sale.aggregate({
+          where: saleWhere,
+          _sum: {
+            totalAmount: true,
+          },
+        } as never),
+      ])) as [
+        number,
+        {
+          _sum: {
+            totalAmount: number | null;
+          };
         },
-      } as never),
-    ])) as [
-      number,
-      {
-        _sum: {
-          totalAmount: number | null;
-        };
-      },
-    ];
+      ];
     const saleItems = (await this.prisma.saleItem.findMany({
       where: {
         sale: saleWhere,
@@ -225,10 +232,15 @@ export class SalesService {
         },
       } as never);
 
-      const productById = new Map(products.map((product) => [product.id, product]));
+      const productById = new Map(
+        products.map((product) => [product.id, product]),
+      );
       const requiredQuantities = this.aggregateRequestedQuantities(dto);
 
-      for (const [productId, requiredQuantity] of requiredQuantities.entries()) {
+      for (const [
+        productId,
+        requiredQuantity,
+      ] of requiredQuantities.entries()) {
         const product = productById.get(productId);
 
         if (!product) {
@@ -297,10 +309,13 @@ export class SalesService {
         },
       } as never);
 
-      for (const [productId, requiredQuantity] of requiredQuantities.entries()) {
+      for (const [
+        productId,
+        requiredQuantity,
+      ] of requiredQuantities.entries()) {
         const product = productById.get(productId)!;
 
-        await tx.product.update({
+        const updatedProduct = await tx.product.update({
           where: {
             id: productId,
           },
@@ -308,6 +323,8 @@ export class SalesService {
             currentStock: product.currentStock - requiredQuantity,
           },
         } as never);
+
+        await this.alertsPort.syncProductAlerts(tx, updatedProduct);
 
         await tx.stockMovement.create({
           data: {
@@ -352,9 +369,7 @@ export class SalesService {
     return requiredQuantities;
   }
 
-  private buildTopProducts(
-    saleItems: SummarySaleItem[],
-  ) {
+  private buildTopProducts(saleItems: SummarySaleItem[]) {
     const topProductsMap = new Map<
       string,
       {
@@ -530,7 +545,9 @@ export class SalesService {
     const minute = boundary === 'start' ? 0 : 59;
     const second = boundary === 'start' ? 0 : 59;
     const millisecond = boundary === 'start' ? 0 : 999;
-    const utcGuess = new Date(Date.UTC(year, month - 1, day, hour, minute, second, millisecond));
+    const utcGuess = new Date(
+      Date.UTC(year, month - 1, day, hour, minute, second, millisecond),
+    );
     const offset = this.getTimeZoneOffset(utcGuess, timeZone);
 
     return new Date(utcGuess.getTime() - offset);
