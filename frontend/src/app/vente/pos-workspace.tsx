@@ -349,7 +349,7 @@ export function PosWorkspace() {
                 <PackageSearch size={32} aria-hidden="true" />
                 <strong>Aucun produit actif</strong>
                 <p>Ajoutez d&apos;abord des produits pour ouvrir la caisse.</p>
-                <Link href="/produits" className="button-link">Gérer les produits</Link>
+                <Link href="/produits" className="app-btn app-btn--primary">Gérer les produits</Link>
               </div>
             ) : null}
 
@@ -506,7 +506,7 @@ export function PosWorkspace() {
                 <button
                   key={mode}
                   type="button"
-                  className={`pos-v2__payment-pill${paymentMode === mode ? ' is-active' : ''}`}
+                  className={`app-btn app-btn--sm ${paymentMode === mode ? 'app-btn--primary' : 'app-btn--secondary'}`}
                   onClick={() => setPaymentMode(mode)}
                   disabled={isSubmitting}
                   aria-pressed={paymentMode === mode}
@@ -521,7 +521,7 @@ export function PosWorkspace() {
             <div className="pos-v2__order-actions">
               <button
                 type="button"
-                className="pos-v2__action-btn"
+                className="app-btn app-btn--secondary app-btn--sm"
                 disabled={cartItems.length === 0 || isSubmitting}
                 title="Fonctionnalité à venir"
               >
@@ -530,7 +530,7 @@ export function PosWorkspace() {
               </button>
               <button
                 type="button"
-                className="pos-v2__action-btn"
+                className="app-btn app-btn--secondary app-btn--sm"
                 disabled={cartItems.length === 0 || isSubmitting}
                 title="Fonctionnalité à venir"
               >
@@ -542,7 +542,7 @@ export function PosWorkspace() {
             {/* Process Pay CTA */}
             <button
               type="button"
-              className="pos-v2__pay-btn"
+              className="app-btn app-btn--primary app-btn--lg"
               onClick={() => void handleSubmitSale()}
               disabled={isSubmitting || cartItems.length === 0}
             >

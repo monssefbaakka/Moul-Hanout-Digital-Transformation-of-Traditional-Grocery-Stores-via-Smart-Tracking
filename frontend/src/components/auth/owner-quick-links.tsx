@@ -18,16 +18,16 @@ export function OwnerQuickLinks() {
         Accedez rapidement aux espaces de configuration les plus utilises pour garder le magasin a jour.
       </p>
       <nav className="app-quick-links" aria-label="Raccourcis proprietaire">
-        <Link href="/categories" className="button-link secondary">
+        <Link href="/categories" className="app-btn app-btn--secondary">
           Categories
         </Link>
-        <Link href="/inventaire" className="button-link secondary">
+        <Link href="/inventaire" className="app-btn app-btn--secondary">
           Inventaire
         </Link>
-        <Link href="/produits" className="button-link secondary">
+        <Link href="/produits" className="app-btn app-btn--secondary">
           Produits
         </Link>
-        <Link href="/utilisateurs" className="button-link secondary">
+        <Link href="/utilisateurs" className="app-btn app-btn--secondary">
           Utilisateurs
         </Link>
       </nav>

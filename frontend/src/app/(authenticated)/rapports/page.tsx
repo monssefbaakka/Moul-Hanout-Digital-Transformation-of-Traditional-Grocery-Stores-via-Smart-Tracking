@@ -125,7 +125,7 @@ export default function RapportsPage() {
         actions={
           <button
             type="button"
-            className="button-link"
+            className="app-btn app-btn--primary"
             onClick={handleExport}
             disabled={isExporting || isLoading}
           >

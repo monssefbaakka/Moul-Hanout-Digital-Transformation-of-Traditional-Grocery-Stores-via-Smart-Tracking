@@ -233,7 +233,7 @@ export function UsersWorkspace() {
             </label>
 
             <div className="form-actions field-wide">
-              <button className="button-link" type="submit" disabled={isSubmitting}>
+              <button className="app-btn app-btn--primary" type="submit" disabled={isSubmitting}>
                 {isSubmitting ? 'Creation...' : 'Creer utilisateur'}
               </button>
             </div>
@@ -276,7 +276,7 @@ export function UsersWorkspace() {
                   <div className="form-actions">
                     <button
                       type="button"
-                      className="button-link secondary"
+                      className="app-btn app-btn--secondary"
                       onClick={() => handleDeactivate(member.id)}
                       disabled={pendingActionUserId === member.id}
                     >
@@ -289,7 +289,7 @@ export function UsersWorkspace() {
                   <div className="form-actions">
                     <button
                       type="button"
-                      className="button-link"
+                      className="app-btn app-btn--primary"
                       onClick={() => handleActivate(member.id)}
                       disabled={pendingActionUserId === member.id}
                     >

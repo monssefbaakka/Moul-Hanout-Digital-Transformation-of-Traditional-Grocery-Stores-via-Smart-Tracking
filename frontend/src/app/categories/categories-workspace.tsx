@@ -329,7 +329,7 @@ export function CategoriesWorkspace() {
       <div className="categories-submit-bar">
         <button
           type="button"
-          className="category-action category-action-secondary"
+          className="app-btn app-btn--secondary app-btn--lg"
           onClick={handleDiscard}
           disabled={isSubmitting}
         >
@@ -339,7 +339,7 @@ export function CategoriesWorkspace() {
         <button
           type="submit"
           form="category-create-form"
-          className="category-action category-action-primary"
+          className="app-btn app-btn--primary app-btn--lg"
           disabled={isSubmitting || form.name.trim().length === 0}
         >
           {isSubmitting ? 'Creation...' : 'Creer la categorie'}

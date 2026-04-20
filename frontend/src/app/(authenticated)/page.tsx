@@ -70,7 +70,7 @@ export default function HomePage() {
         title="Tableau de bord du magasin"
         subtitle="Suivez les performances du jour, surveillez les priorites et ouvrez rapidement les espaces importants de l'application."
         actions={
-          <Link href="/inventaire" className="button-link">
+          <Link href="/inventaire" className="app-btn app-btn--primary">
             Ouvrir l&apos;inventaire
           </Link>
         }

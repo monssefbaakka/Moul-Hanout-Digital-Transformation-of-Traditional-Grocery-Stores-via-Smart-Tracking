@@ -389,7 +389,7 @@ export function ProductsWorkspace() {
               type="submit"
               form="product-create-form"
               value="publish"
-              className="products-studio-primary-button products-studio-primary-button--compact"
+              className="app-btn app-btn--primary app-btn--sm"
               disabled={!canSubmit}
             >
               {isSubmitting ? 'Enregistrement...' : 'Enregistrer'}
@@ -407,7 +407,7 @@ export function ProductsWorkspace() {
           <p>
             Les produits ont besoin d&apos;une categorie valide pour rester bien organises dans le catalogue.
           </p>
-          <Link href="/categories" className="products-studio-secondary-button">
+          <Link href="/categories" className="app-btn app-btn--secondary">
             Ouvrir les categories
           </Link>
         </section>
@@ -702,7 +702,7 @@ export function ProductsWorkspace() {
         <div className="products-studio-footer-actions">
           <button
             type="button"
-            className="products-studio-ghost-button"
+            className="app-btn app-btn--ghost"
             onClick={handleDiscard}
             disabled={isSubmitting || isLoading}
           >
@@ -713,7 +713,7 @@ export function ProductsWorkspace() {
             type="submit"
             form="product-create-form"
             value="draft"
-            className="products-studio-secondary-button"
+            className="app-btn app-btn--secondary"
             disabled={!canSaveDraft}
           >
             {isSubmitting ? 'Enregistrement...' : 'Enregistrer brouillon'}
@@ -723,7 +723,7 @@ export function ProductsWorkspace() {
             type="submit"
             form="product-create-form"
             value="publish"
-            className="products-studio-primary-button"
+            className="app-btn app-btn--primary"
             disabled={!canSubmit}
           >
             {isSubmitting ? 'Creation...' : 'Creer le produit'}

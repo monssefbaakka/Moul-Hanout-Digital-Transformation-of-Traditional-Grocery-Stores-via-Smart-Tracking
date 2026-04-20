@@ -139,7 +139,7 @@ export function SalesHistoryWorkspace() {
         title="Historique des ventes"
         subtitle="Retrouvez les ventes deja enregistrees avec leur date, le caissier responsable, le total encaisse et le statut de chaque ticket."
         actions={
-          <Link href="/vente" className="button-link">
+          <Link href="/vente" className="app-btn app-btn--primary">
             Ouvrir la caisse
           </Link>
         }
