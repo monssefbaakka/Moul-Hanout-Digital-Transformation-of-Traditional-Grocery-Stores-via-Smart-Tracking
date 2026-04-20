@@ -1,8 +1,10 @@
 'use client';
 
-import { type ReactNode, useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { type ReactNode, useEffect, useLayoutEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { Boxes, Menu } from 'lucide-react';
+import { registerAuthFailureHandler } from '@/lib/api/api-client';
+import { useAuthStore } from '@/store/auth.store';
 import { AppSidebar } from './app-sidebar';
 
 type AuthenticatedShellProps = {
@@ -11,8 +13,20 @@ type AuthenticatedShellProps = {
 
 export function AuthenticatedShell({ children }: AuthenticatedShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const showSidebar = !(pathname === '/categories' || pathname.startsWith('/categories/'));
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useLayoutEffect(() => {
+    registerAuthFailureHandler(() => {
+      useAuthStore.getState().logout();
+      router.replace('/login');
+    });
+
+    return () => {
+      registerAuthFailureHandler(null);
+    };
+  }, [router]);
 
   // Close drawer on route change
   useEffect(() => {

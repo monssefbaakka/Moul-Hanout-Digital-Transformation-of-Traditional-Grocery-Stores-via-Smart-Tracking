@@ -52,6 +52,8 @@ function buildQuery(params?: Record<string, string | number | undefined>) {
 
 let accessToken: string | null = null;
 let refreshToken: string | null = null;
+let refreshPromise: Promise<AuthResponse | null> | null = null;
+let authFailureHandler: (() => void) | null = null;
 
 export function setTokens(tokens: AuthTokens) {
   accessToken = tokens.accessToken;
@@ -63,24 +65,47 @@ export function clearTokens() {
   refreshToken = null;
 }
 
+export function registerAuthFailureHandler(handler: (() => void) | null) {
+  authFailureHandler = handler;
+}
+
+function handleAuthFailure() {
+  clearTokens();
+  authFailureHandler?.();
+}
+
 async function refreshTokens(): Promise<AuthResponse | null> {
-  if (!refreshToken) return null;
-
-  try {
-    const response = await fetch(`${BASE_URL}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
-    });
-
-    if (!response.ok) return null;
-
-    const payload = (await response.json()) as ApiResponse<AuthResponse>;
-    setTokens(payload.data);
-    return payload.data;
-  } catch {
+  if (!refreshToken) {
     return null;
   }
+
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const payload = (await response.json()) as ApiResponse<AuthResponse>;
+      setTokens(payload.data);
+      return payload.data;
+    } catch {
+      return null;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
 }
 
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
@@ -100,7 +125,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
 
   let response = await fetch(`${BASE_URL}${endpoint}`, requestInit);
 
-  if (response.status === 401 && typeof window !== 'undefined') {
+  if (response.status === 401 && typeof window !== 'undefined' && endpoint !== '/auth/refresh') {
     const refreshed = await refreshTokens();
     if (refreshed && accessToken) {
       requestInit.headers = {
@@ -108,6 +133,8 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
         Authorization: `Bearer ${accessToken}`,
       };
       response = await fetch(`${BASE_URL}${endpoint}`, requestInit);
+    } else {
+      handleAuthFailure();
     }
   }
 
