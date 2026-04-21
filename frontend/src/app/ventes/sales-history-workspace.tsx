@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import type { Sale, SaleStatus, SalesListPagination } from '@moul-hanout/shared-types';
-import { salesApi } from '@/lib/api/api-client';
-import { AppPageHeader } from '@/components/layout/app-page-header';
-import { useAuthStore } from '@/store/auth.store';
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Printer } from "lucide-react";
+import type {
+  Sale,
+  SaleStatus,
+  SalesListPagination,
+} from "@moul-hanout/shared-types";
+import { salesApi } from "@/lib/api/api-client";
+import { AppPageHeader } from "@/components/layout/app-page-header";
+import { printSaleReceipt } from "@/lib/receipt-print";
+import { useAuthStore } from "@/store/auth.store";
 
 const SALES_PAGE_SIZE = 20;
 
@@ -18,42 +24,42 @@ const INITIAL_PAGINATION: SalesListPagination = {
 };
 
 function formatMoney(value: number) {
-  return new Intl.NumberFormat('fr-MA', {
-    style: 'currency',
-    currency: 'MAD',
+  return new Intl.NumberFormat("fr-MA", {
+    style: "currency",
+    currency: "MAD",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
 }
 
 function formatDateTime(value: string) {
-  return new Date(value).toLocaleString('fr-MA', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
+  return new Date(value).toLocaleString("fr-MA", {
+    dateStyle: "medium",
+    timeStyle: "short",
   });
 }
 
 function getStatusClassName(status: SaleStatus) {
   switch (status) {
-    case 'COMPLETED':
-      return 'inventory-status inventory-status-success';
-    case 'PENDING':
-      return 'inventory-status inventory-status-warning';
-    case 'CANCELLED':
-      return 'inventory-status inventory-status-danger';
+    case "COMPLETED":
+      return "inventory-status inventory-status-success";
+    case "PENDING":
+      return "inventory-status inventory-status-warning";
+    case "CANCELLED":
+      return "inventory-status inventory-status-danger";
     default:
-      return 'inventory-status';
+      return "inventory-status";
   }
 }
 
 function getStatusLabel(status: SaleStatus) {
   switch (status) {
-    case 'COMPLETED':
-      return 'Completee';
-    case 'PENDING':
-      return 'En attente';
-    case 'CANCELLED':
-      return 'Annulee';
+    case "COMPLETED":
+      return "Completee";
+    case "PENDING":
+      return "En attente";
+    case "CANCELLED":
+      return "Annulee";
     default:
       return status;
   }
@@ -63,10 +69,13 @@ export function SalesHistoryWorkspace() {
   const router = useRouter();
   const { isAuthenticated, hasHydrated } = useAuthStore();
   const [sales, setSales] = useState<Sale[]>([]);
-  const [pagination, setPagination] = useState<SalesListPagination>(INITIAL_PAGINATION);
+  const [pagination, setPagination] =
+    useState<SalesListPagination>(INITIAL_PAGINATION);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [printingSaleId, setPrintingSaleId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!hasHydrated) {
@@ -74,7 +83,7 @@ export function SalesHistoryWorkspace() {
     }
 
     if (!isAuthenticated) {
-      router.replace('/login');
+      router.replace("/login");
       return;
     }
 
@@ -102,7 +111,9 @@ export function SalesHistoryWorkspace() {
         }
 
         setErrorMessage(
-          error instanceof Error ? error.message : "Impossible de charger l'historique des ventes.",
+          error instanceof Error
+            ? error.message
+            : "Impossible de charger l'historique des ventes.",
         );
       } finally {
         if (isMounted) {
@@ -122,6 +133,28 @@ export function SalesHistoryWorkspace() {
     () => sales.reduce((sum, sale) => sum + sale.total, 0),
     [sales],
   );
+
+  async function handlePrintSale(saleId: string) {
+    setPrintingSaleId(saleId);
+    setErrorMessage(null);
+    setStatusMessage(null);
+
+    try {
+      const receipt = await salesApi.getById(saleId);
+      await printSaleReceipt(receipt);
+      setStatusMessage(
+        `Le recu ${receipt.receiptNumber} est pret pour impression.`,
+      );
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Impossible d'imprimer ce recu.",
+      );
+    } finally {
+      setPrintingSaleId(null);
+    }
+  }
 
   if (!hasHydrated || !isAuthenticated) {
     return (
@@ -145,22 +178,31 @@ export function SalesHistoryWorkspace() {
         }
       />
 
-      {errorMessage ? <p className="status-error" role="alert">{errorMessage}</p> : null}
+      {statusMessage ? (
+        <p className="status-success" role="status">
+          {statusMessage}
+        </p>
+      ) : null}
+      {errorMessage ? (
+        <p className="status-error" role="alert">
+          {errorMessage}
+        </p>
+      ) : null}
 
       <section className="app-dashboard-grid" aria-label="Resume des ventes">
         <article className="panel app-stat-card">
           <span className="eyebrow">Ventes chargees</span>
-          <strong>{isLoading ? '...' : sales.length}</strong>
+          <strong>{isLoading ? "..." : sales.length}</strong>
           <p>Nombre de tickets actuellement affiches sur cette page.</p>
         </article>
         <article className="panel app-stat-card">
           <span className="eyebrow">Historique total</span>
-          <strong>{isLoading ? '...' : pagination.totalItems}</strong>
+          <strong>{isLoading ? "..." : pagination.totalItems}</strong>
           <p>Nombre total de ventes disponibles dans l&apos;historique.</p>
         </article>
         <article className="panel app-stat-card">
           <span className="eyebrow">Montant page</span>
-          <strong>{isLoading ? '...' : formatMoney(pageRevenue)}</strong>
+          <strong>{isLoading ? "..." : formatMoney(pageRevenue)}</strong>
           <p>Total cumule des tickets visibles sur la page actuelle.</p>
         </article>
       </section>
@@ -172,13 +214,15 @@ export function SalesHistoryWorkspace() {
             <p>
               {pagination.totalItems > 0
                 ? `${pagination.totalItems} vente(s) trouvee(s) dans l'historique.`
-                : 'Consultez les encaissements recents du magasin.'}
+                : "Consultez les encaissements recents du magasin."}
             </p>
           </div>
         </div>
 
         {isLoading ? <p>Chargement des ventes...</p> : null}
-        {!isLoading && sales.length === 0 ? <p>Aucune vente enregistree pour le moment.</p> : null}
+        {!isLoading && sales.length === 0 ? (
+          <p>Aucune vente enregistree pour le moment.</p>
+        ) : null}
 
         {!isLoading && sales.length > 0 ? (
           <>
@@ -191,6 +235,7 @@ export function SalesHistoryWorkspace() {
                     <th>Caissier</th>
                     <th>Total</th>
                     <th>Statut</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -208,6 +253,21 @@ export function SalesHistoryWorkspace() {
                           {getStatusLabel(sale.status)}
                         </span>
                       </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="app-btn app-btn--secondary app-btn--sm"
+                          onClick={() => void handlePrintSale(sale.id)}
+                          disabled={printingSaleId === sale.id}
+                        >
+                          <Printer size={14} aria-hidden="true" />
+                          <span>
+                            {printingSaleId === sale.id
+                              ? "Generation..."
+                              : "Imprimer"}
+                          </span>
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -217,7 +277,9 @@ export function SalesHistoryWorkspace() {
             <div className="inventory-table-head">
               <div>
                 <p>
-                  Page {pagination.page} sur {Math.max(pagination.totalPages, 1)} | {pagination.totalItems} vente(s)
+                  Page {pagination.page} sur{" "}
+                  {Math.max(pagination.totalPages, 1)} | {pagination.totalItems}{" "}
+                  vente(s)
                 </p>
               </div>
 
@@ -225,7 +287,9 @@ export function SalesHistoryWorkspace() {
                 <button
                   type="button"
                   className="app-btn app-btn--secondary"
-                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                  onClick={() =>
+                    setCurrentPage((page) => Math.max(1, page - 1))
+                  }
                   disabled={currentPage <= 1 || isLoading}
                 >
                   Precedent
@@ -234,7 +298,9 @@ export function SalesHistoryWorkspace() {
                   type="button"
                   className="app-btn app-btn--secondary"
                   onClick={() =>
-                    setCurrentPage((page) => Math.min(pagination.totalPages || 1, page + 1))
+                    setCurrentPage((page) =>
+                      Math.min(pagination.totalPages || 1, page + 1),
+                    )
                   }
                   disabled={
                     isLoading ||

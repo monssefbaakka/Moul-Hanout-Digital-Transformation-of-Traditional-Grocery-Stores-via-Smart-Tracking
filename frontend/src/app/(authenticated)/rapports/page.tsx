@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   Bar,
   BarChart,
@@ -10,15 +10,15 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from 'recharts';
-import { AppPageHeader } from '@/components/layout/app-page-header';
-import { reportsApi } from '@/lib/api/api-client';
-import type { InventoryReport, SalesReport } from '@moul-hanout/shared-types';
+} from "recharts";
+import { AppPageHeader } from "@/components/layout/app-page-header";
+import { reportsApi } from "@/lib/api/api-client";
+import type { InventoryReport, SalesReport } from "@moul-hanout/shared-types";
 
-type PresetRange = '7d' | '30d' | '90d';
+type PresetRange = "7d" | "30d" | "90d";
 
 function toIsoDate(date: Date) {
-  return date.toISOString().split('T')[0];
+  return date.toISOString().split("T")[0];
 }
 
 function createRange(days: number) {
@@ -32,26 +32,35 @@ function getDefaultRange() {
 }
 
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat('fr-MA', {
-    style: 'currency',
-    currency: 'MAD',
+  return new Intl.NumberFormat("fr-MA", {
+    style: "currency",
+    currency: "MAD",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
 }
 
 function formatShortDate(value: string) {
-  return new Date(value).toLocaleDateString('fr-MA', {
-    day: '2-digit',
-    month: 'short',
+  return new Date(value).toLocaleDateString("fr-MA", {
+    day: "2-digit",
+    month: "short",
+  });
+}
+
+function formatLongDate(value: string) {
+  return new Date(value).toLocaleDateString("fr-MA", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
   });
 }
 
 export default function RapportsPage() {
   const [range, setRange] = useState(getDefaultRange);
-  const [activePreset, setActivePreset] = useState<PresetRange>('30d');
+  const [activePreset, setActivePreset] = useState<PresetRange>("30d");
   const [salesReport, setSalesReport] = useState<SalesReport | null>(null);
-  const [inventoryReport, setInventoryReport] = useState<InventoryReport | null>(null);
+  const [inventoryReport, setInventoryReport] =
+    useState<InventoryReport | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -69,7 +78,9 @@ export default function RapportsPage() {
         setInventoryReport(inventory);
       })
       .catch(() => {
-        setErrorMessage('Impossible de charger les rapports pour cette periode.');
+        setErrorMessage(
+          "Impossible de charger les rapports pour cette periode.",
+        );
       })
       .finally(() => {
         setIsLoading(false);
@@ -96,7 +107,11 @@ export default function RapportsPage() {
   function applyPreset(preset: PresetRange) {
     setActivePreset(preset);
     setRange(
-      preset === '7d' ? createRange(7) : preset === '90d' ? createRange(90) : createRange(30),
+      preset === "7d"
+        ? createRange(7)
+        : preset === "90d"
+          ? createRange(90)
+          : createRange(30),
     );
   }
 
@@ -116,6 +131,50 @@ export default function RapportsPage() {
     salesReport && salesReport.totalTransactions > 0
       ? salesReport.totalRevenue / salesReport.totalTransactions
       : 0;
+  const activeSalesDays = salesReport?.days.length ?? 0;
+  const averageDailyRevenue =
+    salesReport && activeSalesDays > 0
+      ? salesReport.totalRevenue / activeSalesDays
+      : 0;
+  const averageDailyTransactions =
+    salesReport && activeSalesDays > 0
+      ? salesReport.totalTransactions / activeSalesDays
+      : 0;
+  const bestRevenueDay = useMemo(() => {
+    return (salesReport?.days ?? []).reduce<SalesReport["days"][number] | null>(
+      (best, day) => {
+        if (!best || day.revenue > best.revenue) {
+          return day;
+        }
+
+        return best;
+      },
+      null,
+    );
+  }, [salesReport]);
+  const busiestDay = useMemo(() => {
+    return (salesReport?.days ?? []).reduce<SalesReport["days"][number] | null>(
+      (best, day) => {
+        if (!best || day.transactions > best.transactions) {
+          return day;
+        }
+
+        return best;
+      },
+      null,
+    );
+  }, [salesReport]);
+  const dailyPerformanceRows = useMemo(
+    () =>
+      (salesReport?.days ?? [])
+        .map((day) => ({
+          ...day,
+          averageTicket:
+            day.transactions > 0 ? day.revenue / day.transactions : 0,
+        }))
+        .sort((left, right) => right.revenue - left.revenue),
+    [salesReport],
+  );
 
   return (
     <main className="page stack app-page">
@@ -129,7 +188,7 @@ export default function RapportsPage() {
             onClick={handleExport}
             disabled={isExporting || isLoading}
           >
-            {isExporting ? 'Export...' : 'Exporter CSV'}
+            {isExporting ? "Export..." : "Exporter CSV"}
           </button>
         }
       />
@@ -137,7 +196,11 @@ export default function RapportsPage() {
       {errorMessage ? (
         <div className="app-alert app-alert--danger" role="alert">
           <span className="app-alert__content">{errorMessage}</span>
-          <button type="button" className="app-btn app-btn--secondary" onClick={loadReports}>
+          <button
+            type="button"
+            className="app-btn app-btn--secondary"
+            onClick={loadReports}
+          >
             Recharger
           </button>
         </div>
@@ -146,7 +209,10 @@ export default function RapportsPage() {
       <section className="panel reports-filters">
         <div className="reports-filters__copy">
           <h2>Periode d&apos;analyse</h2>
-          <p>Choisissez une plage personnalisee ou utilisez un raccourci pour aller plus vite.</p>
+          <p>
+            Choisissez une plage personnalisee ou utilisez un raccourci pour
+            aller plus vite.
+          </p>
         </div>
 
         <div className="reports-filters__controls">
@@ -159,8 +225,11 @@ export default function RapportsPage() {
                 value={range.from}
                 max={range.to}
                 onChange={(event) => {
-                  setActivePreset('30d');
-                  setRange((current) => ({ ...current, from: event.target.value }));
+                  setActivePreset("30d");
+                  setRange((current) => ({
+                    ...current,
+                    from: event.target.value,
+                  }));
                 }}
               />
             </label>
@@ -173,8 +242,11 @@ export default function RapportsPage() {
                 value={range.to}
                 min={range.from}
                 onChange={(event) => {
-                  setActivePreset('30d');
-                  setRange((current) => ({ ...current, to: event.target.value }));
+                  setActivePreset("30d");
+                  setRange((current) => ({
+                    ...current,
+                    to: event.target.value,
+                  }));
                 }}
               />
             </label>
@@ -183,22 +255,22 @@ export default function RapportsPage() {
           <div className="reports-preset-list" aria-label="Periodes rapides">
             <button
               type="button"
-              className={`app-btn ${activePreset === '7d' ? 'app-btn--primary' : 'app-btn--secondary'}`}
-              onClick={() => applyPreset('7d')}
+              className={`app-btn ${activePreset === "7d" ? "app-btn--primary" : "app-btn--secondary"}`}
+              onClick={() => applyPreset("7d")}
             >
               7 jours
             </button>
             <button
               type="button"
-              className={`app-btn ${activePreset === '30d' ? 'app-btn--primary' : 'app-btn--secondary'}`}
-              onClick={() => applyPreset('30d')}
+              className={`app-btn ${activePreset === "30d" ? "app-btn--primary" : "app-btn--secondary"}`}
+              onClick={() => applyPreset("30d")}
             >
               30 jours
             </button>
             <button
               type="button"
-              className={`app-btn ${activePreset === '90d' ? 'app-btn--primary' : 'app-btn--secondary'}`}
-              onClick={() => applyPreset('90d')}
+              className={`app-btn ${activePreset === "90d" ? "app-btn--primary" : "app-btn--secondary"}`}
+              onClick={() => applyPreset("90d")}
             >
               90 jours
             </button>
@@ -209,33 +281,96 @@ export default function RapportsPage() {
       <section className="app-dashboard-grid">
         <article className="panel app-stat-card">
           <span className="eyebrow">Revenu total</span>
-          <strong>{isLoading ? '...' : formatCurrency(salesReport?.totalRevenue ?? 0)}</strong>
+          <strong>
+            {isLoading ? "..." : formatCurrency(salesReport?.totalRevenue ?? 0)}
+          </strong>
           <p>Montant cumule sur la periode selectionnee.</p>
         </article>
 
         <article className="panel app-stat-card">
           <span className="eyebrow">Transactions</span>
-          <strong>{isLoading ? '...' : salesReport?.totalTransactions ?? 0}</strong>
+          <strong>
+            {isLoading ? "..." : (salesReport?.totalTransactions ?? 0)}
+          </strong>
           <p>Nombre total de ventes completees.</p>
         </article>
 
         <article className="panel app-stat-card">
           <span className="eyebrow">Panier moyen</span>
-          <strong>{isLoading ? '...' : formatCurrency(averageBasket)}</strong>
+          <strong>{isLoading ? "..." : formatCurrency(averageBasket)}</strong>
           <p>Valeur moyenne de chaque ticket sur cette periode.</p>
         </article>
 
         <article className="panel app-stat-card">
           <span className="eyebrow">Points de vigilance</span>
-          <strong>{isLoading ? '...' : lowStockCount + expiringSoonCount}</strong>
+          <strong>
+            {isLoading ? "..." : lowStockCount + expiringSoonCount}
+          </strong>
           <p>
             {lowStockCount + expiringSoonCount > 0 ? (
               <Link href="/inventaire" className="reports-inline-link">
                 Voir les alertes stock dans l&apos;inventaire
               </Link>
             ) : (
-              'Aucun produit critique a signaler pour le moment.'
+              "Aucun produit critique a signaler pour le moment."
             )}
+          </p>
+        </article>
+      </section>
+
+      <section className="reports-detail-grid" aria-label="Analyse detaillee">
+        <article className="panel reports-insight-card">
+          <span className="eyebrow">Rythme journalier</span>
+          <h2>{isLoading ? "..." : formatCurrency(averageDailyRevenue)}</h2>
+          <p>
+            Revenu moyen realise par jour actif sur la periode selectionnee.
+          </p>
+          <dl className="reports-insight-list">
+            <div>
+              <dt>Jours avec ventes</dt>
+              <dd>{isLoading ? "..." : activeSalesDays}</dd>
+            </div>
+            <div>
+              <dt>Transactions / jour</dt>
+              <dd>{isLoading ? "..." : averageDailyTransactions.toFixed(1)}</dd>
+            </div>
+          </dl>
+        </article>
+
+        <article className="panel reports-insight-card">
+          <span className="eyebrow">Jour record</span>
+          <h2>
+            {isLoading || !bestRevenueDay
+              ? "..."
+              : formatCurrency(bestRevenueDay.revenue)}
+          </h2>
+          <p>
+            {isLoading || !bestRevenueDay
+              ? "Chargement du meilleur jour de vente."
+              : `${formatLongDate(bestRevenueDay.date)} avec ${bestRevenueDay.transactions} transaction(s).`}
+          </p>
+        </article>
+
+        <article className="panel reports-insight-card">
+          <span className="eyebrow">Pic de frequentation</span>
+          <h2>{isLoading || !busiestDay ? "..." : busiestDay.transactions}</h2>
+          <p>
+            {isLoading || !busiestDay
+              ? "Chargement du jour le plus dense."
+              : `${formatLongDate(busiestDay.date)} pour ${formatCurrency(busiestDay.revenue)} de revenu.`}
+          </p>
+        </article>
+
+        <article className="panel reports-insight-card">
+          <span className="eyebrow">Etat du stock</span>
+          <h2>
+            {isLoading
+              ? "..."
+              : `${lowStockCount} faible / ${expiringSoonCount} expiration`}
+          </h2>
+          <p>
+            Resume rapide des produits a reapprovisionner ou a ecouler en
+            priorite.
           </p>
         </article>
       </section>
@@ -244,55 +379,109 @@ export default function RapportsPage() {
         <div className="inventory-table-head">
           <div>
             <h2>Evolution du revenu journalier</h2>
-            <p>Visualisez les variations de revenus et le rythme des ventes jour apres jour.</p>
+            <p>
+              Visualisez les variations de revenus et le rythme des ventes jour
+              apres jour.
+            </p>
           </div>
         </div>
 
         {isLoading ? (
           <p className="reports-empty-copy">Chargement du graphique...</p>
         ) : chartData.length === 0 ? (
-          <p className="reports-empty-copy">Aucune vente disponible sur cette periode.</p>
+          <p className="reports-empty-copy">
+            Aucune vente disponible sur cette periode.
+          </p>
         ) : (
           <div className="reports-chart-wrap">
             <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={chartData} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+              <BarChart
+                data={chartData}
+                margin={{ top: 10, right: 12, left: 0, bottom: 0 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 12, fill: 'var(--text-soft)' }}
+                  tick={{ fontSize: 12, fill: "var(--text-soft)" }}
                   tickLine={false}
                   axisLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 12, fill: 'var(--text-soft)' }}
+                  tick={{ fontSize: 12, fill: "var(--text-soft)" }}
                   tickLine={false}
                   axisLine={false}
                 />
                 <Tooltip
                   formatter={(value, name) => [
-                    name === 'transactions' ? Number(value) : formatCurrency(Number(value)),
-                    name === 'transactions' ? 'Transactions' : 'Revenu',
+                    name === "transactions"
+                      ? Number(value)
+                      : formatCurrency(Number(value)),
+                    name === "transactions" ? "Transactions" : "Revenu",
                   ]}
                   labelStyle={{ fontWeight: 700 }}
                   contentStyle={{
-                    borderRadius: '1rem',
-                    border: '1px solid var(--border)',
-                    boxShadow: 'var(--shadow-soft)',
+                    borderRadius: "1rem",
+                    border: "1px solid var(--border)",
+                    boxShadow: "var(--shadow-soft)",
                   }}
                 />
-                <Bar dataKey="revenue" fill="var(--primary)" radius={[10, 10, 0, 0]} />
+                <Bar
+                  dataKey="revenue"
+                  fill="var(--primary)"
+                  radius={[10, 10, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
         )}
       </section>
 
+      {!isLoading && dailyPerformanceRows.length > 0 ? (
+        <section className="panel">
+          <div className="inventory-table-head">
+            <div>
+              <h2>Lecture quotidienne</h2>
+              <p>
+                Comparez les meilleures journees, le volume de tickets et le
+                panier moyen jour par jour.
+              </p>
+            </div>
+          </div>
+
+          <div className="app-table-wrapper">
+            <table className="app-table">
+              <thead>
+                <tr>
+                  <th>Jour</th>
+                  <th>Revenu</th>
+                  <th>Transactions</th>
+                  <th>Panier moyen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dailyPerformanceRows.map((day) => (
+                  <tr key={day.date}>
+                    <td>{formatLongDate(day.date)}</td>
+                    <td>{formatCurrency(day.revenue)}</td>
+                    <td>{day.transactions}</td>
+                    <td>{formatCurrency(day.averageTicket)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
       {!isLoading && lowStockCount > 0 ? (
         <section className="panel">
           <div className="inventory-table-head">
             <div>
               <h2>Produits en stock faible</h2>
-              <p>Ces produits meritent un reaprovisionnement rapide pour eviter les ruptures.</p>
+              <p>
+                Ces produits meritent un reaprovisionnement rapide pour eviter
+                les ruptures.
+              </p>
             </div>
           </div>
 
@@ -312,9 +501,11 @@ export default function RapportsPage() {
                   <tr key={item.id}>
                     <td>{item.name}</td>
                     <td>{item.categoryName}</td>
-                    <td className="reports-cell-highlight">{item.currentStock}</td>
+                    <td className="reports-cell-highlight">
+                      {item.currentStock}
+                    </td>
                     <td>{item.lowStockThreshold}</td>
-                    <td>{item.unit ?? '--'}</td>
+                    <td>{item.unit ?? "--"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -328,7 +519,10 @@ export default function RapportsPage() {
           <div className="inventory-table-head">
             <div>
               <h2>Produits proches de l&apos;expiration</h2>
-              <p>Anticipez les pertes et les rotations de stock sur les references sensibles.</p>
+              <p>
+                Anticipez les pertes et les rotations de stock sur les
+                references sensibles.
+              </p>
             </div>
           </div>
 
@@ -350,8 +544,10 @@ export default function RapportsPage() {
                     <td>{item.currentStock}</td>
                     <td className="reports-cell-highlight">
                       {item.expirationDate
-                        ? new Date(item.expirationDate).toLocaleDateString('fr-MA')
-                        : '--'}
+                        ? new Date(item.expirationDate).toLocaleDateString(
+                            "fr-MA",
+                          )
+                        : "--"}
                     </td>
                   </tr>
                 ))}
