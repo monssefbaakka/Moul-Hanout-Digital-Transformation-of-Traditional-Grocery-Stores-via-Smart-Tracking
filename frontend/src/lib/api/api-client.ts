@@ -38,6 +38,18 @@ interface RequestOptions {
   headers?: Record<string, string>;
 }
 
+type ProductUpdatePayload = Omit<
+  UpdateProductInput,
+  'barcode' | 'description' | 'unit' | 'photo' | 'costPrice' | 'expirationDate'
+> & {
+  barcode?: string | null;
+  description?: string | null;
+  unit?: string | null;
+  photo?: string | null;
+  costPrice?: number | null;
+  expirationDate?: string | null;
+};
+
 function buildQuery(params?: Record<string, string | number | undefined>) {
   if (!params) {
     return '';
@@ -206,7 +218,7 @@ export const productsApi = {
   listAll: () => request<Product[]>('/products/manage'),
   create: (payload: CreateProductInput) =>
     request<Product>('/products', { method: 'POST', body: payload }),
-  update: (productId: string, payload: UpdateProductInput) =>
+  update: (productId: string, payload: ProductUpdatePayload) =>
     request<Product>(`/products/${productId}`, { method: 'PATCH', body: payload }),
 };
 

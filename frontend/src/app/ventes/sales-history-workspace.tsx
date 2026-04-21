@@ -3,9 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Printer } from "lucide-react";
+import { Eye, Printer } from "lucide-react";
 import type {
+  PaymentMode,
+  PaymentStatus,
   Sale,
+  SaleDetail,
   SaleStatus,
   SalesListPagination,
 } from "@moul-hanout/shared-types";
@@ -65,6 +68,32 @@ function getStatusLabel(status: SaleStatus) {
   }
 }
 
+function getPaymentModeLabel(mode: PaymentMode) {
+  switch (mode) {
+    case "CASH":
+      return "Especes";
+    case "CARD":
+      return "Carte";
+    case "OTHER":
+      return "Autre";
+    default:
+      return mode;
+  }
+}
+
+function getPaymentStatusLabel(status: PaymentStatus) {
+  switch (status) {
+    case "COMPLETED":
+      return "Complete";
+    case "PENDING":
+      return "En attente";
+    case "CANCELLED":
+      return "Annule";
+    default:
+      return status;
+  }
+}
+
 export function SalesHistoryWorkspace() {
   const router = useRouter();
   const { isAuthenticated, hasHydrated } = useAuthStore();
@@ -76,6 +105,10 @@ export function SalesHistoryWorkspace() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [printingSaleId, setPrintingSaleId] = useState<string | null>(null);
+  const [loadingSaleDetailId, setLoadingSaleDetailId] = useState<string | null>(
+    null,
+  );
+  const [selectedSale, setSelectedSale] = useState<SaleDetail | null>(null);
 
   useEffect(() => {
     if (!hasHydrated) {
@@ -144,6 +177,50 @@ export function SalesHistoryWorkspace() {
       await printSaleReceipt(receipt);
       setStatusMessage(
         `Le recu ${receipt.receiptNumber} est pret pour impression.`,
+      );
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Impossible d'imprimer ce recu.",
+      );
+    } finally {
+      setPrintingSaleId(null);
+    }
+  }
+
+  async function handleViewSaleDetails(saleId: string) {
+    setLoadingSaleDetailId(saleId);
+    setErrorMessage(null);
+    setStatusMessage(null);
+
+    try {
+      const saleDetail = await salesApi.getById(saleId);
+      setSelectedSale(saleDetail);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Impossible de charger les details de cette vente.",
+      );
+    } finally {
+      setLoadingSaleDetailId(null);
+    }
+  }
+
+  async function handlePrintSelectedSale() {
+    if (!selectedSale) {
+      return;
+    }
+
+    setPrintingSaleId(selectedSale.id);
+    setErrorMessage(null);
+    setStatusMessage(null);
+
+    try {
+      await printSaleReceipt(selectedSale);
+      setStatusMessage(
+        `Le recu ${selectedSale.receiptNumber} est pret pour impression.`,
       );
     } catch (error) {
       setErrorMessage(
@@ -254,19 +331,34 @@ export function SalesHistoryWorkspace() {
                         </span>
                       </td>
                       <td>
-                        <button
-                          type="button"
-                          className="app-btn app-btn--secondary app-btn--sm"
-                          onClick={() => void handlePrintSale(sale.id)}
-                          disabled={printingSaleId === sale.id}
-                        >
-                          <Printer size={14} aria-hidden="true" />
-                          <span>
-                            {printingSaleId === sale.id
-                              ? "Generation..."
-                              : "Imprimer"}
-                          </span>
-                        </button>
+                        <div className="sales-history__actions">
+                          <button
+                            type="button"
+                            className="app-btn app-btn--secondary app-btn--sm"
+                            onClick={() => void handleViewSaleDetails(sale.id)}
+                            disabled={loadingSaleDetailId === sale.id}
+                          >
+                            <Eye size={14} aria-hidden="true" />
+                            <span>
+                              {loadingSaleDetailId === sale.id
+                                ? "Chargement..."
+                                : "Voir details"}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            className="app-btn app-btn--secondary app-btn--sm"
+                            onClick={() => void handlePrintSale(sale.id)}
+                            disabled={printingSaleId === sale.id}
+                          >
+                            <Printer size={14} aria-hidden="true" />
+                            <span>
+                              {printingSaleId === sale.id
+                                ? "Generation..."
+                                : "Imprimer"}
+                            </span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -315,6 +407,197 @@ export function SalesHistoryWorkspace() {
           </>
         ) : null}
       </section>
+
+      {selectedSale ? (
+        <div
+          className="app-modal-backdrop"
+          role="none"
+          onClick={() => setSelectedSale(null)}
+        >
+          <section
+            className="app-modal sales-history__detail-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sale-detail-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="app-modal__header">
+              <div>
+                <span className="eyebrow">Ticket detaille</span>
+                <h2 id="sale-detail-title">Details de la vente</h2>
+                <p>{selectedSale.receiptNumber}</p>
+              </div>
+              <button
+                type="button"
+                className="app-btn app-btn--secondary"
+                onClick={() => setSelectedSale(null)}
+                disabled={printingSaleId === selectedSale.id}
+              >
+                Fermer
+              </button>
+            </div>
+
+            <div className="sales-history__detail-grid">
+              <article className="sales-history__detail-card">
+                <span>Date</span>
+                <strong>{formatDateTime(selectedSale.soldAt)}</strong>
+              </article>
+              <article className="sales-history__detail-card">
+                <span>Caissier</span>
+                <strong>{selectedSale.cashier.name}</strong>
+                <small>{selectedSale.cashier.email}</small>
+              </article>
+              <article className="sales-history__detail-card">
+                <span>Paiement</span>
+                <strong>{getPaymentModeLabel(selectedSale.paymentMode)}</strong>
+              </article>
+              <article className="sales-history__detail-card">
+                <span>Statut</span>
+                <strong>
+                  <span className={getStatusClassName(selectedSale.status)}>
+                    {getStatusLabel(selectedSale.status)}
+                  </span>
+                </strong>
+              </article>
+            </div>
+
+            <section className="sales-history__detail-section">
+              <div className="inventory-table-head">
+                <div>
+                  <h3>Articles vendus</h3>
+                  <p>
+                    {selectedSale.items.reduce(
+                      (count, item) => count + item.qty,
+                      0,
+                    )}{" "}
+                    article(s) sur ce ticket.
+                  </p>
+                </div>
+              </div>
+
+              <div className="sales-history__line-list">
+                {selectedSale.items.map((item) => (
+                  <article key={item.id} className="sales-history__line-item">
+                    <div className="sales-history__line-item-header">
+                      <div>
+                        <strong>{item.product.name}</strong>
+                        <p>
+                          {item.product.barcode ??
+                            item.product.unit ??
+                            "Article standard"}
+                        </p>
+                      </div>
+                      <strong>
+                        {formatMoney(
+                          item.qty * item.unitPrice - (item.discount ?? 0),
+                        )}
+                      </strong>
+                    </div>
+
+                    <dl className="sales-history__line-meta">
+                      <div>
+                        <dt>Quantite</dt>
+                        <dd>{item.qty}</dd>
+                      </div>
+                      <div>
+                        <dt>Prix unitaire</dt>
+                        <dd>{formatMoney(item.unitPrice)}</dd>
+                      </div>
+                      <div>
+                        <dt>Remise</dt>
+                        <dd>{formatMoney(item.discount ?? 0)}</dd>
+                      </div>
+                    </dl>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="sales-history__detail-section">
+              <div className="inventory-table-head">
+                <div>
+                  <h3>Paiements</h3>
+                  <p>Trace des encaissements associes a cette vente.</p>
+                </div>
+              </div>
+
+              {selectedSale.payments.length === 0 ? (
+                <p>Aucun paiement enregistre pour cette vente.</p>
+              ) : (
+                <div className="sales-history__payment-list">
+                  {selectedSale.payments.map((payment) => (
+                    <article
+                      key={payment.id}
+                      className="sales-history__payment-item"
+                    >
+                      <div className="sales-history__payment-item-header">
+                        <div>
+                          <span>Mode</span>
+                          <strong>
+                            {getPaymentModeLabel(payment.paymentMethod)}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>Statut</span>
+                          <strong>
+                            {getPaymentStatusLabel(payment.status)}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>Montant</span>
+                          <strong>{formatMoney(payment.amount)}</strong>
+                        </div>
+                        <div>
+                          <span>Encaisse le</span>
+                          <strong>{formatDateTime(payment.paidAt)}</strong>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <div className="sales-history__totals">
+              <div className="sales-history__detail-card">
+                <span>Sous-total</span>
+                <strong>{formatMoney(selectedSale.subtotal)}</strong>
+              </div>
+              <div className="sales-history__detail-card">
+                <span>Total encaisse</span>
+                <strong>{formatMoney(selectedSale.totalAmount)}</strong>
+              </div>
+            </div>
+
+            <div className="app-modal__footer">
+              <p>Le ticket complet reste disponible pour verification et impression.</p>
+              <div className="sales-history__modal-actions">
+                <button
+                  type="button"
+                  className="app-btn app-btn--secondary"
+                  onClick={() => void handlePrintSelectedSale()}
+                  disabled={printingSaleId === selectedSale.id}
+                >
+                  <Printer size={16} aria-hidden="true" />
+                  <span>
+                    {printingSaleId === selectedSale.id
+                      ? "Impression..."
+                      : "Imprimer le recu"}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="app-btn app-btn--primary"
+                  onClick={() => setSelectedSale(null)}
+                  disabled={printingSaleId === selectedSale.id}
+                >
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }

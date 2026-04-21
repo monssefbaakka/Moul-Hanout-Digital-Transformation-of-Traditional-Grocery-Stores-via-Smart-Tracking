@@ -1,21 +1,26 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   AlertCircle,
+  ArrowLeft,
+  CalendarDays,
+  ChevronDown,
   CircleDollarSign,
-  ImageIcon,
-  ImagePlus,
   Info,
+  Lightbulb,
+  Minus,
   Package2,
+  Pencil,
+  Plus,
   ScanLine,
-  Sparkles,
+  ShoppingCart,
+  UploadCloud,
 } from 'lucide-react';
 import type { Category, CreateProductInput, Product } from '@moul-hanout/shared-types';
 import { ApiError, categoriesApi, inventoryApi, productsApi } from '@/lib/api/api-client';
-import { AppPageHeader } from '@/components/layout/app-page-header';
 import { useAuthStore } from '@/store/auth.store';
 
 type ProductFormState = {
@@ -33,6 +38,20 @@ type ProductFormState = {
 };
 
 type SubmitIntent = 'publish' | 'draft';
+
+type ProductUpdatePayload = {
+  name: string;
+  categoryId: string;
+  salePrice: number;
+  isActive: boolean;
+  costPrice?: number | null;
+  barcode?: string | null;
+  description?: string | null;
+  unit?: string | null;
+  photo?: string | null;
+  lowStockThreshold?: number;
+  expirationDate?: string | null;
+};
 
 const DEFAULT_LOW_STOCK_THRESHOLD = '5';
 const DEFAULT_INITIAL_STOCK = '0';
@@ -54,15 +73,44 @@ function createInitialForm(categoryId = ''): ProductFormState {
   };
 }
 
-function toIsoDate(dateValue: string) {
-  if (!dateValue) {
-    return undefined;
-  }
+function createFormFromProduct(product: Product): ProductFormState {
+  return {
+    name: product.name,
+    categoryId: product.categoryId,
+    salePrice: String(product.salePrice),
+    costPrice: product.costPrice != null ? String(product.costPrice) : '',
+    barcode: product.barcode ?? '',
+    description: product.description ?? '',
+    unit: product.unit ?? '',
+    photo: product.photo ?? '',
+    lowStockThreshold: String(product.lowStockThreshold),
+    expirationDate: product.expirationDate ? product.expirationDate.slice(0, 10) : '',
+    initialStock: DEFAULT_INITIAL_STOCK,
+  };
+}
 
+function areFormsEqual(left: ProductFormState, right: ProductFormState) {
+  return (
+    left.name === right.name &&
+    left.categoryId === right.categoryId &&
+    left.salePrice === right.salePrice &&
+    left.costPrice === right.costPrice &&
+    left.barcode === right.barcode &&
+    left.description === right.description &&
+    left.unit === right.unit &&
+    left.photo === right.photo &&
+    left.lowStockThreshold === right.lowStockThreshold &&
+    left.expirationDate === right.expirationDate &&
+    left.initialStock === right.initialStock
+  );
+}
+
+function toIsoDate(dateValue: string) {
+  if (!dateValue) return undefined;
   return new Date(`${dateValue}T00:00:00.000Z`).toISOString();
 }
 
-function buildPayload(form: ProductFormState, intent: SubmitIntent): CreateProductInput {
+function buildCreatePayload(form: ProductFormState, intent: SubmitIntent): CreateProductInput {
   const expirationDate = toIsoDate(form.expirationDate);
 
   return {
@@ -80,6 +128,24 @@ function buildPayload(form: ProductFormState, intent: SubmitIntent): CreateProdu
   };
 }
 
+function buildUpdatePayload(form: ProductFormState, intent: SubmitIntent): ProductUpdatePayload {
+  const expirationDate = toIsoDate(form.expirationDate);
+
+  return {
+    name: form.name.trim(),
+    categoryId: form.categoryId,
+    salePrice: Number(form.salePrice),
+    isActive: intent === 'publish',
+    costPrice: form.costPrice.trim().length > 0 ? Number(form.costPrice) : null,
+    barcode: form.barcode.trim().length > 0 ? form.barcode.trim() : null,
+    description: form.description.trim().length > 0 ? form.description.trim() : null,
+    unit: form.unit.trim().length > 0 ? form.unit.trim() : null,
+    photo: form.photo.trim().length > 0 ? form.photo.trim() : null,
+    lowStockThreshold: form.lowStockThreshold ? Number(form.lowStockThreshold) : undefined,
+    expirationDate: expirationDate ?? null,
+  };
+}
+
 function formatMoney(value: number) {
   return new Intl.NumberFormat('fr-MA', {
     style: 'currency',
@@ -90,50 +156,19 @@ function formatMoney(value: number) {
 }
 
 function formatDate(value?: string | null) {
-  if (!value) {
-    return 'Non suivie';
-  }
-
+  if (!value) return 'Non suivie';
   return new Date(value).toLocaleDateString('fr-MA');
 }
 
-function getDraftState(form: ProductFormState, defaultCategoryId: string) {
-  return (
-    form.name.trim().length > 0 ||
-    form.categoryId !== defaultCategoryId ||
-    form.salePrice.trim().length > 0 ||
-    form.costPrice.trim().length > 0 ||
-    form.barcode.trim().length > 0 ||
-    form.description.trim().length > 0 ||
-    form.unit.trim().length > 0 ||
-    form.photo.trim().length > 0 ||
-    form.lowStockThreshold !== DEFAULT_LOW_STOCK_THRESHOLD ||
-    form.expirationDate.trim().length > 0 ||
-    form.initialStock !== DEFAULT_INITIAL_STOCK
-  );
-}
-
 function getProductStatusLabel(product: Product) {
-  if (!product.isActive) {
-    return 'Brouillon';
-  }
-
-  if (product.currentStock <= product.lowStockThreshold) {
-    return 'Stock bas';
-  }
-
+  if (!product.isActive) return 'Brouillon';
+  if (product.currentStock <= product.lowStockThreshold) return 'Stock bas';
   return 'Actif';
 }
 
 function getProductStatusVariant(product: Product) {
-  if (!product.isActive) {
-    return 'is-draft';
-  }
-
-  if (product.currentStock <= product.lowStockThreshold) {
-    return 'is-alert';
-  }
-
+  if (!product.isActive) return 'is-draft';
+  if (product.currentStock <= product.lowStockThreshold) return 'is-alert';
   return 'is-active';
 }
 
@@ -145,7 +180,7 @@ function getInitials(name: string) {
     .slice(0, 2)
     .join('');
 
-  return initials.toUpperCase() || 'VM';
+  return initials.toUpperCase() || 'MH';
 }
 
 export function ProductsWorkspace() {
@@ -153,16 +188,19 @@ export function ProductsWorkspace() {
   const { user, isAuthenticated, hasHydrated } = useAuthStore();
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [form, setForm] = useState<ProductFormState>(createInitialForm());
+  const [baselineForm, setBaselineForm] = useState<ProductFormState>(createInitialForm());
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const urlInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!hasHydrated) {
-      return;
-    }
+    if (!hasHydrated) return;
 
     if (!isAuthenticated || user?.role !== 'OWNER') {
       router.replace('/');
@@ -178,34 +216,24 @@ export function ProductsWorkspace() {
           productsApi.listAll(),
         ]);
 
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
 
         const fallbackCategoryId = categoryList[0]?.id ?? '';
+        const initialForm = createInitialForm(fallbackCategoryId);
 
         setCategories(categoryList);
         setProducts(productList);
-        setForm((current) => {
-          const categoryStillExists = categoryList.some((category) => category.id === current.categoryId);
-
-          return {
-            ...current,
-            categoryId: categoryStillExists ? current.categoryId : fallbackCategoryId,
-          };
-        });
+        setEditingProductId(null);
+        setForm(initialForm);
+        setBaselineForm(initialForm);
       } catch (error) {
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
 
         setErrorMessage(
           error instanceof Error ? error.message : "Impossible de charger l'espace produits.",
         );
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        if (isMounted) setIsLoading(false);
       }
     }
 
@@ -216,10 +244,15 @@ export function ProductsWorkspace() {
     };
   }, [hasHydrated, isAuthenticated, router, user?.role]);
 
-  function handleDiscard() {
-    const defaultCategoryId = categories[0]?.id ?? '';
+  function resetToCreateForm(categoryId: string) {
+    const initialForm = createInitialForm(categoryId);
+    setEditingProductId(null);
+    setForm(initialForm);
+    setBaselineForm(initialForm);
+  }
 
-    setForm(createInitialForm(defaultCategoryId));
+  function handleDiscard() {
+    resetToCreateForm(categories[0]?.id ?? '');
     setStatusMessage(null);
     setErrorMessage(null);
   }
@@ -227,7 +260,21 @@ export function ProductsWorkspace() {
   async function refreshProducts(categoryIdFallback: string) {
     const productList = await productsApi.listAll();
     setProducts(productList);
-    setForm(createInitialForm(categoryIdFallback));
+    resetToCreateForm(categoryIdFallback);
+  }
+
+  function handleStartEdit(product: Product) {
+    const nextForm = createFormFromProduct(product);
+
+    setEditingProductId(product.id);
+    setForm(nextForm);
+    setBaselineForm(nextForm);
+    setStatusMessage(`Mode edition active pour "${product.name}".`);
+    setErrorMessage(null);
+
+    requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -240,9 +287,10 @@ export function ProductsWorkspace() {
     const costPriceValue = form.costPrice ? Number(form.costPrice) : undefined;
     const initialStockValue = Number(form.initialStock);
     const hasInitialStock = !Number.isNaN(initialStockValue) && initialStockValue > 0;
+    const isEditing = editingProductId !== null;
 
     if (categories.length === 0) {
-      setErrorMessage('Creez au moins une categorie avant d ajouter des produits.');
+      setErrorMessage("Creez au moins une categorie avant d'ajouter des produits.");
       return;
     }
 
@@ -261,7 +309,12 @@ export function ProductsWorkspace() {
       return;
     }
 
-    if (intent === 'draft' && hasInitialStock) {
+    if (isEditing && hasInitialStock) {
+      setErrorMessage("Le stock initial se gere depuis l'inventaire, pas depuis la modification produit.");
+      return;
+    }
+
+    if (!isEditing && intent === 'draft' && hasInitialStock) {
       setErrorMessage("Le stock initial n'est possible que pour un produit cree comme actif.");
       return;
     }
@@ -271,7 +324,26 @@ export function ProductsWorkspace() {
     setErrorMessage(null);
 
     try {
-      const createdProduct = await productsApi.create(buildPayload(form, intent));
+      if (isEditing && editingProductId) {
+        const updatedProduct = await productsApi.update(
+          editingProductId,
+          buildUpdatePayload(form, intent),
+        );
+
+        const categoryIdFallback = categories.some((category) => category.id === form.categoryId)
+          ? form.categoryId
+          : categories[0]?.id ?? '';
+
+        await refreshProducts(categoryIdFallback);
+        setStatusMessage(
+          intent === 'draft'
+            ? `Le brouillon "${updatedProduct.name}" a ete mis a jour.`
+            : `"${updatedProduct.name}" a ete mis a jour avec succes.`,
+        );
+        return;
+      }
+
+      const createdProduct = await productsApi.create(buildCreatePayload(form, intent));
 
       if (intent === 'publish' && hasInitialStock) {
         const expirationDate = toIsoDate(form.expirationDate);
@@ -291,16 +363,20 @@ export function ProductsWorkspace() {
       await refreshProducts(categoryIdFallback);
       setStatusMessage(
         intent === 'draft'
-          ? `Le brouillon ${createdProduct.name} a ete enregistre.`
+          ? `Le brouillon "${createdProduct.name}" a ete enregistre.`
           : hasInitialStock
-            ? `Le produit ${createdProduct.name} a ete cree et son stock initial a ete ajoute.`
-            : `Le produit ${createdProduct.name} a ete cree avec succes.`,
+            ? `"${createdProduct.name}" a ete cree avec son stock initial.`
+            : `"${createdProduct.name}" a ete cree avec succes.`,
       );
     } catch (error) {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage('Impossible de creer le produit pour le moment.');
+        setErrorMessage(
+          editingProductId
+            ? 'Impossible de mettre a jour le produit pour le moment.'
+            : 'Impossible de creer le produit pour le moment.',
+        );
       }
     } finally {
       setIsSubmitting(false);
@@ -311,7 +387,7 @@ export function ProductsWorkspace() {
     return (
       <main className="page">
         <section className="panel">
-          <p>Chargement de l&apos;espace produits...</p>
+          <p>Chargement...</p>
         </section>
       </main>
     );
@@ -327,6 +403,10 @@ export function ProductsWorkspace() {
     );
   }
 
+  const editingProduct = editingProductId
+    ? products.find((product) => product.id === editingProductId) ?? null
+    : null;
+  const isEditing = editingProduct !== null;
   const selectedCategory = categories.find((category) => category.id === form.categoryId) ?? null;
   const salePriceValue = form.salePrice ? Number(form.salePrice) : NaN;
   const costPriceValue = form.costPrice ? Number(form.costPrice) : NaN;
@@ -354,352 +434,483 @@ export function ProductsWorkspace() {
     !pricingRuleViolated &&
     !invalidNonNegativeField;
   const canSaveDraft = canSubmit && !hasInitialStock;
-  const draftChanged = getDraftState(form, categories[0]?.id ?? '');
+  const draftChanged = !areFormsEqual(form, baselineForm);
   const activeProducts = products.filter((product) => product.isActive).length;
   const draftProducts = products.filter((product) => !product.isActive).length;
   const lowStockProducts = products.filter(
     (product) => product.isActive && product.currentStock <= product.lowStockThreshold,
   ).length;
-  const marginLabel =
+  const hasMargin =
     !Number.isNaN(salePriceValue) &&
     !Number.isNaN(costPriceValue) &&
     salePriceValue > 0 &&
-    form.costPrice.trim().length > 0
-      ? `${Math.round(((salePriceValue - costPriceValue) / salePriceValue) * 100)}%`
-      : '-- %';
-  const previewDescription =
-    form.description.trim() || "Ajoutez une courte description pour reconnaitre le produit plus vite.";
+    form.costPrice.trim().length > 0;
+  const marginLabel = hasMargin
+    ? `${Math.round(((salePriceValue - costPriceValue) / salePriceValue) * 100)}%`
+    : null;
   const validationMessage = pricingRuleViolated
     ? "Le prix d'achat ne peut pas depasser le prix de vente."
     : invalidNonNegativeField
-      ? 'Les prix, le stock et le seuil d alerte doivent etre superieurs ou egaux a 0.'
+      ? "Les prix, le stock et le seuil d'alerte doivent etre >= 0."
       : null;
   const photoPreview = form.photo.trim();
   const userInitials = getInitials(user.name);
+  const canChangeInitialStock = !isEditing;
+  const topbarTitle = isEditing ? 'Product Edit Studio' : 'New Product Studio';
+  const topbarSubmitLabel = isSubmitting ? 'Saving...' : isEditing ? 'Update Product' : 'Publish Product';
+  const footerDraftLabel = isSubmitting
+    ? 'Enregistrement...'
+    : isEditing
+      ? 'Mettre a jour brouillon'
+      : 'Enregistrer brouillon';
+  const footerPublishLabel = isSubmitting
+    ? isEditing
+      ? 'Mise a jour...'
+      : 'Creation...'
+    : isEditing
+      ? 'Mettre a jour le produit'
+      : 'Publier le produit';
 
   return (
-    <main className="page stack app-page">
-      <AppPageHeader
-        title="Ajouter un produit"
-        subtitle="Renseignez les informations essentielles, verifiez la rentabilite et preparez le stock initial sans quitter la page."
-        actions={
-          <>
-            <span className="products-studio-avatar">{userInitials}</span>
-            <button
-              type="submit"
-              form="product-create-form"
-              value="publish"
-              className="app-btn app-btn--primary app-btn--sm"
-              disabled={!canSubmit}
-            >
-              {isSubmitting ? 'Enregistrement...' : 'Enregistrer'}
-            </button>
-          </>
-        }
-      />
+    <main className="ps-page">
+      <header className="ps-topbar">
+        <div className="ps-topbar__left">
+          <Link href="/produits" className="ps-back-btn" aria-label="Retour">
+            <ArrowLeft size={18} />
+          </Link>
+          <div className="ps-topbar__title-wrap">
+            <h1 className="ps-topbar__title">{topbarTitle}</h1>
+            <span className={`ps-mode-pill${isEditing ? ' is-editing' : ''}`}>
+              {isEditing ? 'Edition' : 'Creation'}
+            </span>
+          </div>
+        </div>
+        <div className="ps-topbar__right">
+          <span className="ps-avatar">{userInitials}</span>
+          <button
+            type="submit"
+            form="product-create-form"
+            value="publish"
+            className="ps-btn-publish"
+            disabled={!canSubmit}
+          >
+            {topbarSubmitLabel}
+          </button>
+        </div>
+      </header>
 
-      {statusMessage ? <p className="status-success">{statusMessage}</p> : null}
-      {errorMessage ? <p className="status-error">{errorMessage}</p> : null}
+      {statusMessage && <div className="ps-alert ps-alert--success">{statusMessage}</div>}
+      {(errorMessage || validationMessage) && (
+        <div className="ps-alert ps-alert--error">{errorMessage ?? validationMessage}</div>
+      )}
 
-      {!isLoading && categories.length === 0 ? (
-        <section className="products-studio-empty-state">
-          <h2>Creez une categorie avant d&apos;ajouter des produits</h2>
+      {!isLoading && categories.length === 0 && (
+        <div className="ps-notice">
+          <h2>Creez une categorie d&apos;abord</h2>
           <p>
-            Les produits ont besoin d&apos;une categorie valide pour rester bien organises dans le catalogue.
+            Les produits ont besoin d&apos;une categorie valide pour rester organises dans le catalogue.
           </p>
           <Link href="/categories" className="app-btn app-btn--secondary">
             Ouvrir les categories
           </Link>
-        </section>
-      ) : null}
+        </div>
+      )}
 
-      <form id="product-create-form" onSubmit={handleSubmit}>
-        <section className="products-studio-grid">
-          <div className="products-studio-main-column">
-            <article className="products-studio-card">
-              <div className="products-studio-section-title">
-                <span className="products-studio-section-icon is-primary">
-                  <Info size={18} />
-                </span>
+      <form id="product-create-form" onSubmit={handleSubmit} ref={formRef}>
+        <div className="ps-workspace">
+          <div className="ps-form-col">
+            {isEditing && editingProduct ? (
+              <div className="ps-mode-note">
                 <div>
-                  <h2>Informations generales</h2>
-                  <p>Donnez un nom clair au produit et rattachez-le a la bonne categorie.</p>
+                  <strong>Edition en cours</strong>
+                  <p>
+                    Vous modifiez actuellement &quot;{editingProduct.name}&quot;. Les mouvements de stock
+                    restent geres depuis le module inventaire.
+                  </p>
                 </div>
+                <button
+                  type="button"
+                  className="app-btn app-btn--secondary app-btn--sm"
+                  onClick={handleDiscard}
+                  disabled={isSubmitting}
+                >
+                  Quitter l&apos;edition
+                </button>
               </div>
+            ) : null}
 
-              <div className="products-studio-form-grid">
-                  <label className="products-studio-field">
-                    <span>Nom du produit</span>
-                    <input
-                      value={form.name}
-                      onChange={(event) => setForm({ ...form, name: event.target.value })}
-                      placeholder="Ex : Huile d'olive 1L"
-                      required
-                      maxLength={120}
-                      disabled={isSubmitting || isLoading}
-                    />
-                  </label>
+            <div
+              className={`ps-media-zone${isDragging ? ' is-over' : ''}${photoPreview ? ' has-preview' : ''}`}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={(event) => {
+                event.preventDefault();
+                setIsDragging(false);
 
-                  <label className="products-studio-field">
-                    <span>Categorie</span>
-                    <select
-                      value={form.categoryId}
-                      onChange={(event) => setForm({ ...form, categoryId: event.target.value })}
-                      required
-                      disabled={isSubmitting || isLoading || categories.length === 0}
-                    >
-                      {categories.length === 0 ? <option value="">Aucune categorie disponible</option> : null}
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                const url =
+                  event.dataTransfer.getData('text/uri-list') ||
+                  event.dataTransfer.getData('text/plain');
 
-                  <label className="products-studio-field products-studio-field--wide">
-                    <span>Description</span>
-                    <textarea
-                      value={form.description}
-                      onChange={(event) => setForm({ ...form, description: event.target.value })}
-                      placeholder="Decrivez l'usage, l'origine ou les points utiles pour l'equipe."
-                      rows={5}
-                      maxLength={300}
-                      disabled={isSubmitting || isLoading}
-                    />
-                  </label>
-              </div>
-            </article>
+                if (url.startsWith('http')) {
+                  setForm((current) => ({ ...current, photo: url }));
+                }
+              }}
+              onClick={() => urlInputRef.current?.focus()}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  urlInputRef.current?.focus();
+                }
+              }}
+              aria-label="Zone d'image produit"
+            >
+              {photoPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={photoPreview} alt="Apercu produit" className="ps-media-zone__img" />
+              ) : (
+                <>
+                  <div className="ps-media-zone__icon">
+                    <UploadCloud size={26} />
+                  </div>
+                  <p className="ps-media-zone__title">Drag and drop product media</p>
+                  <p className="ps-media-zone__hint">High resolution PNG or JPG (Max 5MB)</p>
+                </>
+              )}
+            </div>
 
-            <article className="products-studio-card">
-              <div className="products-studio-section-title">
-                <span className="products-studio-section-icon is-secondary">
-                  <Package2 size={18} />
-                </span>
-                <div>
-                  <h2>Stock et reference</h2>
-                  <p>Ajoutez les informations utiles pour suivre le produit au quotidien en magasin.</p>
+            <input
+              ref={urlInputRef}
+              className="ps-url-input"
+              value={form.photo}
+              onChange={(event) => setForm({ ...form, photo: event.target.value })}
+              placeholder="Or paste image URL here..."
+              maxLength={500}
+              disabled={isSubmitting || isLoading}
+            />
+
+            <article className="ps-card">
+              <div className="ps-card-header">
+                <div className="ps-badge ps-badge--blue">
+                  <Info size={14} />
                 </div>
+                <h2>Product Basics</h2>
               </div>
 
-              <div className="products-studio-form-grid products-studio-form-grid--three">
-                  <label className="products-studio-field">
-                    <span>SKU / code-barres</span>
-                    <div className="products-studio-input-icon-wrap">
-                      <input
-                        value={form.barcode}
-                        onChange={(event) => setForm({ ...form, barcode: event.target.value })}
-                        placeholder="SKU-8271"
-                        maxLength={64}
-                        disabled={isSubmitting || isLoading}
-                      />
-                      <ScanLine size={18} />
+              <div className="ps-fields">
+                <label className="ps-field ps-field--full">
+                  <span className="ps-label">PRODUCT NAME</span>
+                  <input
+                    value={form.name}
+                    onChange={(event) => setForm({ ...form, name: event.target.value })}
+                    placeholder="e.g. Organic Moroccan Mint Tea"
+                    required
+                    maxLength={120}
+                    disabled={isSubmitting || isLoading}
+                  />
+                </label>
+
+                <div className="ps-row">
+                  <label className="ps-field">
+                    <span className="ps-label">CATEGORY</span>
+                    <div className="ps-select-wrap">
+                      <select
+                        value={form.categoryId}
+                        onChange={(event) => setForm({ ...form, categoryId: event.target.value })}
+                        required
+                        disabled={isSubmitting || isLoading || categories.length === 0}
+                      >
+                        {categories.length === 0 ? <option value="">Aucune categorie</option> : null}
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown size={14} className="ps-chevron" />
                     </div>
                   </label>
 
-                  <label className="products-studio-field">
-                    <span>Unite</span>
+                  <label className="ps-field">
+                    <span className="ps-label">UNIT</span>
                     <input
                       value={form.unit}
                       onChange={(event) => setForm({ ...form, unit: event.target.value })}
-                      placeholder="piece, kg, bouteille"
+                      placeholder="kg, gram, piece"
                       maxLength={30}
                       disabled={isSubmitting || isLoading}
                     />
                   </label>
+                </div>
 
-                  <label className="products-studio-field">
-                    <span>Alerte stock bas</span>
+                <label className="ps-field ps-field--full">
+                  <span className="ps-label">DESCRIPTION</span>
+                  <textarea
+                    value={form.description}
+                    onChange={(event) => setForm({ ...form, description: event.target.value })}
+                    placeholder="Describe the origin and quality..."
+                    rows={4}
+                    maxLength={300}
+                    disabled={isSubmitting || isLoading}
+                  />
+                </label>
+              </div>
+            </article>
+
+            <article className="ps-card">
+              <div className="ps-card-header">
+                <div className="ps-badge ps-badge--green">
+                  <CircleDollarSign size={14} />
+                </div>
+                <h2>Pricing &amp; Profit</h2>
+                {marginLabel ? (
+                  <span className="ps-margin-pill">
+                    <span className="ps-margin-dot" />
+                    Profit Margin: {marginLabel}
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="ps-row">
+                <label className="ps-field">
+                  <span className="ps-label">COST PRICE</span>
+                  <div className="ps-currency-wrap">
+                    <span className="ps-currency-symbol">MAD</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.costPrice}
+                      onChange={(event) => setForm({ ...form, costPrice: event.target.value })}
+                      placeholder="0.00"
+                      disabled={isSubmitting || isLoading}
+                    />
+                  </div>
+                </label>
+
+                <label className="ps-field">
+                  <span className="ps-label">SELLING PRICE</span>
+                  <div className="ps-currency-wrap">
+                    <span className="ps-currency-symbol">MAD</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.salePrice}
+                      onChange={(event) => setForm({ ...form, salePrice: event.target.value })}
+                      placeholder="0.00"
+                      required
+                      disabled={isSubmitting || isLoading}
+                    />
+                  </div>
+                </label>
+              </div>
+            </article>
+
+            <article className="ps-card">
+              <div className="ps-card-header">
+                <div className="ps-badge ps-badge--amber">
+                  <Package2 size={14} />
+                </div>
+                <h2>Inventory Tracking</h2>
+              </div>
+
+              <div className="ps-fields">
+                <div className="ps-row">
+                  <label className="ps-field">
+                    <span className="ps-label">BARCODE / SKU</span>
+                    <div className="ps-icon-wrap">
+                      <input
+                        value={form.barcode}
+                        onChange={(event) => setForm({ ...form, barcode: event.target.value })}
+                        placeholder="Scan or enter code"
+                        maxLength={64}
+                        disabled={isSubmitting || isLoading}
+                      />
+                      <ScanLine size={15} />
+                    </div>
+                  </label>
+
+                  <label className="ps-field">
+                    <span className="ps-label">INITIAL STOCK</span>
+                    <div className="ps-stepper">
+                      <button
+                        type="button"
+                        className="ps-stepper__btn"
+                        onClick={() =>
+                          setForm((current) => ({
+                            ...current,
+                            initialStock: String(Math.max(0, Number(current.initialStock) - 1)),
+                          }))
+                        }
+                        disabled={
+                          isSubmitting || !canChangeInitialStock || Number(form.initialStock) <= 0
+                        }
+                        aria-label="Diminuer"
+                      >
+                        <Minus size={13} />
+                      </button>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={form.initialStock}
+                        onChange={(event) => setForm({ ...form, initialStock: event.target.value })}
+                        disabled={isSubmitting || isLoading || !canChangeInitialStock}
+                      />
+                      <button
+                        type="button"
+                        className="ps-stepper__btn"
+                        onClick={() =>
+                          setForm((current) => ({
+                            ...current,
+                            initialStock: String(Number(current.initialStock) + 1),
+                          }))
+                        }
+                        disabled={isSubmitting || !canChangeInitialStock}
+                        aria-label="Augmenter"
+                      >
+                        <Plus size={13} />
+                      </button>
+                    </div>
+                    {!canChangeInitialStock ? (
+                      <span className="ps-field-note">
+                        Le stock se modifie ensuite depuis l&apos;inventaire pour respecter la separation des
+                        responsabilites.
+                      </span>
+                    ) : null}
+                  </label>
+                </div>
+
+                <div className="ps-row">
+                  <label className="ps-field">
+                    <span className="ps-label">LOW STOCK ALERT</span>
                     <input
                       type="number"
                       min="0"
                       step="1"
                       value={form.lowStockThreshold}
-                      onChange={(event) => setForm({ ...form, lowStockThreshold: event.target.value })}
-                      placeholder={DEFAULT_LOW_STOCK_THRESHOLD}
+                      onChange={(event) =>
+                        setForm({ ...form, lowStockThreshold: event.target.value })
+                      }
+                      placeholder="5"
                       disabled={isSubmitting || isLoading}
                     />
                   </label>
 
-                  <label className="products-studio-field">
-                    <span>Stock initial</span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={form.initialStock}
-                      onChange={(event) => setForm({ ...form, initialStock: event.target.value })}
-                      placeholder="0"
-                      disabled={isSubmitting || isLoading}
-                    />
+                  <label className="ps-field">
+                    <span className="ps-label">EXPIRATION DATE</span>
+                    <div className="ps-icon-wrap">
+                      <input
+                        type="date"
+                        value={form.expirationDate}
+                        onChange={(event) =>
+                          setForm({ ...form, expirationDate: event.target.value })
+                        }
+                        disabled={isSubmitting || isLoading}
+                      />
+                      <CalendarDays size={15} />
+                    </div>
                   </label>
-
-                  <label className="products-studio-field">
-                    <span>Date d&apos;expiration</span>
-                    <input
-                      type="date"
-                      value={form.expirationDate}
-                      onChange={(event) => setForm({ ...form, expirationDate: event.target.value })}
-                      disabled={isSubmitting || isLoading}
-                    />
-                  </label>
-
-                  <div className="products-studio-note-card">
-                    <strong>{hasInitialStock ? 'Publication requise' : 'Brouillon possible'}</strong>
-                    <p>
-                      {hasInitialStock
-                        ? "Le stock initial est ajoute seulement si le produit est cree comme actif."
-                        : "Laissez le stock initial a 0 pour enregistrer le produit en brouillon."}
-                    </p>
-                  </div>
+                </div>
               </div>
             </article>
           </div>
 
-          <div className="products-studio-side-column">
-            <article className="products-studio-card products-studio-card--pricing">
-              <div className="products-studio-pricing-head">
-                <div>
-                  <h2>Tarification</h2>
-                  <p>Verifiez rapidement les prix et la marge attendue avant la publication.</p>
-                </div>
+          <div className="ps-preview-col">
+            <p className="ps-preview-eyebrow">
+              {isEditing ? 'LIVE EDIT PREVIEW' : 'LIVE PREVIEW'}
+            </p>
 
-                <span className="products-studio-section-icon is-primary">
-                  <CircleDollarSign size={18} />
-                </span>
+            <div className="ps-preview-card">
+              <div className="ps-preview-media">
+                {photoPreview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={photoPreview} alt={form.name || 'Product'} />
+                ) : (
+                  <div className="ps-preview-media__empty" />
+                )}
+
+                {form.salePrice ? (
+                  <span className="ps-preview-price-tag">
+                    {formatMoney(Number(form.salePrice))}
+                  </span>
+                ) : null}
               </div>
 
-              <div className="products-studio-pricing-body">
-                  <label className="products-studio-field">
-                    <span>Prix d&apos;achat</span>
-                    <div className="products-studio-currency-input">
-                      <i>MAD</i>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={form.costPrice}
-                        onChange={(event) => setForm({ ...form, costPrice: event.target.value })}
-                        placeholder="0.00"
-                        disabled={isSubmitting || isLoading}
-                      />
+              <div className="ps-preview-body">
+                {selectedCategory ? (
+                  <div className="ps-preview-meta">
+                    <span className="ps-preview-category">
+                      {selectedCategory.name.toUpperCase()}
+                    </span>
+                    <div className="ps-preview-dots">
+                      <span className="is-active" />
+                      <span />
                     </div>
-                  </label>
+                  </div>
+                ) : null}
 
-                  <label className="products-studio-field">
-                    <span>Prix de vente</span>
-                    <div className="products-studio-currency-input">
-                      <i>MAD</i>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={form.salePrice}
-                        onChange={(event) => setForm({ ...form, salePrice: event.target.value })}
-                        placeholder="0.00"
-                        required
-                        disabled={isSubmitting || isLoading}
-                      />
+                <h3 className="ps-preview-name">{form.name || 'Product Name'}</h3>
+
+                <p className="ps-preview-desc">
+                  {form.description || 'Add a description to see it here...'}
+                </p>
+
+                <div className="ps-preview-footer">
+                  {form.unit ? (
+                    <div className="ps-preview-units">
+                      <span className="is-sel">{form.unit}</span>
                     </div>
-                  </label>
-
-                  <div className="products-studio-note-card">
-                    <strong>{selectedCategory?.name ?? 'Aucune categorie selectionnee'}</strong>
-                    <p>{previewDescription}</p>
-                  </div>
-
-                  <div className="products-studio-margin-row">
-                    <span>Marge attendue</span>
-                    <strong>{marginLabel}</strong>
-                  </div>
-              </div>
-            </article>
-
-            <article className="products-studio-card">
-              <h2 className="products-studio-media-title">Image produit</h2>
-
-              <div className="products-studio-media-preview">
-                  {photoPreview ? (
-                    <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={photoPreview}
-                        alt={form.name.trim() || 'Apercu du produit'}
-                        className="products-studio-media-preview__image"
-                      />
-                      <div className="products-studio-media-preview__overlay" />
-
-                      <div className="products-studio-media-preview__content">
-                        <p>{form.name.trim() || 'Apercu du produit'}</p>
-                        <span>Apercu direct depuis l&apos;URL de l&apos;image.</span>
-                      </div>
-                    </>
                   ) : (
-                    <div className="products-studio-media-preview__content">
-                      <span className="products-studio-media-icon">
-                        <ImagePlus size={20} />
-                      </span>
-                      <p>Ajoutez une URL d&apos;image</p>
-                      <span>Une image claire aide a reconnaitre le produit plus vite.</span>
-                    </div>
+                    <span />
                   )}
-              </div>
 
-              <label className="products-studio-field">
-                <span>URL image principale</span>
-                <input
-                  value={form.photo}
-                  onChange={(event) => setForm({ ...form, photo: event.target.value })}
-                  placeholder="https://exemple.com/produit.jpg"
-                  maxLength={500}
-                  disabled={isSubmitting || isLoading}
-                />
-              </label>
-
-              <div className="products-studio-thumbnail-grid" aria-hidden="true">
-                <div className={photoPreview ? 'is-highlighted' : ''}>
-                  <ImageIcon size={18} />
-                </div>
-                <div>
-                  <ImageIcon size={18} />
-                </div>
-                <div>
-                  <ImageIcon size={18} />
-                </div>
-                <div className="is-highlighted">
-                  <ImagePlus size={18} />
+                  <button
+                    type="button"
+                    className="ps-preview-cart"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                  >
+                    <ShoppingCart size={15} />
+                  </button>
                 </div>
               </div>
-            </article>
+            </div>
 
-            <aside className="products-studio-tip">
-              <span className="products-studio-tip__icon">
-                <Sparkles size={18} />
-              </span>
+            <div className="ps-tip-card">
+              <div className="ps-tip-icon">
+                <Lightbulb size={15} />
+              </div>
               <div>
-                <h3>Conseil utile</h3>
-                <p>
-                  Une description courte et une image nette aident l&apos;equipe a reconnaitre plus vite le produit en caisse.
+                <h4 className="ps-tip-title">Merchant Tip</h4>
+                <p className="ps-tip-body">
+                  Products with detailed descriptions and high-quality natural-light photos tend
+                  to sell faster in digital catalogs.
                 </p>
               </div>
-            </aside>
+            </div>
           </div>
-        </section>
+        </div>
       </form>
 
-      {validationMessage ? <p className="status-error">{validationMessage}</p> : null}
-
-      <div className="products-studio-footer-bar">
-        <div className="products-studio-footer-copy">
-          <AlertCircle size={18} />
+      <div className="ps-footer">
+        <div className="ps-footer__info">
+          <AlertCircle size={15} />
           <span>
             {draftChanged
-              ? 'Les changements non enregistres seront perdus si vous quittez cette page.'
-              : 'Le formulaire est pret pour un nouveau produit.'}
+              ? 'Les changements non enregistres seront perdus si vous quittez.'
+              : isEditing
+                ? 'Le formulaire est synchronise avec le produit en cours de modification.'
+                : 'Formulaire pret pour un nouveau produit.'}
           </span>
         </div>
 
-        <div className="products-studio-footer-actions">
+        <div className="ps-footer__actions">
           <button
             type="button"
             className="app-btn app-btn--ghost"
@@ -708,7 +919,6 @@ export function ProductsWorkspace() {
           >
             Annuler
           </button>
-
           <button
             type="submit"
             form="product-create-form"
@@ -716,9 +926,8 @@ export function ProductsWorkspace() {
             className="app-btn app-btn--secondary"
             disabled={!canSaveDraft}
           >
-            {isSubmitting ? 'Enregistrement...' : 'Enregistrer brouillon'}
+            {footerDraftLabel}
           </button>
-
           <button
             type="submit"
             form="product-create-form"
@@ -726,19 +935,18 @@ export function ProductsWorkspace() {
             className="app-btn app-btn--primary"
             disabled={!canSubmit}
           >
-            {isSubmitting ? 'Creation...' : 'Creer le produit'}
+            {footerPublishLabel}
           </button>
         </div>
       </div>
 
-      <section className="products-studio-catalog">
-        <div className="products-studio-catalog__header">
+      <section className="ps-catalog">
+        <div className="ps-catalog__header">
           <div>
             <h2>Catalogue actuel</h2>
-            <p>Relisez les produits actifs, les brouillons et les references qui demandent un suivi.</p>
+            <p>Produits actifs, brouillons et references a surveiller.</p>
           </div>
-
-          <div className="products-studio-header__stats">
+          <div className="ps-catalog__stats">
             <article>
               <strong>{isLoading ? '...' : categories.length}</strong>
               <span>Categories</span>
@@ -754,38 +962,54 @@ export function ProductsWorkspace() {
           </div>
         </div>
 
-        {isLoading ? <p>Chargement des produits...</p> : null}
+        {isLoading ? <p className="ps-catalog__empty">Chargement des produits...</p> : null}
         {!isLoading && products.length === 0 ? (
-          <p>Aucun produit pour le moment. Creez le premier article pour lancer le catalogue.</p>
+          <p className="ps-catalog__empty">
+            Aucun produit pour le moment. Creez le premier article pour lancer le catalogue.
+          </p>
         ) : null}
 
         {!isLoading && products.length > 0 ? (
-          <div className="products-studio-catalog-grid">
+          <div className="ps-catalog__grid">
             {products.map((product) => (
-              <article key={product.id} className="products-studio-catalog-card">
-                <div className="products-studio-catalog-card__top">
-                  <div>
-                    <h3>{product.name}</h3>
-                    <p>{product.category?.name ?? 'Aucune categorie assignee'}</p>
-                  </div>
-
-                  <span
-                    className={`products-studio-status-pill ${getProductStatusVariant(product)}`}
+              <article
+                key={product.id}
+                className={`ps-catalog-card${editingProductId === product.id ? ' is-selected' : ''}`}
+              >
+                <div className="ps-catalog-card__top">
+                  <button
+                    type="button"
+                    className="ps-catalog-card__select"
+                    onClick={() => handleStartEdit(product)}
                   >
-                    {getProductStatusLabel(product)}
-                  </span>
+                    <span>
+                      <h3>{product.name}</h3>
+                      <p>{product.category?.name ?? 'Aucune categorie'}</p>
+                    </span>
+                  </button>
+                  <div className="ps-catalog-card__actions">
+                    <span className={`products-studio-status-pill ${getProductStatusVariant(product)}`}>
+                      {getProductStatusLabel(product)}
+                    </span>
+                    <button
+                      type="button"
+                      className="ps-catalog-card__edit-btn"
+                      onClick={() => handleStartEdit(product)}
+                      aria-label={`Modifier ${product.name}`}
+                    >
+                      <Pencil size={14} />
+                    </button>
+                  </div>
                 </div>
 
-                <dl className="products-studio-catalog-metrics">
+                <dl className="ps-catalog-card__metrics">
                   <div>
                     <dt>Prix vente</dt>
                     <dd>{formatMoney(product.salePrice)}</dd>
                   </div>
                   <div>
                     <dt>Prix achat</dt>
-                    <dd>
-                      {product.costPrice != null ? formatMoney(product.costPrice) : '--'}
-                    </dd>
+                    <dd>{product.costPrice != null ? formatMoney(product.costPrice) : '--'}</dd>
                   </div>
                   <div>
                     <dt>Stock</dt>
