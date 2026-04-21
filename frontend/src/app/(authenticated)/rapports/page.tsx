@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Bar,
-  BarChart,
   CartesianGrid,
   Line,
   ComposedChart,
@@ -76,7 +75,60 @@ function formatShortCurrency(value: number) {
   return formatCurrency(value);
 }
 
-// Custom tooltip for the chart
+// ── Circular progress ring ──────────────────────────────────────
+function CircularProgress({
+  value,
+  color,
+  size = 96,
+  strokeWidth = 7,
+}: {
+  value: number;
+  color: string;
+  size?: number;
+  strokeWidth?: number;
+}) {
+  const center = size / 2;
+  const radius = center - strokeWidth - 2;
+  const circumference = 2 * Math.PI * radius;
+  const pct = Math.min(100, Math.max(0, value));
+  const dashOffset = circumference * (1 - pct / 100);
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      className="rpt-kpi-ring"
+      aria-hidden="true"
+    >
+      {/* Track */}
+      <circle
+        cx={center}
+        cy={center}
+        r={radius}
+        fill="none"
+        stroke="rgba(255,255,255,0.15)"
+        strokeWidth={strokeWidth}
+      />
+      {/* Progress */}
+      <circle
+        cx={center}
+        cy={center}
+        r={radius}
+        fill="none"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeDasharray={circumference}
+        strokeDashoffset={dashOffset}
+        strokeLinecap="round"
+        transform={`rotate(-90 ${center} ${center})`}
+        style={{ transition: "stroke-dashoffset 0.9s cubic-bezier(.4,0,.2,1)" }}
+      />
+    </svg>
+  );
+}
+
+// ── Chart tooltip ───────────────────────────────────────────────
 function ChartTooltip({
   active,
   payload,
@@ -206,12 +258,30 @@ export default function RapportsPage() {
 
   const alertCount = lowStockCount + expiringSoonCount;
 
+  // ── Ring percentages (relative performance metrics) ────────────
+  const revenueRingPct = useMemo(() => {
+    if (!bestRevenueDay || bestRevenueDay.revenue === 0) return 0;
+    return Math.round((averageDailyRevenue / bestRevenueDay.revenue) * 100);
+  }, [averageDailyRevenue, bestRevenueDay]);
+
+  const transactionRingPct = useMemo(() => {
+    if (!busiestDay || busiestDay.transactions === 0) return 0;
+    return Math.round((averageDailyTransactions / busiestDay.transactions) * 100);
+  }, [averageDailyTransactions, busiestDay]);
+
+  // Basket ring: normalised over 300 MAD max
+  const basketRingPct = Math.min(100, Math.round((averageBasket / 300) * 100));
+
+  // Stock ring: 100% healthy, -10 per alert
+  const stockRingPct = Math.max(0, Math.min(100, 100 - alertCount * 10));
+
   return (
     <main className="page stack app-page rpt-page">
 
       {/* ── Page header ── */}
       <div className="rpt-header">
         <div className="rpt-header__copy">
+          <p className="rpt-header__eyebrow">Vue d&apos;ensemble</p>
           <h1 className="rpt-header__title">Rapports &amp; Analyses</h1>
           <p className="rpt-header__sub">
             Analysez vos ventes et l&apos;état du stock sur la période choisie.
@@ -289,64 +359,96 @@ export default function RapportsPage() {
 
       {/* ── KPI cards ── */}
       <div className="rpt-kpi-grid">
-        <article className="rpt-kpi-card rpt-kpi-card--green">
-          <div className="rpt-kpi-card__icon">
-            <TrendingUp size={18} />
-          </div>
-          <div className="rpt-kpi-card__body">
-            <span className="rpt-kpi-card__label">Revenu total</span>
-            <strong className="rpt-kpi-card__value">
-              {isLoading ? "—" : formatShortCurrency(salesReport?.totalRevenue ?? 0)}
-            </strong>
-            <p className="rpt-kpi-card__hint">Montant cumulé sur la période</p>
-          </div>
-        </article>
 
-        <article className="rpt-kpi-card rpt-kpi-card--blue">
-          <div className="rpt-kpi-card__icon">
-            <ShoppingBag size={18} />
-          </div>
-          <div className="rpt-kpi-card__body">
-            <span className="rpt-kpi-card__label">Transactions</span>
-            <strong className="rpt-kpi-card__value">
-              {isLoading ? "—" : (salesReport?.totalTransactions ?? 0).toLocaleString("fr-MA")}
-            </strong>
-            <p className="rpt-kpi-card__hint">Ventes complétées</p>
-          </div>
-        </article>
-
+        {/* Revenue */}
         <article className="rpt-kpi-card rpt-kpi-card--purple">
-          <div className="rpt-kpi-card__icon">
-            <ShoppingCart size={18} />
+          <div className="rpt-kpi-card__top">
+            <TrendingUp size={14} className="rpt-kpi-card__icon-sm" />
+            <span className="rpt-kpi-card__label">Revenu total</span>
           </div>
-          <div className="rpt-kpi-card__body">
-            <span className="rpt-kpi-card__label">Panier moyen</span>
-            <strong className="rpt-kpi-card__value">
-              {isLoading ? "—" : formatShortCurrency(averageBasket)}
-            </strong>
-            <p className="rpt-kpi-card__hint">Valeur moyenne par ticket</p>
+          <div className="rpt-kpi-card__ring-wrap">
+            <CircularProgress value={isLoading ? 0 : revenueRingPct} color="#8ddfc0" />
+            <div className="rpt-kpi-card__ring-inner">
+              <span className="rpt-kpi-card__pct">
+                {isLoading ? "—" : `${revenueRingPct}%`}
+              </span>
+            </div>
           </div>
+          <strong className="rpt-kpi-card__value">
+            {isLoading ? "—" : formatShortCurrency(salesReport?.totalRevenue ?? 0)}
+          </strong>
+          <p className="rpt-kpi-card__hint">Montant cumulé sur la période</p>
         </article>
 
-        <article className={`rpt-kpi-card ${alertCount > 0 ? "rpt-kpi-card--amber" : "rpt-kpi-card--neutral"}`}>
-          <div className="rpt-kpi-card__icon">
-            <AlertTriangle size={18} />
+        {/* Transactions */}
+        <article className="rpt-kpi-card rpt-kpi-card--blue">
+          <div className="rpt-kpi-card__top">
+            <ShoppingBag size={14} className="rpt-kpi-card__icon-sm" />
+            <span className="rpt-kpi-card__label">Transactions</span>
           </div>
-          <div className="rpt-kpi-card__body">
+          <div className="rpt-kpi-card__ring-wrap">
+            <CircularProgress value={isLoading ? 0 : transactionRingPct} color="#8bd0ee" />
+            <div className="rpt-kpi-card__ring-inner">
+              <span className="rpt-kpi-card__pct">
+                {isLoading ? "—" : `${transactionRingPct}%`}
+              </span>
+            </div>
+          </div>
+          <strong className="rpt-kpi-card__value">
+            {isLoading ? "—" : (salesReport?.totalTransactions ?? 0).toLocaleString("fr-MA")}
+          </strong>
+          <p className="rpt-kpi-card__hint">Ventes complétées</p>
+        </article>
+
+        {/* Average basket */}
+        <article className="rpt-kpi-card rpt-kpi-card--rose">
+          <div className="rpt-kpi-card__top">
+            <ShoppingCart size={14} className="rpt-kpi-card__icon-sm" />
+            <span className="rpt-kpi-card__label">Panier moyen</span>
+          </div>
+          <div className="rpt-kpi-card__ring-wrap">
+            <CircularProgress value={isLoading ? 0 : basketRingPct} color="#efb082" />
+            <div className="rpt-kpi-card__ring-inner">
+              <span className="rpt-kpi-card__pct">
+                {isLoading ? "—" : `${basketRingPct}%`}
+              </span>
+            </div>
+          </div>
+          <strong className="rpt-kpi-card__value">
+            {isLoading ? "—" : formatShortCurrency(averageBasket)}
+          </strong>
+          <p className="rpt-kpi-card__hint">Valeur moyenne par ticket</p>
+        </article>
+
+        {/* Stock alerts */}
+        <article className={`rpt-kpi-card ${alertCount > 0 ? "rpt-kpi-card--amber" : "rpt-kpi-card--sage"}`}>
+          <div className="rpt-kpi-card__top">
+            <AlertTriangle size={14} className="rpt-kpi-card__icon-sm" />
             <span className="rpt-kpi-card__label">Alertes stock</span>
-            <strong className="rpt-kpi-card__value">
-              {isLoading ? "—" : alertCount}
-            </strong>
-            <p className="rpt-kpi-card__hint">
-              {alertCount > 0 ? (
-                <Link href="/inventaire" className="rpt-kpi-link">
-                  {lowStockCount} faible · {expiringSoonCount} expirant
-                </Link>
-              ) : (
-                "Aucune alerte en cours"
-              )}
-            </p>
           </div>
+          <div className="rpt-kpi-card__ring-wrap">
+            <CircularProgress
+              value={isLoading ? 0 : stockRingPct}
+              color={alertCount > 0 ? "#fcd277" : "#a0e8b4"}
+            />
+            <div className="rpt-kpi-card__ring-inner">
+              <span className="rpt-kpi-card__pct">
+                {isLoading ? "—" : `${stockRingPct}%`}
+              </span>
+            </div>
+          </div>
+          <strong className="rpt-kpi-card__value">
+            {isLoading ? "—" : alertCount === 0 ? "OK" : alertCount}
+          </strong>
+          <p className="rpt-kpi-card__hint">
+            {!isLoading && alertCount > 0 ? (
+              <Link href="/inventaire" className="rpt-kpi-link">
+                {lowStockCount} faible · {expiringSoonCount} expirant
+              </Link>
+            ) : (
+              "Santé du stock"
+            )}
+          </p>
         </article>
       </div>
 
@@ -354,8 +456,8 @@ export default function RapportsPage() {
       <div className="rpt-insight-row">
         <article className="panel rpt-insight-card">
           <div className="rpt-insight-card__head">
-            <span className="rpt-insight-badge rpt-insight-badge--green">
-              <Clock size={14} />
+            <span className="rpt-insight-badge rpt-insight-badge--purple">
+              <Clock size={13} />
             </span>
             <span className="rpt-insight-label">Rythme journalier</span>
           </div>
@@ -378,7 +480,7 @@ export default function RapportsPage() {
         <article className="panel rpt-insight-card">
           <div className="rpt-insight-card__head">
             <span className="rpt-insight-badge rpt-insight-badge--yellow">
-              <Star size={14} />
+              <Star size={13} />
             </span>
             <span className="rpt-insight-label">Meilleur jour</span>
           </div>
@@ -403,7 +505,7 @@ export default function RapportsPage() {
         <article className="panel rpt-insight-card">
           <div className="rpt-insight-card__head">
             <span className="rpt-insight-badge rpt-insight-badge--blue">
-              <ShoppingBag size={14} />
+              <ShoppingBag size={13} />
             </span>
             <span className="rpt-insight-label">Pic de fréquentation</span>
           </div>
@@ -425,8 +527,8 @@ export default function RapportsPage() {
 
         <article className="panel rpt-insight-card">
           <div className="rpt-insight-card__head">
-            <span className={`rpt-insight-badge ${alertCount > 0 ? "rpt-insight-badge--amber" : "rpt-insight-badge--green"}`}>
-              <Package size={14} />
+            <span className={`rpt-insight-badge ${alertCount > 0 ? "rpt-insight-badge--amber" : "rpt-insight-badge--purple"}`}>
+              <Package size={13} />
             </span>
             <span className="rpt-insight-label">État du stock</span>
           </div>
@@ -513,7 +615,7 @@ export default function RapportsPage() {
                 <Bar
                   yAxisId="revenue"
                   dataKey="revenue"
-                  fill="var(--primary)"
+                  fill="#0f766e"
                   radius={[6, 6, 0, 0]}
                   maxBarSize={40}
                 />
@@ -521,7 +623,7 @@ export default function RapportsPage() {
                   yAxisId="txn"
                   type="monotone"
                   dataKey="transactions"
-                  stroke="#6366f1"
+                  stroke="#c26c3f"
                   strokeWidth={2}
                   dot={false}
                   activeDot={{ r: 4 }}
