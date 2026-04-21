@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { SaleStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
-import { GetInventoryReportQueryDto, GetSalesReportQueryDto } from './dto/report.dto';
+import {
+  GetInventoryReportQueryDto,
+  GetSalesReportQueryDto,
+} from './dto/report.dto';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -24,7 +27,10 @@ export class ReportsService {
       select: { soldAt: true, totalAmount: true },
     } as never)) as { soldAt: Date; totalAmount: number }[];
 
-    const dayMap = new Map<string, { date: string; revenue: number; transactions: number }>();
+    const dayMap = new Map<
+      string,
+      { date: string; revenue: number; transactions: number }
+    >();
     let totalRevenue = 0;
 
     for (const sale of sales) {
@@ -36,7 +42,9 @@ export class ReportsService {
       totalRevenue += sale.totalAmount;
     }
 
-    const days = Array.from(dayMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+    const days = Array.from(dayMap.values()).sort((a, b) =>
+      a.date.localeCompare(b.date),
+    );
 
     return {
       days,
@@ -87,12 +95,17 @@ export class ReportsService {
     };
   }
 
-  async exportSalesCsv(shopId: string, dto: GetSalesReportQueryDto): Promise<string> {
+  async exportSalesCsv(
+    shopId: string,
+    dto: GetSalesReportQueryDto,
+  ): Promise<string> {
     const report = await this.getSalesReport(shopId, dto);
 
     const rows = [
       'Date,Revenu (MAD),Transactions',
-      ...report.days.map((d) => `${d.date},${d.revenue.toFixed(2)},${d.transactions}`),
+      ...report.days.map(
+        (d) => `${d.date},${d.revenue.toFixed(2)},${d.transactions}`,
+      ),
       `Total,${report.totalRevenue.toFixed(2)},${report.totalTransactions}`,
     ];
 

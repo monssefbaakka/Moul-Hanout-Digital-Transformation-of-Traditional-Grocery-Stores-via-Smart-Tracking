@@ -28,7 +28,10 @@ export class StockInDto {
 
   @ApiPropertyOptional({ example: '2026-04-25T00:00:00.000Z' })
   @IsOptional()
-  @IsDateString({}, { message: 'Expiration date must be a valid ISO date string' })
+  @IsDateString(
+    {},
+    { message: 'Expiration date must be a valid ISO date string' },
+  )
   expirationDate?: string;
 }
 

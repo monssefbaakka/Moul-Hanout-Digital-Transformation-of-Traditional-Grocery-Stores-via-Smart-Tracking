@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -28,7 +36,9 @@ export class SalesController {
 
   @Roles(Role.OWNER, Role.CASHIER)
   @Get('summary/daily')
-  @ApiOkResponse({ description: 'Returns daily sales summary for the dashboard.' })
+  @ApiOkResponse({
+    description: 'Returns daily sales summary for the dashboard.',
+  })
   getDailySummary(
     @CurrentUser('shopId') shopId: string,
     @Query() query: GetDailySalesSummaryQueryDto,
@@ -38,7 +48,9 @@ export class SalesController {
 
   @Roles(Role.OWNER, Role.CASHIER)
   @Get(':id')
-  @ApiOkResponse({ description: 'Returns full sale details for the authenticated shop.' })
+  @ApiOkResponse({
+    description: 'Returns full sale details for the authenticated shop.',
+  })
   @ApiNotFoundResponse({ description: 'Sale not found.' })
   findOne(@CurrentUser('shopId') shopId: string, @Param('id') saleId: string) {
     return this.salesService.findOne(shopId, saleId);
@@ -46,16 +58,24 @@ export class SalesController {
 
   @Roles(Role.OWNER, Role.CASHIER)
   @Get()
-  @ApiOkResponse({ description: 'Returns a paginated sales list for the authenticated shop.' })
-  findAll(@CurrentUser('shopId') shopId: string, @Query() query: GetSalesQueryDto) {
+  @ApiOkResponse({
+    description: 'Returns a paginated sales list for the authenticated shop.',
+  })
+  findAll(
+    @CurrentUser('shopId') shopId: string,
+    @Query() query: GetSalesQueryDto,
+  ) {
     return this.salesService.findAll(shopId, query);
   }
 
   @Roles(Role.OWNER, Role.CASHIER)
   @Post()
-  @ApiCreatedResponse({ description: 'Creates a sale, payment, and stock movements.' })
+  @ApiCreatedResponse({
+    description: 'Creates a sale, payment, and stock movements.',
+  })
   @ApiUnprocessableEntityResponse({
-    description: 'One or more products are missing or do not have enough stock.',
+    description:
+      'One or more products are missing or do not have enough stock.',
   })
   create(
     @CurrentUser('shopId') shopId: string,
