@@ -81,7 +81,6 @@ type AlertRecord = {
   shopId: string;
   type: AlertType;
   productId: string;
-  batchId?: string | null;
   message: string;
   isRead: boolean;
   createdAt: Date;
@@ -747,7 +746,6 @@ async function createPrismaMock() {
           shopId: args.data.shopId,
           type: args.data.type,
           productId: args.data.productId,
-          batchId: args.data.batchId ?? null,
           message: args.data.message,
           isRead: args.data.isRead ?? false,
           createdAt: new Date(),

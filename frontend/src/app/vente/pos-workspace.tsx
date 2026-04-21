@@ -113,8 +113,6 @@ function toCartItem(product: Product): CartItem {
   };
 }
 
-const TAX_RATE = 0.2;
-
 function createOrderNumber() {
   return `CMD-${String(Math.floor(Math.random() * 90000) + 10000)}`;
 }
@@ -202,9 +200,6 @@ export function PosWorkspace() {
     () => cartItems.reduce((sum, item) => sum + item.quantity, 0),
     [cartItems],
   );
-
-  const subtotalAmount = totalAmount / (1 + TAX_RATE);
-  const taxAmount = totalAmount - subtotalAmount;
 
   function syncProductStock(updated: Product[]) {
     setCartItems((current) =>
@@ -658,12 +653,12 @@ export function PosWorkspace() {
             {/* Summary */}
             <div className="pos-v2__summary">
               <div className="pos-v2__summary-row">
-                <span>Sous-total</span>
-                <span>{formatMoney(subtotalAmount)}</span>
+                <span>Articles</span>
+                <span>{totalQuantity}</span>
               </div>
               <div className="pos-v2__summary-row">
-                <span>TVA (20%)</span>
-                <span>{formatMoney(taxAmount)}</span>
+                <span>Montant panier</span>
+                <span>{formatMoney(totalAmount)}</span>
               </div>
             </div>
 
