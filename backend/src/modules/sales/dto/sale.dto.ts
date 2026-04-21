@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaymentMode } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
@@ -93,5 +93,3 @@ export class GetDailySalesSummaryQueryDto {
   @IsDateString({}, { message: 'To date must be a valid ISO date string' })
   to?: string;
 }
-
-export class UpdateSaleDto extends PartialType(CreateSaleDto) {}
