@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { createTransport } from 'nodemailer';
@@ -41,6 +41,7 @@ describe('MailService', () => {
 
   it('logs the reset link when SMTP is not configured', async () => {
     const configService = createConfigService({
+      'app.env': 'development',
       'mail.isEnabled': false,
     });
 
@@ -68,8 +69,32 @@ describe('MailService', () => {
     );
   });
 
+  it('fails clearly in production when SMTP is not configured', async () => {
+    const configService = createConfigService({
+      'app.env': 'production',
+      'mail.isEnabled': false,
+    });
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        MailService,
+        { provide: ConfigService, useValue: configService },
+      ],
+    }).compile();
+
+    const service = module.get<MailService>(MailService);
+
+    await expect(
+      service.sendPasswordResetEmail(
+        'owner@moulhanout.ma',
+        'https://app.moulhanout.ma/reset-password?token=abc',
+      ),
+    ).rejects.toBeInstanceOf(InternalServerErrorException);
+  });
+
   it('sends a password reset email when SMTP is configured', async () => {
     const configService = createConfigService({
+      'app.env': 'production',
       'mail.isEnabled': true,
       'mail.host': 'smtp.example.com',
       'mail.port': 587,
@@ -118,6 +143,45 @@ describe('MailService', () => {
     );
     expect(sentMail?.html).toContain(
       'https://app.moulhanout.ma/reset-password?token=abc',
+    );
+  });
+
+  it('fails when the configured SMTP delivery throws an error', async () => {
+    mockSendMail.mockRejectedValueOnce(new Error('SMTP unavailable'));
+
+    const configService = createConfigService({
+      'app.env': 'production',
+      'mail.isEnabled': true,
+      'mail.host': 'smtp.example.com',
+      'mail.port': 587,
+      'mail.secure': false,
+      'mail.user': 'smtp-user',
+      'mail.pass': 'smtp-pass',
+      'mail.from': 'noreply@moulhanout.ma',
+    });
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        MailService,
+        { provide: ConfigService, useValue: configService },
+      ],
+    }).compile();
+
+    const service = module.get<MailService>(MailService);
+    const loggerSpy = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => undefined);
+
+    await expect(
+      service.sendPasswordResetEmail(
+        'owner@moulhanout.ma',
+        'https://app.moulhanout.ma/reset-password?token=abc',
+      ),
+    ).rejects.toBeInstanceOf(InternalServerErrorException);
+
+    expect(loggerSpy).toHaveBeenCalledWith(
+      'Failed to send password reset email to owner@moulhanout.ma. Password reset link: https://app.moulhanout.ma/reset-password?token=abc',
+      expect.any(String),
     );
   });
 });

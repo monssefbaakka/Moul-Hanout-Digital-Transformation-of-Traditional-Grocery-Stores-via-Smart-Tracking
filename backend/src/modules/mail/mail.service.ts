@@ -1,10 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createTransport } from 'nodemailer';
 
 const PASSWORD_RESET_SUBJECT = 'Reset your Moul Hanout password';
-
-type MailTransporter = ReturnType<typeof createTransport>;
 
 interface PasswordResetMailTransporter {
   sendMail(options: {
@@ -16,22 +18,36 @@ interface PasswordResetMailTransporter {
   }): Promise<unknown>;
 }
 
+type CreateMailTransport = (options: {
+  host: string;
+  port: number;
+  secure: boolean;
+  auth: {
+    user: string;
+    pass: string;
+  };
+}) => PasswordResetMailTransporter;
+
+const createMailTransport = createTransport as unknown as CreateMailTransport;
+
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
   private readonly isEnabled: boolean;
+  private readonly isProduction: boolean;
   private readonly fromAddress?: string;
-  private readonly transporter?: MailTransporter;
+  private readonly transporter?: PasswordResetMailTransporter;
 
   constructor(private readonly config: ConfigService) {
     this.isEnabled = this.config.get<boolean>('mail.isEnabled') ?? false;
+    this.isProduction = this.config.get<string>('app.env') === 'production';
     this.fromAddress = this.config.get<string>('mail.from');
 
     if (!this.isEnabled) {
       return;
     }
 
-    this.transporter = createTransport({
+    this.transporter = createMailTransport({
       host: this.config.getOrThrow<string>('mail.host'),
       port: this.config.getOrThrow<number>('mail.port'),
       secure: this.config.get<boolean>('mail.secure') ?? false,
@@ -44,6 +60,12 @@ export class MailService {
 
   async sendPasswordResetEmail(to: string, link: string): Promise<void> {
     if (!this.isEnabled || !this.transporter || !this.fromAddress) {
+      if (this.isProduction) {
+        throw new InternalServerErrorException(
+          'Password reset email is not configured for production',
+        );
+      }
+
       this.logger.log(`Password reset link for ${to}: ${link}`);
       return;
     }
@@ -61,7 +83,7 @@ export class MailService {
     `;
 
     try {
-      await (this.transporter as PasswordResetMailTransporter).sendMail({
+      await this.transporter.sendMail({
         from: this.fromAddress,
         to,
         subject: PASSWORD_RESET_SUBJECT,
@@ -74,6 +96,10 @@ export class MailService {
       this.logger.error(
         `Failed to send password reset email to ${to}. Password reset link: ${link}`,
         stack,
+      );
+
+      throw new InternalServerErrorException(
+        'Unable to send password reset email',
       );
     }
   }
