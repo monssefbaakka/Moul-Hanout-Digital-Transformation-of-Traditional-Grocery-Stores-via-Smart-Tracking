@@ -98,6 +98,7 @@ model UserShopRole {
   shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@unique([userId, shopId])
+  @@index([shopId])
   @@map("user_shop_roles")
 }
 
@@ -112,6 +113,7 @@ model Session {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, expiresAt])
   @@map("sessions")
 }
 
@@ -166,6 +168,8 @@ model Product {
   stockMovements StockMovement[]
 
   @@unique([shopId, barcode]) // Barcodes must be unique per shop
+  @@index([shopId])
+  @@index([shopId, isActive])
   @@map("products")
 }
 
@@ -185,6 +189,9 @@ model Sale {
   items    SaleItem[]
   payments Payment[]
 
+  @@index([shopId])
+  @@index([shopId, soldAt])
+  @@index([shopId, status, soldAt])
   @@map("sales")
 }
 
@@ -213,6 +220,7 @@ model Alert {
   shop    Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  @@index([shopId, isRead])
   @@map("alerts")
 }
 
@@ -242,6 +250,7 @@ model StockMovement {
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   user    User    @relation(fields: [createdBy], references: [id], onDelete: Restrict)
 
+  @@index([productId, createdAt])
   @@map("stock_movements")
 }
 
