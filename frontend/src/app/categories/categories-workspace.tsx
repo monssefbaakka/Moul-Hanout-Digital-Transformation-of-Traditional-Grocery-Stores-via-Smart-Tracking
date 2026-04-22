@@ -58,6 +58,13 @@ function buildPayload(form: CategoryFormState) {
   };
 }
 
+function buildUpdatePayload(form: CategoryFormState) {
+  return {
+    name: form.name.trim(),
+    description: form.description.trim(),
+  };
+}
+
 function createCategorySlug(name: string) {
   return (
     name
@@ -76,8 +83,11 @@ export function CategoriesWorkspace() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState<CategoryFormState>(INITIAL_FORM);
   const [selectedIconId, setSelectedIconId] = useState(DEFAULT_ICON_ID);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<CategoryFormState>(INITIAL_FORM);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingActionCategoryId, setPendingActionCategoryId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -150,6 +160,71 @@ export function CategoriesWorkspace() {
     setSelectedIconId(DEFAULT_ICON_ID);
     setStatusMessage(null);
     setErrorMessage(null);
+  }
+
+  function handleEditStart(category: Category) {
+    setEditingCategoryId(category.id);
+    setEditForm({
+      name: category.name,
+      description: category.description ?? '',
+    });
+    setStatusMessage(null);
+    setErrorMessage(null);
+  }
+
+  function handleEditCancel() {
+    setEditingCategoryId(null);
+    setEditForm(INITIAL_FORM);
+  }
+
+  async function handleEditSubmit(event: FormEvent<HTMLFormElement>, categoryId: string) {
+    event.preventDefault();
+    setPendingActionCategoryId(categoryId);
+    setStatusMessage(null);
+    setErrorMessage(null);
+
+    try {
+      const updatedCategory = await categoriesApi.update(categoryId, buildUpdatePayload(editForm));
+      setCategories((current) => current.map((category) => (category.id === categoryId ? updatedCategory : category)));
+      setEditingCategoryId(null);
+      setEditForm(INITIAL_FORM);
+      setStatusMessage(`La categorie ${updatedCategory.name} a ete mise a jour avec succes.`);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage('Impossible de mettre a jour la categorie pour le moment.');
+      }
+    } finally {
+      setPendingActionCategoryId(null);
+    }
+  }
+
+  async function handleDeactivate(category: Category) {
+    if (!window.confirm(`Desactiver la categorie ${category.name} ?`)) {
+      return;
+    }
+
+    setPendingActionCategoryId(category.id);
+    setStatusMessage(null);
+    setErrorMessage(null);
+
+    try {
+      await categoriesApi.deactivate(category.id);
+      setCategories((current) => current.filter((item) => item.id !== category.id));
+      if (editingCategoryId === category.id) {
+        handleEditCancel();
+      }
+      setStatusMessage(`La categorie ${category.name} a ete desactivee.`);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage('Impossible de desactiver la categorie pour le moment.');
+      }
+    } finally {
+      setPendingActionCategoryId(null);
+    }
   }
 
   if (!hasHydrated || !isAuthenticated) {
@@ -369,18 +444,84 @@ export function CategoriesWorkspace() {
                     </span>
                   </div>
 
-                  <p>{category.description?.trim() || 'Aucune description fournie.'}</p>
+                  {editingCategoryId === category.id ? (
+                    <form className="category-library-card__edit" onSubmit={(event) => handleEditSubmit(event, category.id)}>
+                      <label className="field">
+                        <span>Nom categorie</span>
+                        <input
+                          value={editForm.name}
+                          onChange={(event) => setEditForm((current) => ({ ...current, name: event.target.value }))}
+                          required
+                          minLength={2}
+                          maxLength={80}
+                          disabled={pendingActionCategoryId === category.id}
+                        />
+                      </label>
 
-                  <dl>
-                    <div>
-                      <dt>Slug</dt>
-                      <dd>/cat/{createCategorySlug(category.name)}</dd>
-                    </div>
-                    <div>
-                      <dt>Created</dt>
-                      <dd>{new Date(category.createdAt).toLocaleDateString('fr-MA')}</dd>
-                    </div>
-                  </dl>
+                      <label className="field">
+                        <span>Description</span>
+                        <textarea
+                          value={editForm.description}
+                          onChange={(event) => setEditForm((current) => ({ ...current, description: event.target.value }))}
+                          rows={4}
+                          maxLength={300}
+                          disabled={pendingActionCategoryId === category.id}
+                        />
+                      </label>
+
+                      <div className="category-library-card__actions">
+                        <button
+                          type="button"
+                          className="app-btn app-btn--secondary app-btn--sm"
+                          onClick={handleEditCancel}
+                          disabled={pendingActionCategoryId === category.id}
+                        >
+                          Annuler
+                        </button>
+                        <button
+                          type="submit"
+                          className="app-btn app-btn--primary app-btn--sm"
+                          disabled={pendingActionCategoryId === category.id || editForm.name.trim().length < 2}
+                        >
+                          {pendingActionCategoryId === category.id ? 'Enregistrement...' : 'Enregistrer'}
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <>
+                      <p>{category.description?.trim() || 'Aucune description fournie.'}</p>
+
+                      <dl>
+                        <div>
+                          <dt>Slug</dt>
+                          <dd>/cat/{createCategorySlug(category.name)}</dd>
+                        </div>
+                        <div>
+                          <dt>Created</dt>
+                          <dd>{new Date(category.createdAt).toLocaleDateString('fr-MA')}</dd>
+                        </div>
+                      </dl>
+
+                      <div className="category-library-card__actions">
+                        <button
+                          type="button"
+                          className="app-btn app-btn--secondary app-btn--sm"
+                          onClick={() => handleEditStart(category)}
+                          disabled={isSubmitting || pendingActionCategoryId === category.id}
+                        >
+                          Modifier
+                        </button>
+                        <button
+                          type="button"
+                          className="app-btn app-btn--secondary app-btn--sm"
+                          onClick={() => handleDeactivate(category)}
+                          disabled={isSubmitting || pendingActionCategoryId === category.id}
+                        >
+                          {pendingActionCategoryId === category.id ? 'Desactivation...' : 'Desactiver'}
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </article>
               ))
             : null}

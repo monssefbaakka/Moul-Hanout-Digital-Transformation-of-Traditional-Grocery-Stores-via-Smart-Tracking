@@ -31,6 +31,10 @@ function formatDate() {
   return new Date().toLocaleDateString('fr-MA', { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
+function formatExpirationDate(value?: string | null) {
+  return value ? new Date(value).toLocaleDateString('fr-MA', { day: 'numeric', month: 'short' }) : 'Date non suivie';
+}
+
 type StockLevel = 'critical' | 'low' | 'ok';
 
 function getStockLevel(current: number, threshold: number): StockLevel {
@@ -54,10 +58,12 @@ export default function HomePage() {
   const user = useAuthStore((state) => state.user);
   const [summary, setSummary] = useState<DailySummary | null>(null);
   const [lowStockItems, setLowStockItems] = useState<InventoryItem[]>([]);
+  const [expiringSoonItems, setExpiringSoonItems] = useState<InventoryItem[]>([]);
   const [alertDismissed, setAlertDismissed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const isOwner = user?.role === 'OWNER';
 
   useEffect(() => {
     let isMounted = true;
@@ -67,19 +73,22 @@ export default function HomePage() {
       setErrorMessage(null);
 
       try {
-        const [dailySummary, inventory] = await Promise.all([
+        const [dailySummary, inventory, expiringItems] = await Promise.all([
           salesApi.dailySummary(),
           inventoryApi.list(),
+          isOwner ? inventoryApi.expiringSoon() : Promise.resolve([]),
         ]);
 
         if (!isMounted) return;
 
         setSummary(dailySummary);
         setLowStockItems(inventory.filter((item) => item.isLowStock));
+        setExpiringSoonItems(expiringItems);
       } catch {
         if (!isMounted) return;
         setSummary(null);
         setLowStockItems([]);
+        setExpiringSoonItems([]);
         setErrorMessage('Impossible de charger le tableau de bord pour le moment.');
       } finally {
         if (isMounted) setLoading(false);
@@ -91,11 +100,13 @@ export default function HomePage() {
     return () => {
       isMounted = false;
     };
-  }, [reloadKey]);
+  }, [isOwner, reloadKey]);
 
   const firstName = user?.name?.split(' ')[0] ?? 'Gérant';
   const hasLowStock = !loading && !errorMessage && lowStockItems.length > 0;
+  const hasExpiringSoon = !loading && !errorMessage && expiringSoonItems.length > 0;
   const topLowStockItems = lowStockItems.slice(0, 5);
+  const topExpiringSoonItems = expiringSoonItems.slice(0, 3);
   const roleLabel = user?.role === 'OWNER' ? 'Propriétaire' : 'Caissier';
 
   return (
@@ -173,6 +184,41 @@ export default function HomePage() {
       ) : null}
 
       {/* ── KPI Strip ───────────────────────────────────── */}
+      {hasExpiringSoon ? (
+        <section className="stack" aria-label="Produits expirant bientot">
+          <div className="app-alert app-alert--danger" role="alert">
+            <span className="app-alert__content">
+              <CalendarDays size={16} />
+              <strong>{expiringSoonItems.length} article{expiringSoonItems.length > 1 ? 's' : ''}</strong>{' '}
+              expirent bientot.{' '}
+              <Link href="/inventaire" style={{ textDecoration: 'underline' }}>
+                Voir l&apos;inventaire
+              </Link>
+            </span>
+          </div>
+          <div className="db2-stock-list" role="list" aria-label="Produits expirant bientot">
+            {topExpiringSoonItems.map((item) => (
+              <article key={item.id} className="db2-stock-item" role="listitem">
+                <div className="db2-stock-item__meta">
+                  <span className="db2-stock-item__dot db2-stock-item__dot--low" aria-hidden="true" />
+                  <div className="db2-stock-item__text">
+                    <strong>{item.name}</strong>
+                    <span>{item.categoryName}</span>
+                  </div>
+                </div>
+                <div className="db2-stock-item__gauge">
+                  <StockBar current={item.currentStock} threshold={Math.max(item.lowStockThreshold, 1)} />
+                  <div className="db2-stock-item__counts">
+                    <span className="db2-stock-item__current">Expire {formatExpirationDate(item.expirationDate)}</span>
+                    <span className="db2-stock-item__threshold">&nbsp;/ stock {item.currentStock}</span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section className="db2-kpi-strip" aria-label="Indicateurs du jour">
 
         <article className="db2-kpi">

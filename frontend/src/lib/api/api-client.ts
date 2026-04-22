@@ -211,6 +211,10 @@ export const categoriesApi = {
   list: () => request<Category[]>('/categories'),
   create: (payload: CreateCategoryInput) =>
     request<Category>('/categories', { method: 'POST', body: payload }),
+  update: (id: string, payload: { name?: string; description?: string }) =>
+    request<Category>(`/categories/${id}`, { method: 'PATCH', body: payload }),
+  deactivate: (id: string) =>
+    request<Category>(`/categories/${id}/deactivate`, { method: 'PATCH' }),
 };
 
 export const productsApi = {
