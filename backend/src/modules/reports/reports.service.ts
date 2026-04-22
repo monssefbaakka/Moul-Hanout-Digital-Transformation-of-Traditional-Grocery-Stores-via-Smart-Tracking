@@ -13,10 +13,6 @@ const salesReportSelect = {
   totalAmount: true,
 } satisfies Prisma.SaleSelect;
 
-type SalesReportSale = Prisma.SaleGetPayload<{
-  select: typeof salesReportSelect;
-}>;
-
 const inventoryReportInclude = {
   category: true,
 } satisfies Prisma.ProductInclude;
@@ -55,7 +51,7 @@ export class ReportsService {
       where: {
         shopId,
         status: SaleStatus.COMPLETED,
-        soldAt: { gte: reportWindow.start, lte: reportWindow.end },
+        soldAt: { gte: reportWindow.start, lt: reportWindow.endExclusive },
       },
       select: salesReportSelect,
     });
@@ -157,10 +153,11 @@ export class ReportsService {
     const toDate = query.to ?? today;
     const defaultFromDate = this.shiftDateByDays(toDate, -30);
     const fromDate = query.from ?? defaultFromDate;
+    const dayAfterToDate = this.shiftDateByDays(toDate, 1);
 
     return {
-      start: this.createTimeZoneBoundary(fromDate, timeZone, 'start'),
-      end: this.createTimeZoneBoundary(toDate, timeZone, 'end'),
+      start: this.createStartOfDayInTimeZone(fromDate, timeZone),
+      endExclusive: this.createStartOfDayInTimeZone(dayAfterToDate, timeZone),
     };
   }
 
@@ -186,45 +183,52 @@ export class ReportsService {
     return `${year}-${month}-${day}`;
   }
 
-  private createTimeZoneBoundary(
-    dateValue: string,
-    timeZone: string,
-    boundary: 'start' | 'end',
-  ) {
+  private createStartOfDayInTimeZone(dateValue: string, timeZone: string) {
     const [year, month, day] = dateValue.split('-').map((part) => Number(part));
-    const hour = boundary === 'start' ? 0 : 23;
-    const minute = boundary === 'start' ? 0 : 59;
-    const second = boundary === 'start' ? 0 : 59;
-    const millisecond = boundary === 'start' ? 0 : 999;
-    const utcGuess = new Date(
-      Date.UTC(year, month - 1, day, hour, minute, second, millisecond),
+    const utcGuess = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+    const initialOffset = this.getTimeZoneOffsetInMilliseconds(
+      utcGuess,
+      timeZone,
     );
-    const offset = this.getTimeZoneOffset(utcGuess, timeZone);
+    const resolvedDate = new Date(utcGuess.getTime() - initialOffset);
+    const resolvedOffset = this.getTimeZoneOffsetInMilliseconds(
+      resolvedDate,
+      timeZone,
+    );
 
-    return new Date(utcGuess.getTime() - offset);
+    return new Date(utcGuess.getTime() - resolvedOffset);
   }
 
-  private getTimeZoneOffset(date: Date, timeZone: string) {
-    const parts = new Intl.DateTimeFormat('en-US', {
+  private getTimeZoneOffsetInMilliseconds(date: Date, timeZone: string) {
+    const timeZoneName = new Intl.DateTimeFormat('en-US', {
       timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    }).formatToParts(date);
+      timeZoneName: 'longOffset',
+    })
+      .formatToParts(date)
+      .find((part) => part.type === 'timeZoneName')?.value;
 
-    const year = Number(parts.find((part) => part.type === 'year')?.value);
-    const month = Number(parts.find((part) => part.type === 'month')?.value);
-    const day = Number(parts.find((part) => part.type === 'day')?.value);
-    const hour = Number(parts.find((part) => part.type === 'hour')?.value);
-    const minute = Number(parts.find((part) => part.type === 'minute')?.value);
-    const second = Number(parts.find((part) => part.type === 'second')?.value);
+    if (!timeZoneName) {
+      return 0;
+    }
 
-    const asUtc = Date.UTC(year, month - 1, day, hour, minute, second);
+    return this.parseTimeZoneOffset(timeZoneName);
+  }
 
-    return asUtc - date.getTime();
+  private parseTimeZoneOffset(timeZoneName: string) {
+    if (timeZoneName === 'GMT') {
+      return 0;
+    }
+
+    const match = /^GMT([+-])(\d{1,2}):(\d{2})$/.exec(timeZoneName);
+
+    if (!match) {
+      return 0;
+    }
+
+    const [, sign, hours, minutes] = match;
+    const totalMilliseconds =
+      (Number(hours) * 60 + Number(minutes)) * 60 * 1000;
+
+    return sign === '+' ? totalMilliseconds : -totalMilliseconds;
   }
 }

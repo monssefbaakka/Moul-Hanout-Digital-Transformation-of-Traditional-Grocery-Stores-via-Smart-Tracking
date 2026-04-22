@@ -54,7 +54,7 @@ describe('ReportsService', () => {
         status: 'COMPLETED',
         soldAt: {
           gte: new Date('2026-01-14T23:00:00.000Z'),
-          lte: new Date('2026-01-15T23:00:00.998Z'),
+          lt: new Date('2026-01-15T23:00:00.000Z'),
         },
       },
       select: { soldAt: true, totalAmount: true },
