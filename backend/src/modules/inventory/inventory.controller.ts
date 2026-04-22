@@ -22,14 +22,18 @@ export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
   @Get()
-  @ApiOkResponse({ description: 'Returns inventory items for the authenticated shop.' })
+  @ApiOkResponse({
+    description: 'Returns inventory items for the authenticated shop.',
+  })
   findAll(@CurrentUser('shopId') shopId: string) {
     return this.inventoryService.findInventory(shopId);
   }
 
   @Roles(Role.OWNER)
   @Post('stock-in')
-  @ApiCreatedResponse({ description: 'Adds stock to a product and records a stock movement.' })
+  @ApiCreatedResponse({
+    description: 'Adds stock to a product and records a stock movement.',
+  })
   stockIn(
     @CurrentUser('shopId') shopId: string,
     @CurrentUser('id') userId: string,
@@ -56,14 +60,18 @@ export class InventoryController {
 
   @Roles(Role.OWNER)
   @Get('expiring-soon')
-  @ApiOkResponse({ description: 'Returns products that expire within the next 5 days.' })
+  @ApiOkResponse({
+    description: 'Returns products that expire within the next 5 days.',
+  })
   findExpiringSoon(@CurrentUser('shopId') shopId: string) {
     return this.inventoryService.findExpiringSoon(shopId);
   }
 
   @Roles(Role.OWNER)
   @Get('movements')
-  @ApiOkResponse({ description: 'Returns recent stock movement history for the shop.' })
+  @ApiOkResponse({
+    description: 'Returns recent stock movement history for the shop.',
+  })
   findMovements(@CurrentUser('shopId') shopId: string) {
     return this.inventoryService.findRecentMovements(shopId);
   }

@@ -63,10 +63,7 @@ export class AuthController {
   @ApiCreatedResponse({ description: 'Account successfully created.' })
   @ApiConflictResponse({ description: 'Email address already in use.' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid access token.' })
-  register(
-    @CurrentUser('shopId') shopId: string,
-    @Body() dto: RegisterDto,
-  ) {
+  register(@CurrentUser('shopId') shopId: string, @Body() dto: RegisterDto) {
     return this.authService.register(shopId, dto);
   }
 
@@ -101,8 +98,7 @@ export class AuthController {
     summary: 'Validate a password reset token and save a new password',
   })
   @ApiOkResponse({
-    description:
-      'Password updated and all existing user sessions invalidated.',
+    description: 'Password updated and all existing user sessions invalidated.',
   })
   @ApiBadRequestResponse({
     description: 'The reset token is invalid, expired, or already used.',

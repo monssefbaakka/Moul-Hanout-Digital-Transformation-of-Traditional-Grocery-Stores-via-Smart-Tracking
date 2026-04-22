@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiConflictResponse,
@@ -24,21 +32,29 @@ export class ProductsController {
 
   @Roles(Role.OWNER)
   @Get('manage')
-  @ApiOkResponse({ description: 'Returns all products for the authenticated shop owner.' })
+  @ApiOkResponse({
+    description: 'Returns all products for the authenticated shop owner.',
+  })
   findAllForOwner(@CurrentUser('shopId') shopId: string) {
     return this.productsService.findAllByShop(shopId);
   }
 
   @Get()
-  @ApiOkResponse({ description: 'Returns active products for the authenticated shop.' })
+  @ApiOkResponse({
+    description: 'Returns active products for the authenticated shop.',
+  })
   findAll(@CurrentUser('shopId') shopId: string) {
     return this.productsService.findActiveByShop(shopId);
   }
 
   @Roles(Role.OWNER)
   @Post()
-  @ApiCreatedResponse({ description: 'Creates a product for the authenticated shop.' })
-  @ApiConflictResponse({ description: 'RG07 duplicate barcode within the shop.' })
+  @ApiCreatedResponse({
+    description: 'Creates a product for the authenticated shop.',
+  })
+  @ApiConflictResponse({
+    description: 'RG07 duplicate barcode within the shop.',
+  })
   @ApiUnprocessableEntityResponse({ description: 'RG08 invalid pricing rule.' })
   create(@CurrentUser('shopId') shopId: string, @Body() dto: CreateProductDto) {
     return this.productsService.create(shopId, dto);
@@ -46,8 +62,12 @@ export class ProductsController {
 
   @Roles(Role.OWNER)
   @Patch(':id')
-  @ApiOkResponse({ description: 'Updates a product for the authenticated shop.' })
-  @ApiConflictResponse({ description: 'RG07 duplicate barcode within the shop.' })
+  @ApiOkResponse({
+    description: 'Updates a product for the authenticated shop.',
+  })
+  @ApiConflictResponse({
+    description: 'RG07 duplicate barcode within the shop.',
+  })
   @ApiUnprocessableEntityResponse({ description: 'RG08 invalid pricing rule.' })
   update(
     @CurrentUser('shopId') shopId: string,

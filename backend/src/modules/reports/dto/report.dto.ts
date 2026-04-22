@@ -15,7 +15,11 @@ export class GetSalesReportQueryDto {
 }
 
 export class GetInventoryReportQueryDto {
-  @ApiPropertyOptional({ example: 7, default: 7, description: 'Days ahead to check for expiring products' })
+  @ApiPropertyOptional({
+    example: 7,
+    default: 7,
+    description: 'Days ahead to check for expiring products',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()

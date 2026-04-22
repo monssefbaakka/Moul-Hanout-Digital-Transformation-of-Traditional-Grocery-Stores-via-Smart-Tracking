@@ -3,7 +3,6 @@
 // `ConflictException` is used when a resource already exists, like a duplicate email.
 import {
   Injectable,
-  Logger,
   UnauthorizedException,
   ConflictException,
   BadRequestException,
@@ -42,6 +41,7 @@ import { Role } from '../../common/enums';
 
 // `JwtPayload` describes what fields we expect to find inside decoded JWT tokens.
 import { JwtPayload } from './strategies/jwt.strategy';
+import { MailService } from '../mail/mail.service';
 
 // This interface describes the user fields we need while generating tokens and sessions.
 interface AuthenticatedUser {
@@ -95,7 +95,6 @@ interface UserShopRole {
 // This tells NestJS that `AuthService` can be injected into controllers and other services.
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
   private readonly passwordResetRequestedMessage =
     'If an account exists for that email, a password reset link has been generated.';
   private readonly passwordResetCompletedMessage =
@@ -111,6 +110,9 @@ export class AuthService {
 
     // Configuration helper dependency.
     private readonly config: ConfigService,
+
+    // Outbound email dependency.
+    private readonly mailService: MailService,
   ) {}
 
   // This method handles the login flow.
@@ -319,7 +321,10 @@ export class AuthService {
       }),
     ]);
 
-    this.deliverPasswordResetLink(user.email, passwordResetLink);
+    await this.mailService.sendPasswordResetEmail(
+      user.email,
+      passwordResetLink,
+    );
 
     return { message: this.passwordResetRequestedMessage };
   }
@@ -573,19 +578,6 @@ export class AuthService {
       this.config.get<string>('app.frontendUrl') ?? 'http://localhost:3000';
 
     return `${frontendUrl.replace(/\/$/, '')}/reset-password?token=${encodeURIComponent(token)}`;
-  }
-
-  private deliverPasswordResetLink(email: string, resetLink: string) {
-    const environment = this.config.get<string>('app.env') ?? 'development';
-
-    if (environment === 'production') {
-      this.logger.warn(
-        `Password reset requested for ${email}, but outbound email delivery is not configured in this build.`,
-      );
-      return;
-    }
-
-    this.logger.log(`Password reset link for ${email}: ${resetLink}`);
   }
 
   private buildAuthResponse(

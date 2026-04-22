@@ -6,6 +6,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { Role } from '../../common/enums';
+import { MailService } from '../mail/mail.service';
 
 jest.mock('bcryptjs', () => ({
   compare: jest.fn(),
@@ -57,13 +58,16 @@ describe('AuthService', () => {
     }),
     get: jest.fn((key: string) => {
       const values: Record<string, string | number> = {
-        'app.env': 'development',
         'app.frontendUrl': 'http://localhost:3000',
         'auth.passwordResetExpiresInMinutes': 30,
       };
 
       return values[key];
     }),
+  };
+
+  const mailService = {
+    sendPasswordResetEmail: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -75,6 +79,7 @@ describe('AuthService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: JwtService, useValue: jwt },
         { provide: ConfigService, useValue: config },
+        { provide: MailService, useValue: mailService },
       ],
     }).compile();
 
@@ -233,7 +238,7 @@ describe('AuthService', () => {
     expect(result).toEqual({ message: 'Logged out successfully' });
   });
 
-  it('creates a password reset token and logs a reset link for active users', async () => {
+  it('creates a password reset token and sends a reset link for active users', async () => {
     prisma.user.findUnique.mockResolvedValue({
       id: 'user-1',
       email: 'owner@moulhanout.ma',
@@ -241,13 +246,6 @@ describe('AuthService', () => {
     });
     prisma.passwordResetToken.deleteMany.mockResolvedValue({ count: 1 });
     prisma.passwordResetToken.create.mockResolvedValue({ id: 'reset-1' });
-
-    const loggerSpy = jest
-      .spyOn(
-        (service as { logger: { log: (message: string) => void } }).logger,
-        'log',
-      )
-      .mockImplementation(() => undefined);
 
     const result = await service.forgotPassword({
       email: 'owner@moulhanout.ma',
@@ -263,10 +261,9 @@ describe('AuthService', () => {
         expiresAt: expect.any(Date),
       },
     });
-    expect(loggerSpy).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'Password reset link for owner@moulhanout.ma: http://localhost:3000/reset-password?token=',
-      ),
+    expect(mailService.sendPasswordResetEmail).toHaveBeenCalledWith(
+      'owner@moulhanout.ma',
+      expect.stringMatching(/^http:\/\/localhost:3000\/reset-password\?token=/),
     );
     expect(result).toEqual({
       message:
@@ -282,6 +279,7 @@ describe('AuthService', () => {
     });
 
     expect(prisma.passwordResetToken.create).not.toHaveBeenCalled();
+    expect(mailService.sendPasswordResetEmail).not.toHaveBeenCalled();
     expect(result).toEqual({
       message:
         'If an account exists for that email, a password reset link has been generated.',

@@ -11,7 +11,10 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '../../common/enums';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { GetInventoryReportQueryDto, GetSalesReportQueryDto } from './dto/report.dto';
+import {
+  GetInventoryReportQueryDto,
+  GetSalesReportQueryDto,
+} from './dto/report.dto';
 import { ReportsService } from './reports.service';
 
 @ApiTags('reports')
@@ -23,7 +26,9 @@ export class ReportsController {
 
   @Roles(Role.OWNER)
   @Get('sales')
-  @ApiOkResponse({ description: 'Sales grouped by day for the given date range.' })
+  @ApiOkResponse({
+    description: 'Sales grouped by day for the given date range.',
+  })
   getSalesReport(
     @CurrentUser('shopId') shopId: string,
     @Query() query: GetSalesReportQueryDto,
@@ -33,7 +38,9 @@ export class ReportsController {
 
   @Roles(Role.OWNER)
   @Get('inventory')
-  @ApiOkResponse({ description: 'Low-stock products and products expiring within N days.' })
+  @ApiOkResponse({
+    description: 'Low-stock products and products expiring within N days.',
+  })
   getInventoryReport(
     @CurrentUser('shopId') shopId: string,
     @Query() query: GetInventoryReportQueryDto,
@@ -44,7 +51,9 @@ export class ReportsController {
   @Roles(Role.OWNER)
   @Get('sales/export')
   @ApiProduces('text/csv')
-  @ApiOkResponse({ description: 'CSV file of daily sales for the given date range.' })
+  @ApiOkResponse({
+    description: 'CSV file of daily sales for the given date range.',
+  })
   async exportSalesCsv(
     @CurrentUser('shopId') shopId: string,
     @Query() query: GetSalesReportQueryDto,

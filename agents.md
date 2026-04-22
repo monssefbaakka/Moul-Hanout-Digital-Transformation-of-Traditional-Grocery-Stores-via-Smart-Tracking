@@ -348,6 +348,173 @@ it is WRONG.
 
 ---
 
+# 🧾 18. MANDATORY POST-TASK DOCUMENTATION OUTPUT
+
+After completing ANY task, the AI agent MUST produce a documentation file before ending its response.
+
+This is mandatory.
+
+## 18.1 Output File Requirement
+
+For every completed task, create a documentation file named using this format:
+
+docs/task-[short-feature-name].md
+
+Example:
+- docs/task-auth-login-fix.md
+- docs/task-products-module-update.md
+- docs/task-ui-sidebar-standardization.md
+
+---
+
+## 18.2 Required Structure of the Documentation File
+
+The documentation file MUST contain the following sections in this exact order:
+
+# Task Documentation
+
+## 1. What Was Done
+Explain clearly what was implemented, fixed, changed, or improved.
+
+This section must be written for an engineering student.
+The explanation must be educational, clear, and structured.
+Avoid vague wording.
+
+Include:
+- the task objective
+- the problem that existed
+- the implemented solution
+- the final result
+
+---
+
+## 2. Detailed Audit
+This section is mandatory and must be highly detailed.
+
+Explain:
+- every important action performed
+- why each action was necessary
+- what alternatives were considered if relevant
+- why the chosen solution was preferred
+- architecture choices
+- technical constraints
+- risks avoided
+- files impacted
+- logic that was preserved
+- logic that was changed
+
+This section must justify the agent’s decisions like an engineering audit trail.
+
+---
+
+## 3. Technical Choices and Reasoning
+Explain the design and implementation choices.
+
+Include:
+- naming choices
+- structural choices
+- dependency decisions
+- performance considerations
+- maintainability considerations
+- scalability considerations
+- security considerations if relevant
+
+---
+
+## 4. Files Modified
+List all created, updated, renamed, or deleted files.
+
+Format:
+- `path/to/file.ext` — short explanation of what changed
+
+---
+
+## 5. Validation and Checks
+Document how the work was validated.
+
+Include when applicable:
+- build status
+- lint status
+- type-check status
+- manual test status
+- API validation
+- UI validation
+- regression check
+
+If something could not be validated, state it explicitly.
+
+---
+
+## 6. Mermaid Diagrams
+The documentation file MUST end with one or more Mermaid diagrams to help understanding.
+
+Use diagrams when relevant, such as:
+- flowchart
+- sequenceDiagram
+- classDiagram
+- graph TD
+- stateDiagram
+
+The diagrams must explain:
+- workflow
+- architecture
+- request/response flow
+- module interaction
+- before/after logic
+- decision flow
+
+At least one Mermaid diagram is required.
+
+---
+
+## 18.3 Commit Message Requirement
+
+After generating the documentation file, the agent MUST also provide:
+
+## Commit Message
+A clean conventional commit message matching the work done.
+
+Examples:
+- feat: add post-task technical documentation workflow
+- fix: resolve cashier sales submission issue in production
+- refactor: standardize sidebar layout across dashboard pages
+
+---
+
+## 18.4 Quality Rules
+
+The post-task documentation MUST be:
+- precise
+- technical
+- educational
+- structured
+- understandable by an engineering student
+- faithful to the real work done
+
+The agent MUST NOT:
+- invent actions that were not performed
+- claim tests passed if they were not run
+- hide uncertainties
+- skip the audit section
+- skip Mermaid diagrams
+- skip the commit message
+
+---
+
+## 18.5 Completion Rule
+
+A task is NOT fully complete until:
+1. the implementation is finished
+2. the documentation file is generated
+3. the audit section is included
+4. the Mermaid diagrams are included
+5. the commit message is provided
+
+---
+
+---
+
+
 # 🔥 FINAL NOTE
 
 This project enforces:

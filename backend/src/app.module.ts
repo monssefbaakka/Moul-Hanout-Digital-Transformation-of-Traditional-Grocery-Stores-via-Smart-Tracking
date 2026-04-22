@@ -24,6 +24,7 @@ import { appConfig } from './config/app.config';
 import { authConfig } from './config/auth.config';
 import { jwtConfig } from './config/jwt.config';
 import { databaseConfig } from './config/database.config';
+import { mailConfig } from './config/mail.config';
 import { validateEnv } from './config/env.validation';
 
 @Injectable()
@@ -43,7 +44,7 @@ export class RedisClient extends Redis implements OnApplicationShutdown {
     // Configuration — load env first
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, authConfig, jwtConfig, databaseConfig],
+      load: [appConfig, authConfig, jwtConfig, databaseConfig, mailConfig],
       envFilePath: ['.env.local', '.env'],
       validate: validateEnv,
     }),

@@ -56,7 +56,9 @@ export class ProductsService {
         salePrice: dto.salePrice,
         costPrice: dto.costPrice,
         lowStockThreshold: dto.lowStockThreshold ?? 5,
-        expirationDate: dto.expirationDate ? new Date(dto.expirationDate) : undefined,
+        expirationDate: dto.expirationDate
+          ? new Date(dto.expirationDate)
+          : undefined,
       },
       include: {
         category: true,
@@ -78,7 +80,9 @@ export class ProductsService {
 
     const salePrice = dto.salePrice ?? existingProduct.salePrice;
     const costPrice =
-      dto.costPrice === undefined ? existingProduct.costPrice ?? undefined : dto.costPrice;
+      dto.costPrice === undefined
+        ? (existingProduct.costPrice ?? undefined)
+        : dto.costPrice;
 
     this.validatePricing(salePrice, costPrice);
 
@@ -120,11 +124,16 @@ export class ProductsService {
 
   private validatePricing(salePrice: number, costPrice?: number) {
     if (costPrice !== undefined && costPrice > salePrice) {
-      throw new UnprocessableEntityException('RG08: costPrice cannot be greater than salePrice');
+      throw new UnprocessableEntityException(
+        'RG08: costPrice cannot be greater than salePrice',
+      );
     }
   }
 
-  private async ensureCategoryBelongsToShop(shopId: string, categoryId: string) {
+  private async ensureCategoryBelongsToShop(
+    shopId: string,
+    categoryId: string,
+  ) {
     const category = await this.prisma.category.findFirst({
       where: {
         id: categoryId,
