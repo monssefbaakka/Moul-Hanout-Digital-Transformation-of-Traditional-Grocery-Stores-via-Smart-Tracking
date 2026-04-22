@@ -22,59 +22,65 @@ import {
 
 const MAX_TOP_PRODUCTS = 5;
 
+const salesListInclude = {
+  cashier: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+  items: {
+    select: {
+      qty: true,
+    },
+  },
+} satisfies Prisma.SaleInclude;
+
 type SalesListEntry = Prisma.SaleGetPayload<{
-  include: {
-    cashier: {
-      select: {
-        id: true;
-        name: true;
-      };
-    };
-    items: {
-      select: {
-        qty: true;
-      };
-    };
-  };
+  include: typeof salesListInclude;
 }>;
+
+const saleDetailInclude = {
+  cashier: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  },
+  items: {
+    include: {
+      product: {
+        select: {
+          id: true,
+          name: true,
+          barcode: true,
+          unit: true,
+        },
+      },
+    },
+  },
+  payments: true,
+} satisfies Prisma.SaleInclude;
 
 type SaleDetail = Prisma.SaleGetPayload<{
-  include: {
-    cashier: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-      };
-    };
-    items: {
-      include: {
-        product: {
-          select: {
-            id: true;
-            name: true;
-            barcode: true;
-            unit: true;
-          };
-        };
-      };
-    };
-    payments: true;
-  };
+  include: typeof saleDetailInclude;
 }>;
 
+const summarySaleItemSelect = {
+  productId: true,
+  qty: true,
+  unitPrice: true,
+  discount: true,
+  product: {
+    select: {
+      name: true,
+    },
+  },
+} satisfies Prisma.SaleItemSelect;
+
 type SummarySaleItem = Prisma.SaleItemGetPayload<{
-  select: {
-    productId: true;
-    qty: true;
-    unitPrice: true;
-    discount: true;
-    product: {
-      select: {
-        name: true;
-      };
-    };
-  };
+  select: typeof summarySaleItemSelect;
 }>;
 
 @Injectable()
@@ -92,7 +98,7 @@ export class SalesService {
       select: {
         timezone: true,
       },
-    } as never);
+    });
 
     if (!shop) {
       throw new NotFoundException('Shop not found');
@@ -108,41 +114,25 @@ export class SalesService {
       },
     };
 
-    const [transactionCount, revenueAggregate] =
-      (await this.prisma.$transaction([
+    const [transactionCount, revenueAggregate] = await this.prisma.$transaction(
+      [
         this.prisma.sale.count({
           where: saleWhere,
-        } as never),
+        }),
         this.prisma.sale.aggregate({
           where: saleWhere,
           _sum: {
             totalAmount: true,
           },
-        } as never),
-      ])) as [
-        number,
-        {
-          _sum: {
-            totalAmount: number | null;
-          };
-        },
-      ];
-    const saleItems = (await this.prisma.saleItem.findMany({
+        }),
+      ],
+    );
+    const saleItems = await this.prisma.saleItem.findMany({
       where: {
         sale: saleWhere,
       },
-      select: {
-        productId: true,
-        qty: true,
-        unitPrice: true,
-        discount: true,
-        product: {
-          select: {
-            name: true,
-          },
-        },
-      },
-    } as never)) as unknown as SummarySaleItem[];
+      select: summarySaleItemSelect,
+    });
 
     const topProducts = this.buildTopProducts(saleItems);
 
@@ -169,30 +159,18 @@ export class SalesService {
     const limit = query.limit ?? 20;
     const where = this.buildSaleListWhereClause(shopId, query);
 
-    const [totalCount, sales] = (await this.prisma.$transaction([
-      this.prisma.sale.count({ where } as never),
+    const [totalCount, sales] = await this.prisma.$transaction([
+      this.prisma.sale.count({ where }),
       this.prisma.sale.findMany({
         where,
-        include: {
-          cashier: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          items: {
-            select: {
-              qty: true,
-            },
-          },
-        },
+        include: salesListInclude,
         orderBy: {
           soldAt: 'desc',
         },
         skip: (page - 1) * limit,
         take: limit,
-      } as never),
-    ])) as [number, SalesListEntry[]];
+      }),
+    ]);
 
     return {
       items: sales.map((sale) => ({
@@ -230,7 +208,7 @@ export class SalesService {
             in: requestedProductIds,
           },
         },
-      } as never);
+      });
 
       const productById = new Map(
         products.map((product) => [product.id, product]),
@@ -303,11 +281,7 @@ export class SalesService {
             },
           },
         },
-        include: {
-          items: true,
-          payments: true,
-        },
-      } as never);
+      });
 
       for (const [
         productId,
@@ -322,7 +296,7 @@ export class SalesService {
           data: {
             currentStock: product.currentStock - requiredQuantity,
           },
-        } as never);
+        });
 
         await this.alertsPort.syncProductAlerts(tx, updatedProduct);
 
@@ -334,7 +308,7 @@ export class SalesService {
             reason: `Sale #${receiptNumber}`,
             createdBy: userId,
           },
-        } as never);
+        });
       }
 
       await tx.auditLog.create({
@@ -352,9 +326,9 @@ export class SalesService {
             items: saleItemsData,
           },
         },
-      } as never);
+      });
 
-      return this.getSaleDetail(tx, shopId, sale.id) as Promise<SaleDetail>;
+      return this.getSaleDetail(tx, shopId, sale.id);
     });
   }
 
@@ -413,35 +387,14 @@ export class SalesService {
     prismaClient: Prisma.TransactionClient | PrismaService,
     shopId: string,
     saleId: string,
-  ) {
+  ): Promise<SaleDetail | null> {
     return prismaClient.sale.findFirst({
       where: {
         id: saleId,
         shopId,
       },
-      include: {
-        cashier: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        items: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                barcode: true,
-                unit: true,
-              },
-            },
-          },
-        },
-        payments: true,
-      },
-    } as never) as Promise<SaleDetail | null>;
+      include: saleDetailInclude,
+    });
   }
 
   private buildSaleListWhereClause(

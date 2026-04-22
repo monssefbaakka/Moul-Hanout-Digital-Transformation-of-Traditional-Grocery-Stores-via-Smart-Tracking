@@ -17,7 +17,7 @@ export class LoginDto {
   })
   @IsEmail({}, { message: 'Please provide a valid email address' })
   @IsNotEmpty({ message: 'Email is required' })
-  email: string;
+  email!: string;
 
   @ApiProperty({
     description: 'The user password (min 8 characters)',
@@ -27,7 +27,7 @@ export class LoginDto {
   @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
   @IsNotEmpty({ message: 'Password is required' })
-  password: string;
+  password!: string;
 }
 
 /**
@@ -44,7 +44,7 @@ export class RegisterDto {
   @IsNotEmpty({ message: 'Name is required' })
   @MinLength(2, { message: 'Name must be at least 2 characters long' })
   @MaxLength(80, { message: 'Name cannot exceed 80 characters' })
-  name: string;
+  name!: string;
 
   @ApiProperty({
     description: 'The email address for the new account',
@@ -52,7 +52,7 @@ export class RegisterDto {
   })
   @IsEmail({}, { message: 'Please provide a valid email address' })
   @IsNotEmpty({ message: 'Email is required' })
-  email: string;
+  email!: string;
 
   @ApiProperty({
     description: 'Secure password for the new account (min 8 characters)',
@@ -62,7 +62,7 @@ export class RegisterDto {
   @IsString()
   @IsNotEmpty({ message: 'Password is required' })
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
-  password: string;
+  password!: string;
 }
 
 /**
@@ -74,7 +74,7 @@ export class RefreshTokenDto {
   })
   @IsString()
   @IsNotEmpty({ message: 'Refresh token is required' })
-  refreshToken: string;
+  refreshToken!: string;
 }
 
 /**
@@ -87,7 +87,7 @@ export class ForgotPasswordDto {
   })
   @IsEmail({}, { message: 'Please provide a valid email address' })
   @IsNotEmpty({ message: 'Email is required' })
-  email: string;
+  email!: string;
 }
 
 /**
@@ -100,7 +100,7 @@ export class ResetPasswordDto {
   })
   @IsString()
   @IsNotEmpty({ message: 'Reset token is required' })
-  token: string;
+  token!: string;
 
   @ApiProperty({
     description: 'The new password to save for the account',
@@ -110,5 +110,5 @@ export class ResetPasswordDto {
   @IsString()
   @IsNotEmpty({ message: 'Password is required' })
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
-  password: string;
+  password!: string;
 }

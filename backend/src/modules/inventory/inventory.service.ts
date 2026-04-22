@@ -13,21 +13,31 @@ import { StockInDto, StockOutDto } from './dto/inventory.dto';
 const EXPIRING_SOON_DAYS = 5;
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
+const inventoryProductInclude = {
+  category: true,
+} satisfies Prisma.ProductInclude;
+
+type InventoryProduct = Prisma.ProductGetPayload<{
+  include: typeof inventoryProductInclude;
+}>;
+
+const stockMovementRelationsInclude = {
+  product: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+  user: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+} satisfies Prisma.StockMovementInclude;
+
 type StockMovementWithRelations = Prisma.StockMovementGetPayload<{
-  include: {
-    product: {
-      select: {
-        id: true;
-        name: true;
-      };
-    };
-    user: {
-      select: {
-        id: true;
-        name: true;
-      };
-    };
-  };
+  include: typeof stockMovementRelationsInclude;
 }>;
 
 @Injectable()
@@ -43,13 +53,11 @@ export class InventoryService {
         shopId,
         isActive: true,
       },
-      include: {
-        category: true,
-      },
+      include: inventoryProductInclude,
       orderBy: {
         name: 'asc',
       },
-    } as never);
+    });
 
     return products.map((product) => this.toInventoryItem(product));
   }
@@ -72,10 +80,8 @@ export class InventoryService {
           currentStock: updatedStock,
           expirationDate,
         },
-        include: {
-          category: true,
-        },
-      } as never);
+        include: inventoryProductInclude,
+      });
 
       await tx.stockMovement.create({
         data: {
@@ -85,7 +91,7 @@ export class InventoryService {
           reason: dto.reason,
           createdBy: userId,
         },
-      } as never);
+      });
 
       await tx.auditLog.create({
         data: {
@@ -102,7 +108,7 @@ export class InventoryService {
             expirationDate: updatedProduct.expirationDate,
           },
         },
-      } as never);
+      });
 
       await this.alertsPort.syncProductAlerts(tx, updatedProduct);
 
@@ -131,10 +137,8 @@ export class InventoryService {
         data: {
           currentStock: updatedStock,
         },
-        include: {
-          category: true,
-        },
-      } as never);
+        include: inventoryProductInclude,
+      });
 
       await tx.stockMovement.create({
         data: {
@@ -144,7 +148,7 @@ export class InventoryService {
           reason: dto.reason,
           createdBy: userId,
         },
-      } as never);
+      });
 
       await tx.auditLog.create({
         data: {
@@ -160,7 +164,7 @@ export class InventoryService {
             newStock: updatedStock,
           },
         },
-      } as never);
+      });
 
       await this.alertsPort.syncProductAlerts(tx, updatedProduct);
 
@@ -190,31 +194,18 @@ export class InventoryService {
   }
 
   async findRecentMovements(shopId: string) {
-    const movements = (await this.prisma.stockMovement.findMany({
+    const movements = await this.prisma.stockMovement.findMany({
       where: {
         product: {
           shopId,
         },
       },
-      include: {
-        product: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        user: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
+      include: stockMovementRelationsInclude,
       orderBy: {
         createdAt: 'desc',
       },
       take: 50,
-    } as never)) as StockMovementWithRelations[];
+    });
 
     return movements.map((movement) => ({
       id: movement.id,
@@ -239,10 +230,8 @@ export class InventoryService {
         shopId,
         isActive: true,
       },
-      include: {
-        category: true,
-      },
-    } as never);
+      include: inventoryProductInclude,
+    });
 
     if (!product) {
       throw new NotFoundException('Product not found');
@@ -251,17 +240,7 @@ export class InventoryService {
     return product;
   }
 
-  private toInventoryItem(product: {
-    id: string;
-    name: string;
-    categoryId: string;
-    category?: { name: string } | null;
-    barcode?: string | null;
-    unit?: string | null;
-    currentStock: number;
-    lowStockThreshold: number;
-    expirationDate?: Date | null;
-  }) {
+  private toInventoryItem(product: InventoryProduct) {
     const expirationDate = product.expirationDate?.toISOString() ?? null;
 
     return {

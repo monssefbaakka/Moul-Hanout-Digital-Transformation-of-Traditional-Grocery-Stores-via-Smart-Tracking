@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { SaleStatus } from '@prisma/client';
+import { Prisma, SaleStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import {
   GetInventoryReportQueryDto,
@@ -7,6 +7,23 @@ import {
 } from './dto/report.dto';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const salesReportSelect = {
+  soldAt: true,
+  totalAmount: true,
+} satisfies Prisma.SaleSelect;
+
+type SalesReportSale = Prisma.SaleGetPayload<{
+  select: typeof salesReportSelect;
+}>;
+
+const inventoryReportInclude = {
+  category: true,
+} satisfies Prisma.ProductInclude;
+
+type InventoryReportProduct = Prisma.ProductGetPayload<{
+  include: typeof inventoryReportInclude;
+}>;
 
 @Injectable()
 export class ReportsService {
@@ -20,7 +37,7 @@ export class ReportsService {
       select: {
         timezone: true,
       },
-    } as never);
+    });
 
     if (!shop) {
       throw new NotFoundException('Shop not found');
@@ -34,14 +51,14 @@ export class ReportsService {
       day: '2-digit',
     });
 
-    const sales = (await this.prisma.sale.findMany({
+    const sales = await this.prisma.sale.findMany({
       where: {
         shopId,
         status: SaleStatus.COMPLETED,
         soldAt: { gte: reportWindow.start, lte: reportWindow.end },
       },
-      select: { soldAt: true, totalAmount: true },
-    } as never)) as { soldAt: Date; totalAmount: number }[];
+      select: salesReportSelect,
+    });
 
     const dayMap = new Map<
       string,
@@ -78,24 +95,24 @@ export class ReportsService {
     const now = new Date();
     const expiryThreshold = new Date(now.getTime() + expiryDays * MS_PER_DAY);
 
-    const [allProducts, expiringSoonRaw] = (await Promise.all([
+    const [allProducts, expiringSoonRaw] = await Promise.all([
       this.prisma.product.findMany({
         where: { shopId, isActive: true },
-        include: { category: true },
+        include: inventoryReportInclude,
         orderBy: { name: 'asc' },
-      } as never),
+      }),
       this.prisma.product.findMany({
         where: {
           shopId,
           isActive: true,
           expirationDate: { gte: now, lte: expiryThreshold },
         },
-        include: { category: true },
+        include: inventoryReportInclude,
         orderBy: { expirationDate: 'asc' },
-      } as never),
-    ])) as [any[], any[]];
+      }),
+    ]);
 
-    const toItem = (p: any) => ({
+    const toItem = (p: InventoryReportProduct) => ({
       id: p.id,
       name: p.name,
       currentStock: p.currentStock,

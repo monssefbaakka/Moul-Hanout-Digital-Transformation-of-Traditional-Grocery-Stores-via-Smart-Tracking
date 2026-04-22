@@ -7,20 +7,33 @@ const ALERT_EXPIRY_DAYS = 5;
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 const MANAGED_ALERT_TYPES = [AlertType.LOW_STOCK, AlertType.EXPIRY] as const;
 
+const alertProductSelect = {
+  id: true,
+  name: true,
+  currentStock: true,
+  lowStockThreshold: true,
+  expirationDate: true,
+  isActive: true,
+} satisfies Prisma.ProductSelect;
+
+const alertWithProductInclude = {
+  product: {
+    select: alertProductSelect,
+  },
+} satisfies Prisma.AlertInclude;
+
 type AlertWithProduct = Prisma.AlertGetPayload<{
-  include: {
-    product: {
-      select: {
-        id: true;
-        name: true;
-        currentStock: true;
-        lowStockThreshold: true;
-        expirationDate: true;
-        isActive: true;
-      };
-    };
-  };
+  include: typeof alertWithProductInclude;
 }>;
+
+const alertSyncProductSelect = {
+  id: true,
+  shopId: true,
+  name: true,
+  currentStock: true,
+  lowStockThreshold: true,
+  expirationDate: true,
+} satisfies Prisma.ProductSelect;
 
 @Injectable()
 export class AlertsService implements AlertsPort {
@@ -29,24 +42,13 @@ export class AlertsService implements AlertsPort {
   async findAll(shopId: string) {
     await this.syncShopAlerts(shopId);
 
-    const alerts = (await this.prisma.alert.findMany({
+    const alerts = await this.prisma.alert.findMany({
       where: {
         shopId,
       },
-      include: {
-        product: {
-          select: {
-            id: true,
-            name: true,
-            currentStock: true,
-            lowStockThreshold: true,
-            expirationDate: true,
-            isActive: true,
-          },
-        },
-      },
+      include: alertWithProductInclude,
       orderBy: [{ isRead: 'asc' }, { createdAt: 'desc' }],
-    } as never)) as AlertWithProduct[];
+    });
 
     return alerts
       .filter((alert) => alert.product.isActive)
@@ -62,32 +64,21 @@ export class AlertsService implements AlertsPort {
       select: {
         id: true,
       },
-    } as never);
+    });
 
     if (!existingAlert) {
       throw new NotFoundException('Alert not found');
     }
 
-    const updatedAlert = (await this.prisma.alert.update({
+    const updatedAlert = await this.prisma.alert.update({
       where: {
         id: alertId,
       },
       data: {
         isRead: true,
       },
-      include: {
-        product: {
-          select: {
-            id: true,
-            name: true,
-            currentStock: true,
-            lowStockThreshold: true,
-            expirationDate: true,
-            isActive: true,
-          },
-        },
-      },
-    } as never)) as AlertWithProduct;
+      include: alertWithProductInclude,
+    });
 
     return this.toAlertItem(updatedAlert);
   }
@@ -99,15 +90,8 @@ export class AlertsService implements AlertsPort {
           shopId,
           isActive: true,
         },
-        select: {
-          id: true,
-          shopId: true,
-          name: true,
-          currentStock: true,
-          lowStockThreshold: true,
-          expirationDate: true,
-        },
-      } as never) as Promise<AlertSyncProduct[]>,
+        select: alertSyncProductSelect,
+      }),
       this.prisma.alert.findMany({
         where: {
           shopId,
@@ -115,7 +99,7 @@ export class AlertsService implements AlertsPort {
             in: [...MANAGED_ALERT_TYPES],
           },
         },
-      } as never),
+      }),
     ]);
 
     const activeProductIds = new Set(products.map((product) => product.id));
@@ -130,7 +114,7 @@ export class AlertsService implements AlertsPort {
             in: staleAlertIds,
           },
         },
-      } as never);
+      });
     }
 
     const alertsByProductId = new Map<string, typeof existingAlerts>();
@@ -166,7 +150,7 @@ export class AlertsService implements AlertsPort {
           in: [...MANAGED_ALERT_TYPES],
         },
       },
-    } as never);
+    });
 
     await this.reconcileProductAlerts(prismaClient, product, existingAlerts);
   }
@@ -206,7 +190,7 @@ export class AlertsService implements AlertsPort {
                 in: currentAlerts.map((alert) => alert.id),
               },
             },
-          } as never);
+          });
         }
         continue;
       }
@@ -219,7 +203,7 @@ export class AlertsService implements AlertsPort {
             type,
             message: desiredMessage,
           },
-        } as never);
+        });
         continue;
       }
 
@@ -232,7 +216,7 @@ export class AlertsService implements AlertsPort {
             message: desiredMessage,
             isRead: false,
           },
-        } as never);
+        });
       }
 
       if (duplicateAlerts.length > 0) {
@@ -242,7 +226,7 @@ export class AlertsService implements AlertsPort {
               in: duplicateAlerts.map((alert) => alert.id),
             },
           },
-        } as never);
+        });
       }
     }
   }

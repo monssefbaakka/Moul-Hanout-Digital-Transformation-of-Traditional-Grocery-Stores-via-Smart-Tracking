@@ -16,17 +16,17 @@ export class CreateProductDto {
   @IsString()
   @IsNotEmpty({ message: 'Product name is required' })
   @MaxLength(120, { message: 'Product name cannot exceed 120 characters' })
-  name: string;
+  name!: string;
 
   @ApiProperty({ example: 'cat-123' })
   @IsString()
   @IsNotEmpty({ message: 'Category id is required' })
-  categoryId: string;
+  categoryId!: string;
 
   @ApiProperty({ example: 8.5 })
   @IsNumber()
   @Min(0, { message: 'Sale price must be greater than or equal to 0' })
-  salePrice: number;
+  salePrice!: number;
 
   @ApiPropertyOptional({ example: 5.25 })
   @IsOptional()

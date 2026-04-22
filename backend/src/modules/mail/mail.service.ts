@@ -4,7 +4,9 @@ import { createTransport } from 'nodemailer';
 
 const PASSWORD_RESET_SUBJECT = 'Reset your Moul Hanout password';
 
-interface MailTransporter {
+type MailTransporter = ReturnType<typeof createTransport>;
+
+interface PasswordResetMailTransporter {
   sendMail(options: {
     from: string;
     to: string;
@@ -13,16 +15,6 @@ interface MailTransporter {
     html: string;
   }): Promise<unknown>;
 }
-
-type CreateMailTransport = (options: {
-  host: string;
-  port: number;
-  secure: boolean;
-  auth: {
-    user: string;
-    pass: string;
-  };
-}) => MailTransporter;
 
 @Injectable()
 export class MailService {
@@ -39,10 +31,7 @@ export class MailService {
       return;
     }
 
-    const createMailTransport =
-      createTransport as unknown as CreateMailTransport;
-
-    this.transporter = createMailTransport({
+    this.transporter = createTransport({
       host: this.config.getOrThrow<string>('mail.host'),
       port: this.config.getOrThrow<number>('mail.port'),
       secure: this.config.get<boolean>('mail.secure') ?? false,
@@ -72,7 +61,7 @@ export class MailService {
     `;
 
     try {
-      await this.transporter.sendMail({
+      await (this.transporter as PasswordResetMailTransporter).sendMail({
         from: this.fromAddress,
         to,
         subject: PASSWORD_RESET_SUBJECT,

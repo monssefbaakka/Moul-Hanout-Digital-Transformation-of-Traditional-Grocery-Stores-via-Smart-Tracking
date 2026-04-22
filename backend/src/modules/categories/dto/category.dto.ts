@@ -12,7 +12,7 @@ export class CreateCategoryDto {
   @IsString()
   @IsNotEmpty({ message: 'Category name is required' })
   @MaxLength(80, { message: 'Category name cannot exceed 80 characters' })
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional({ example: 'Soft drinks and bottled water' })
   @IsOptional()

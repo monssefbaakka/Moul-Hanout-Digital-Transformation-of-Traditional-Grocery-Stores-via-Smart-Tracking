@@ -3,7 +3,23 @@ import { Reflector } from '@nestjs/core';
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { RolesGuard } from './roles.guard';
 import { Role } from '../enums';
-import { ROLES_KEY } from '../decorators/roles.decorator';
+
+function createExecutionContext(user: { role: Role } | null): ExecutionContext {
+  return {
+    getClass: jest.fn(),
+    getHandler: jest.fn(),
+    getArgs: jest.fn(),
+    getArgByIndex: jest.fn(),
+    switchToRpc: jest.fn(),
+    switchToWs: jest.fn(),
+    getType: jest.fn(),
+    switchToHttp: jest.fn().mockReturnValue({
+      getRequest: jest.fn().mockReturnValue({ user }),
+      getResponse: jest.fn(),
+      getNext: jest.fn(),
+    }),
+  };
+}
 
 describe('RolesGuard', () => {
   let guard: RolesGuard;
@@ -33,13 +49,7 @@ describe('RolesGuard', () => {
   it('should return true if no roles are required', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(null);
 
-    const context = {
-      getHandler: jest.fn(),
-      getClass: jest.fn(),
-      switchToHttp: jest.fn().mockReturnValue({
-        getRequest: jest.fn().mockReturnValue({ user: { role: Role.CASHIER } }),
-      }),
-    } as unknown as ExecutionContext;
+    const context = createExecutionContext({ role: Role.CASHIER });
 
     expect(guard.canActivate(context)).toBe(true);
   });
@@ -47,13 +57,7 @@ describe('RolesGuard', () => {
   it('should return true if user has the required role', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([Role.OWNER]);
 
-    const context = {
-      getHandler: jest.fn(),
-      getClass: jest.fn(),
-      switchToHttp: jest.fn().mockReturnValue({
-        getRequest: jest.fn().mockReturnValue({ user: { role: Role.OWNER } }),
-      }),
-    } as unknown as ExecutionContext;
+    const context = createExecutionContext({ role: Role.OWNER });
 
     expect(guard.canActivate(context)).toBe(true);
   });
@@ -61,13 +65,7 @@ describe('RolesGuard', () => {
   it('should throw ForbiddenException if user has wrong role', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([Role.OWNER]);
 
-    const context = {
-      getHandler: jest.fn(),
-      getClass: jest.fn(),
-      switchToHttp: jest.fn().mockReturnValue({
-        getRequest: jest.fn().mockReturnValue({ user: { role: Role.CASHIER } }),
-      }),
-    } as unknown as ExecutionContext;
+    const context = createExecutionContext({ role: Role.CASHIER });
 
     expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
   });
@@ -75,13 +73,7 @@ describe('RolesGuard', () => {
   it('should throw ForbiddenException if no user is present', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([Role.OWNER]);
 
-    const context = {
-      getHandler: jest.fn(),
-      getClass: jest.fn(),
-      switchToHttp: jest.fn().mockReturnValue({
-        getRequest: jest.fn().mockReturnValue({ user: null }),
-      }),
-    } as unknown as ExecutionContext;
+    const context = createExecutionContext(null);
 
     expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
   });
