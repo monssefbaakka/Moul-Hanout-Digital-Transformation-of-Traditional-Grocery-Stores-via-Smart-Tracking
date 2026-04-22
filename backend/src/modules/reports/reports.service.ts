@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { SaleStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import {
@@ -13,16 +13,32 @@ export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getSalesReport(shopId: string, dto: GetSalesReportQueryDto) {
-    const from = dto.from
-      ? new Date(dto.from + 'T00:00:00.000Z')
-      : new Date(Date.now() - 30 * MS_PER_DAY);
-    const to = dto.to ? new Date(dto.to + 'T23:59:59.999Z') : new Date();
+    const shop = await this.prisma.shop.findUnique({
+      where: {
+        id: shopId,
+      },
+      select: {
+        timezone: true,
+      },
+    } as never);
+
+    if (!shop) {
+      throw new NotFoundException('Shop not found');
+    }
+
+    const reportWindow = this.resolveSalesReportWindow(shop.timezone, dto);
+    const localDateFormatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: shop.timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
 
     const sales = (await this.prisma.sale.findMany({
       where: {
         shopId,
         status: SaleStatus.COMPLETED,
-        soldAt: { gte: from, lte: to },
+        soldAt: { gte: reportWindow.start, lte: reportWindow.end },
       },
       select: { soldAt: true, totalAmount: true },
     } as never)) as { soldAt: Date; totalAmount: number }[];
@@ -34,11 +50,15 @@ export class ReportsService {
     let totalRevenue = 0;
 
     for (const sale of sales) {
-      const date = sale.soldAt.toISOString().split('T')[0];
-      const day = dayMap.get(date) ?? { date, revenue: 0, transactions: 0 };
+      const localDate = localDateFormatter.format(sale.soldAt);
+      const day = dayMap.get(localDate) ?? {
+        date: localDate,
+        revenue: 0,
+        transactions: 0,
+      };
       day.revenue += sale.totalAmount;
       day.transactions += 1;
-      dayMap.set(date, day);
+      dayMap.set(localDate, day);
       totalRevenue += sale.totalAmount;
     }
 
@@ -110,5 +130,84 @@ export class ReportsService {
     ];
 
     return rows.join('\n');
+  }
+
+  private resolveSalesReportWindow(
+    timeZone: string,
+    query: GetSalesReportQueryDto,
+  ) {
+    const today = this.getCurrentDateInTimeZone(timeZone);
+    const toDate = query.to ?? today;
+    const defaultFromDate = this.shiftDateByDays(toDate, -30);
+    const fromDate = query.from ?? defaultFromDate;
+
+    return {
+      start: this.createTimeZoneBoundary(fromDate, timeZone, 'start'),
+      end: this.createTimeZoneBoundary(toDate, timeZone, 'end'),
+    };
+  }
+
+  private shiftDateByDays(dateValue: string, dayOffset: number) {
+    const date = new Date(`${dateValue}T00:00:00.000Z`);
+    date.setUTCDate(date.getUTCDate() + dayOffset);
+
+    return date.toISOString().split('T')[0];
+  }
+
+  private getCurrentDateInTimeZone(timeZone: string) {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date());
+
+    const year = parts.find((part) => part.type === 'year')?.value;
+    const month = parts.find((part) => part.type === 'month')?.value;
+    const day = parts.find((part) => part.type === 'day')?.value;
+
+    return `${year}-${month}-${day}`;
+  }
+
+  private createTimeZoneBoundary(
+    dateValue: string,
+    timeZone: string,
+    boundary: 'start' | 'end',
+  ) {
+    const [year, month, day] = dateValue.split('-').map((part) => Number(part));
+    const hour = boundary === 'start' ? 0 : 23;
+    const minute = boundary === 'start' ? 0 : 59;
+    const second = boundary === 'start' ? 0 : 59;
+    const millisecond = boundary === 'start' ? 0 : 999;
+    const utcGuess = new Date(
+      Date.UTC(year, month - 1, day, hour, minute, second, millisecond),
+    );
+    const offset = this.getTimeZoneOffset(utcGuess, timeZone);
+
+    return new Date(utcGuess.getTime() - offset);
+  }
+
+  private getTimeZoneOffset(date: Date, timeZone: string) {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).formatToParts(date);
+
+    const year = Number(parts.find((part) => part.type === 'year')?.value);
+    const month = Number(parts.find((part) => part.type === 'month')?.value);
+    const day = Number(parts.find((part) => part.type === 'day')?.value);
+    const hour = Number(parts.find((part) => part.type === 'hour')?.value);
+    const minute = Number(parts.find((part) => part.type === 'minute')?.value);
+    const second = Number(parts.find((part) => part.type === 'second')?.value);
+
+    const asUtc = Date.UTC(year, month - 1, day, hour, minute, second);
+
+    return asUtc - date.getTime();
   }
 }
