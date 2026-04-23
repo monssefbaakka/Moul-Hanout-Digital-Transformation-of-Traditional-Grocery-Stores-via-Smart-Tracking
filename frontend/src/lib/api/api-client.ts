@@ -25,6 +25,7 @@ import type {
   StockInInput,
   StockMovementEntry,
   StockOutInput,
+  UpdateProfileInput,
   UpdateProductInput,
 } from '@moul-hanout/shared-types';
 
@@ -200,6 +201,9 @@ export const authApi = {
 };
 
 export const usersApi = {
+  me: () => request<AdminUser>('/users/me'),
+  updateMe: (payload: UpdateProfileInput) =>
+    request<AdminUser>('/users/me', { method: 'PATCH', body: payload }),
   list: () => request<AdminUser[]>('/users'),
   deactivate: (userId: string) =>
     request<AdminUser>(`/users/${userId}/deactivate`, { method: 'PATCH' }),

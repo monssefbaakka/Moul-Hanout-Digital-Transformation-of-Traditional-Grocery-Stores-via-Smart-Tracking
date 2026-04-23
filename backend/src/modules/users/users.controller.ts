@@ -1,11 +1,12 @@
-import { Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '../../common/enums';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -13,6 +14,25 @@ import { Role } from '../../common/enums';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @ApiOkResponse({ description: 'Returns the authenticated user profile.' })
+  @Get('me')
+  findProfile(
+    @CurrentUser('shopId') shopId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.usersService.findProfile(shopId, userId);
+  }
+
+  @ApiOkResponse({ description: 'Updates the authenticated user profile.' })
+  @Patch('me')
+  updateProfile(
+    @CurrentUser('shopId') shopId: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.usersService.updateProfile(shopId, userId, dto);
+  }
 
   @Roles(Role.OWNER)
   @Get()

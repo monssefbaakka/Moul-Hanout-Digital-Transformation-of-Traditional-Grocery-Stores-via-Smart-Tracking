@@ -48,6 +48,10 @@ export interface AdminUser {
   createdAt: string;
 }
 
+export interface UpdateProfileInput {
+  email: string;
+}
+
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;

@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { createTransport } from 'nodemailer';
 
 const PASSWORD_RESET_SUBJECT = 'Reset your Moul Hanout password';
+const INVENTORY_ALERTS_SUBJECT_PREFIX = 'Moul Hanout inventory alerts';
 
 interface PasswordResetMailTransporter {
   sendMail(options: {
@@ -29,6 +30,20 @@ type CreateMailTransport = (options: {
 }) => PasswordResetMailTransporter;
 
 const createMailTransport = createTransport as unknown as CreateMailTransport;
+
+type InventoryAlertItem = {
+  productName: string;
+  currentStock: number;
+  lowStockThreshold: number;
+  expirationDate?: string | null;
+};
+
+type InventoryAlertEmailInput = {
+  shopName: string;
+  recipientName?: string;
+  lowStock: InventoryAlertItem[];
+  expiringSoon: InventoryAlertItem[];
+};
 
 @Injectable()
 export class MailService {
@@ -56,6 +71,10 @@ export class MailService {
         pass: this.config.getOrThrow<string>('mail.pass'),
       },
     });
+  }
+
+  isMailEnabled() {
+    return this.isEnabled && !!this.transporter && !!this.fromAddress;
   }
 
   async sendPasswordResetEmail(to: string, link: string): Promise<void> {
@@ -102,5 +121,135 @@ export class MailService {
         'Unable to send password reset email',
       );
     }
+  }
+
+  async sendInventoryAlertEmail(
+    to: string,
+    input: InventoryAlertEmailInput,
+  ): Promise<void> {
+    if (!this.isEnabled || !this.transporter || !this.fromAddress) {
+      throw new InternalServerErrorException(
+        'Inventory alert email is not configured',
+      );
+    }
+
+    const subject = this.buildInventoryAlertSubject(input);
+    const text = this.buildInventoryAlertText(input);
+    const html = this.buildInventoryAlertHtml(input);
+
+    try {
+      await this.transporter.sendMail({
+        from: this.fromAddress,
+        to,
+        subject,
+        text,
+        html,
+      });
+    } catch (error) {
+      const stack = error instanceof Error ? error.stack : undefined;
+
+      this.logger.error(
+        `Failed to send inventory alert email to ${to}.`,
+        stack,
+      );
+
+      throw new InternalServerErrorException(
+        'Unable to send inventory alert email',
+      );
+    }
+  }
+
+  private buildInventoryAlertSubject(input: InventoryAlertEmailInput) {
+    const parts: string[] = [];
+
+    if (input.lowStock.length > 0) {
+      parts.push(`${input.lowStock.length} low stock`);
+    }
+
+    if (input.expiringSoon.length > 0) {
+      parts.push(`${input.expiringSoon.length} expiring soon`);
+    }
+
+    return `${INVENTORY_ALERTS_SUBJECT_PREFIX} - ${parts.join(' / ')} - ${input.shopName}`;
+  }
+
+  private buildInventoryAlertText(input: InventoryAlertEmailInput) {
+    const greeting = input.recipientName
+      ? `Hello ${input.recipientName},`
+      : 'Hello,';
+    const lines = [
+      greeting,
+      '',
+      `Here is the latest inventory alert summary for ${input.shopName}.`,
+      '',
+    ];
+
+    if (input.lowStock.length > 0) {
+      lines.push('Low stock products:');
+      lines.push(
+        ...input.lowStock.map(
+          (item) =>
+            `- ${item.productName}: ${item.currentStock} remaining (threshold ${item.lowStockThreshold})`,
+        ),
+      );
+      lines.push('');
+    }
+
+    if (input.expiringSoon.length > 0) {
+      lines.push('Products expiring soon:');
+      lines.push(
+        ...input.expiringSoon.map(
+          (item) =>
+            `- ${item.productName}: expires on ${item.expirationDate ?? 'unknown date'} (stock ${item.currentStock})`,
+        ),
+      );
+      lines.push('');
+    }
+
+    lines.push(
+      'Please review the inventory dashboard to plan restocking or removal actions.',
+    );
+
+    return lines.join('\n');
+  }
+
+  private buildInventoryAlertHtml(input: InventoryAlertEmailInput) {
+    const lowStockHtml =
+      input.lowStock.length > 0
+        ? `
+          <h2>Low stock products</h2>
+          <ul>
+            ${input.lowStock
+              .map(
+                (item) =>
+                  `<li><strong>${item.productName}</strong>: ${item.currentStock} remaining (threshold ${item.lowStockThreshold})</li>`,
+              )
+              .join('')}
+          </ul>
+        `
+        : '';
+
+    const expiringSoonHtml =
+      input.expiringSoon.length > 0
+        ? `
+          <h2>Products expiring soon</h2>
+          <ul>
+            ${input.expiringSoon
+              .map(
+                (item) =>
+                  `<li><strong>${item.productName}</strong>: expires on ${item.expirationDate ?? 'unknown date'} (stock ${item.currentStock})</li>`,
+              )
+              .join('')}
+          </ul>
+        `
+        : '';
+
+    return `
+      <p>Hello${input.recipientName ? ` ${input.recipientName}` : ''},</p>
+      <p>Here is the latest inventory alert summary for <strong>${input.shopName}</strong>.</p>
+      ${lowStockHtml}
+      ${expiringSoonHtml}
+      <p>Please review the inventory dashboard to plan restocking or removal actions.</p>
+    `;
   }
 }

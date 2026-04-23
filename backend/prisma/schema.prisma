@@ -215,12 +215,14 @@ model Alert {
   productId String
   message   String
   isRead    Boolean   @default(false)
+  emailSentAt DateTime?
   createdAt DateTime  @default(now())
 
   shop    Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([shopId, isRead])
+  @@index([shopId, emailSentAt])
   @@map("alerts")
 }
 

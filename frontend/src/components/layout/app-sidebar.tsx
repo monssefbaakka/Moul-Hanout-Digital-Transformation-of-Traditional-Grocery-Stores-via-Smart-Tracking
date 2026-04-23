@@ -12,6 +12,7 @@ import {
   PackagePlus,
   ReceiptText,
   Tag,
+  User,
   Users,
   Warehouse,
   X,
@@ -73,6 +74,11 @@ const NAV_ITEMS: NavItem[] = [
     href: '/alertes',
     label: 'Alertes',
     icon: <Bell size={18} />,
+  },
+  {
+    href: '/profil',
+    label: 'Profil',
+    icon: <User size={18} />,
   },
   {
     href: '/rapports',
@@ -154,7 +160,7 @@ export function AppSidebar({ id, isOpen, onClose }: AppSidebarProps) {
         ) : null}
         <p className="app-sidebar__helper">Interface simple pour la gestion quotidienne du magasin.</p>
         {hasHydrated && user ? (
-          <div className="app-sidebar__profile">
+          <Link href="/profil" className="app-sidebar__profile">
             <span className="app-sidebar__avatar">
               {user.name
                 .split(' ')
@@ -167,7 +173,7 @@ export function AppSidebar({ id, isOpen, onClose }: AppSidebarProps) {
               <strong>{user.name}</strong>
               <small>{isOwner ? 'Proprietaire' : 'Caissier'}</small>
             </div>
-          </div>
+          </Link>
         ) : null}
       </div>
     </aside>

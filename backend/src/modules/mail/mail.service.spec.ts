@@ -184,4 +184,61 @@ describe('MailService', () => {
       expect.any(String),
     );
   });
+
+  it('sends grouped inventory alerts when SMTP is configured', async () => {
+    const configService = createConfigService({
+      'app.env': 'production',
+      'mail.isEnabled': true,
+      'mail.host': 'smtp.example.com',
+      'mail.port': 587,
+      'mail.secure': false,
+      'mail.user': 'smtp-user',
+      'mail.pass': 'smtp-pass',
+      'mail.from': 'noreply@moulhanout.ma',
+    });
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        MailService,
+        { provide: ConfigService, useValue: configService },
+      ],
+    }).compile();
+
+    const service = module.get<MailService>(MailService);
+
+    await service.sendInventoryAlertEmail('owner@moulhanout.ma', {
+      shopName: 'Main Shop',
+      recipientName: 'Store Owner',
+      lowStock: [
+        {
+          productName: 'Milk 1L',
+          currentStock: 2,
+          lowStockThreshold: 5,
+          expirationDate: null,
+        },
+      ],
+      expiringSoon: [
+        {
+          productName: 'Yogurt',
+          currentStock: 4,
+          lowStockThreshold: 3,
+          expirationDate: '2026-04-24T00:00:00.000Z',
+        },
+      ],
+    });
+
+    const mailCalls = mockSendMail.mock.calls as [PasswordResetMail][];
+    const sentMail = mailCalls[0]?.[0];
+
+    expect(sentMail).toMatchObject({
+      from: 'noreply@moulhanout.ma',
+      to: 'owner@moulhanout.ma',
+      subject:
+        'Moul Hanout inventory alerts - 1 low stock / 1 expiring soon - Main Shop',
+    });
+    expect(sentMail?.text).toContain('Low stock products:');
+    expect(sentMail?.text).toContain('Products expiring soon:');
+    expect(sentMail?.html).toContain('Milk 1L');
+    expect(sentMail?.html).toContain('Yogurt');
+  });
 });

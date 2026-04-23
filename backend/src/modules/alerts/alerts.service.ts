@@ -202,6 +202,7 @@ export class AlertsService implements AlertsPort {
             productId: product.id,
             type,
             message: desiredMessage,
+            emailSentAt: null,
           },
         });
         continue;
@@ -215,6 +216,7 @@ export class AlertsService implements AlertsPort {
           data: {
             message: desiredMessage,
             isRead: false,
+            emailSentAt: null,
           },
         });
       }

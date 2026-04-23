@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import Redis from 'ioredis';
 
@@ -48,6 +49,8 @@ export class RedisClient extends Redis implements OnApplicationShutdown {
       envFilePath: ['.env.local', '.env'],
       validate: validateEnv,
     }),
+
+    ScheduleModule.forRoot(),
 
     // Rate limiting
     ThrottlerModule.forRoot([
