@@ -7,37 +7,37 @@
 :root {
   color-scheme: light;
 
-  /* Brand */
-  --primary-50: #e6f5ee;
-  --primary-100: #c4e8d7;
-  --primary-600: #0e7c56;
-  --primary-700: #0b6446;
-  --primary-900: #064231;
+  /* Brand — Modern Emerald */
+  --primary-50: #ecfdf5;
+  --primary-100: #d1fae5;
+  --primary-600: #059669;
+  --primary-700: #047857;
+  --primary-900: #064e3b;
   --primary-strong: var(--primary-700);
 
-  /* Neutrals */
-  --bg: #f7f8fa;
+  /* Neutrals — Clean Slate */
+  --bg: #f8fafc;
   --surface: #ffffff;
-  --surface-muted: #f1f3f6;
-  --surface-soft: #eef3ff;
-  --border: #e5e7eb;
-  --border-strong: #d1d5db;
+  --surface-muted: #f1f5f9;
+  --surface-soft: #f0fdf4;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
   --text: #0f172a;
-  --text-muted: #5e6b7d;
+  --text-muted: #475569;
   --text-soft: #64748b;
 
   /* Status */
-  --success: #15803d;
-  --success-bg: #dcfce7;
-  --warning: #b45309;
-  --warning-bg: #fef3c7;
-  --danger: #b91c1c;
-  --danger-bg: #fee2e2;
+  --success: #059669;
+  --success-bg: #ecfdf5;
+  --warning: #d97706;
+  --warning-bg: #fffbeb;
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
 
-  /* Elevation */
-  --shadow-soft: 0 12px 30px rgba(15, 23, 42, 0.08);
-  --shadow-card: 0 20px 45px rgba(15, 23, 42, 0.08);
-  --shadow-floating: 0 26px 60px rgba(15, 23, 42, 0.12);
+  /* Elevation — Subtle & Clean */
+  --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.04);
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.05), 0 8px 28px rgba(15, 23, 42, 0.06);
+  --shadow-floating: 0 4px 8px rgba(15, 23, 42, 0.06), 0 24px 48px rgba(15, 23, 42, 0.1);
 
   /* shadcn token bridge */
   --background: var(--bg);
@@ -56,26 +56,26 @@
   --accent-soft: var(--primary-50);
   --accent-foreground: var(--primary-700);
   --destructive: var(--danger);
-  --input: var(--border);
-  --ring: rgba(14, 124, 86, 0.22);
+  --input: var(--surface);
+  --ring: rgba(5, 150, 105, 0.2);
 
   /* Charts */
-  --chart-1: #0e7c56;
-  --chart-2: #2563eb;
-  --chart-3: #b45309;
-  --chart-4: #b91c1c;
-  --chart-5: #475569;
+  --chart-1: #059669;
+  --chart-2: #3b82f6;
+  --chart-3: #f59e0b;
+  --chart-4: #ef4444;
+  --chart-5: #8b5cf6;
 
   /* Radius scale */
-  --radius: 0.5rem; /* 8px */
-  --radius-sm: 0.375rem; /* 6px */
-  --radius-md: 0.5rem; /* 8px */
-  --radius-lg: 0.625rem; /* 10px */
-  --radius-xl: 0.75rem; /* 12px */
-  --radius-2xl: 1rem; /* 16px */
+  --radius: 0.5rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
   --radius-full: 9999px;
 
-  /* Spacing scale (px) */
+  /* Spacing scale */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -87,13 +87,13 @@
   --space-12: 3rem;
 
   /* Typography scale */
-  --text-xs: 0.75rem; /* 12 */
-  --text-sm: 0.875rem; /* 14 */
-  --text-base: 1rem; /* 16 */
-  --text-md: 1.125rem; /* 18 */
-  --text-lg: 1.25rem; /* 20 */
-  --text-xl: 1.5rem; /* 24 */
-  --text-2xl: 1.875rem; /* 30 */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.125rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 1.875rem;
   --font-display: clamp(2.4rem, 4vw, 3.5rem);
   --font-h1: clamp(2rem, 3vw, 2.75rem);
   --font-h2: 1.875rem;
@@ -104,18 +104,7 @@
   /* Layout */
   --sidebar-w: 240px;
   --topbar-h: 56px;
-  --app-shell-bg:
-    radial-gradient(
-      circle at top left,
-      rgba(14, 124, 86, 0.1),
-      transparent 22%
-    ),
-    radial-gradient(
-      circle at top right,
-      rgba(95, 150, 255, 0.11),
-      transparent 20%
-    ),
-    linear-gradient(180deg, #f9fbff 0%, var(--bg) 100%);
+  --app-shell-bg: var(--bg);
 
   /* Sidebar bridge (shadcn) */
   --sidebar: var(--surface);
@@ -9430,4 +9419,675 @@ h4 {
   .rpt-insight-row {
     grid-template-columns: 1fr;
   }
+}
+
+/* ==========================================================================
+   DESIGN SYSTEM v2 — CLEAN MINIMALIST OVERRIDES
+   Applied after all other styles to enforce the new design language.
+   ========================================================================== */
+
+/* ── Shell & Layout ──────────────────────────────────────────────────────── */
+
+html, body {
+  background: var(--bg);
+}
+
+.app-shell,
+.products-studio-shell,
+.auth-screen {
+  background: var(--bg);
+}
+
+/* ── Panels & Cards ──────────────────────────────────────────────────────── */
+
+.hero,
+.panel,
+.module-grid article,
+.module-card {
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: none;
+}
+
+.auth-card {
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: none;
+}
+
+.product-card,
+.inventory-expiring-card,
+.category-library-card,
+.products-studio-catalog-card,
+.app-card {
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: var(--shadow-soft);
+}
+
+.inventory-table-wrapper,
+.app-table-wrapper {
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: var(--shadow-soft);
+}
+
+/* Remove warm parchment from product cards */
+.product-card {
+  background: var(--surface);
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────────  */
+
+.app-sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  backdrop-filter: none;
+  padding: 1.25rem 0.875rem;
+  gap: 1rem;
+}
+
+.app-sidebar__brand {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0 0.5rem 1.125rem;
+  margin-bottom: 0.125rem;
+}
+
+.app-sidebar__brand-mark {
+  background: var(--primary-600);
+  box-shadow: none;
+  border-radius: var(--radius-md);
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.app-sidebar__brand strong {
+  font-size: 0.95rem;
+  letter-spacing: -0.025em;
+  color: var(--text);
+}
+
+.app-sidebar__brand span {
+  font-size: 0.76rem;
+  color: var(--text-soft);
+}
+
+.app-sidebar__link {
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.75rem;
+  color: var(--text-soft);
+  gap: 0.75rem;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.app-sidebar__link:hover {
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+.app-sidebar__link.is-active {
+  background: var(--primary-50);
+  color: var(--primary-700);
+  box-shadow: none;
+}
+
+.app-sidebar__icon {
+  background: transparent;
+  border: none;
+  width: 1.625rem;
+  height: 1.625rem;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+}
+
+.app-sidebar__copy strong {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.app-sidebar__helper {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+.app-sidebar__profile {
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.875rem;
+  transition: background 150ms ease;
+}
+
+.app-sidebar__profile:hover {
+  background: var(--surface);
+}
+
+.app-sidebar__avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  background: var(--primary-600);
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.app-sidebar__actions {
+  gap: 0.5rem;
+}
+
+.app-sidebar-overlay {
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+/* ── Mobile Topbar ────────────────────────────────────────────────────────  */
+
+.app-mobile-topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
+.app-mobile-topbar__logo {
+  background: var(--primary-600);
+  border-radius: var(--radius-sm);
+  width: 1.875rem;
+  height: 1.875rem;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────  */
+
+.app-btn {
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  transition: background 150ms ease, box-shadow 150ms ease, transform 150ms ease, border-color 150ms ease;
+}
+
+.app-btn:hover {
+  transform: none;
+}
+
+.app-btn--primary {
+  box-shadow: none;
+}
+
+.app-btn--primary:hover:not(:disabled) {
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.28);
+  transform: translateY(-1px);
+}
+
+.app-btn--secondary {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.app-btn--secondary:hover:not(:disabled) {
+  background: var(--surface-muted);
+  border-color: var(--border-strong);
+}
+
+.app-btn--ghost {
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+.app-btn--ghost:hover:not(:disabled) {
+  background: var(--surface-muted);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+/* ── Form Inputs ──────────────────────────────────────────────────────────  */
+
+.field input,
+.field select,
+.field textarea,
+.products-studio-field input,
+.products-studio-field select,
+.products-studio-field textarea,
+.app-input {
+  background: var(--surface);
+  border-color: var(--border);
+  border-radius: var(--radius-md);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus,
+.products-studio-field input:focus,
+.products-studio-field select:focus,
+.products-studio-field textarea:focus {
+  border-color: var(--primary-600);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+.auth-input-wrap {
+  background: var(--surface);
+  border-color: var(--border);
+  border-radius: var(--radius-md);
+  min-height: 3.25rem;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.auth-input-wrap:focus-within {
+  border-color: var(--primary-600);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+/* ── Alerts ───────────────────────────────────────────────────────────────  */
+
+.app-alert--success,
+.status-success {
+  background: var(--success-bg);
+  border-color: rgba(5, 150, 105, 0.2);
+  color: var(--primary-700);
+}
+
+.app-alert--danger,
+.status-error {
+  background: var(--danger-bg);
+  border-color: rgba(220, 38, 38, 0.18);
+  color: #991b1b;
+}
+
+/* ── Modals ───────────────────────────────────────────────────────────────  */
+
+.app-modal {
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-floating);
+  border-color: var(--border);
+}
+
+.app-modal-backdrop {
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(6px);
+}
+
+/* ── Page Header ──────────────────────────────────────────────────────────  */
+
+.app-page-header h1 {
+  font-size: clamp(1.6rem, 2.5vw, 2.1rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--text);
+}
+
+/* ── Alerts Dropdown ──────────────────────────────────────────────────────  */
+
+.alerts-dropdown__trigger {
+  background: var(--surface);
+  border-color: var(--border);
+  border-radius: var(--radius-md);
+  transition: background 150ms ease;
+}
+
+.alerts-dropdown__trigger:hover {
+  background: var(--surface-muted);
+}
+
+/* ── Dashboard v2 — Command Bar ───────────────────────────────────────────  */
+
+.db2-command {
+  background:
+    radial-gradient(ellipse 55% 100% at 0% 50%, rgba(5, 150, 105, 0.18) 0%, transparent 65%),
+    radial-gradient(ellipse at top right, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
+    #0f172a;
+  border-radius: 1.25rem;
+  box-shadow:
+    0 4px 8px rgba(15, 23, 42, 0.12),
+    0 20px 40px rgba(15, 23, 42, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.db2-command::before {
+  background-image: none;
+  background: none;
+  opacity: 0;
+}
+
+.db2-command::after {
+  background: radial-gradient(circle, rgba(5, 150, 105, 0.12) 0%, transparent 65%);
+  width: 18rem;
+  height: 18rem;
+  top: -9rem;
+  right: -5rem;
+}
+
+.db2-command__greeting {
+  font-size: clamp(1.45rem, 2.8vw, 2rem);
+  letter-spacing: -0.04em;
+}
+
+.db2-command__cta {
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--primary-700);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.db2-command__cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
+}
+
+/* ── Dashboard v2 — KPI Strip ────────────────────────────────────────────  */
+
+.db2-kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-soft);
+  padding: 1.25rem 1.25rem 1.25rem 1.5rem;
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+
+.db2-kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
+}
+
+.db2-kpi--warn {
+  border-color: rgba(217, 119, 6, 0.2);
+  background: #fffbeb;
+}
+
+.db2-kpi__accent {
+  top: 16px;
+  bottom: 16px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+}
+
+.db2-kpi__icon {
+  border-radius: var(--radius-sm);
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.db2-kpi__label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.db2-kpi__value {
+  font-size: clamp(1.5rem, 2vw, 1.875rem);
+  letter-spacing: -0.04em;
+}
+
+/* ── Dashboard v2 — Radar ────────────────────────────────────────────────  */
+
+.db2-radar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-soft);
+}
+
+.db2-radar--warn {
+  border-color: rgba(217, 119, 6, 0.2);
+}
+
+.db2-radar__title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* ── Dashboard v2 — Pulse ────────────────────────────────────────────────  */
+
+.db2-pulse {
+  background:
+    radial-gradient(ellipse 70% 80% at 10% 20%, rgba(5, 150, 105, 0.16) 0%, transparent 60%),
+    #0f172a;
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── Auth Screen ─────────────────────────────────────────────────────────  */
+
+.auth-screen {
+  background: var(--bg);
+}
+
+.auth-frame {
+  border: 1px solid var(--border);
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-floating);
+  background: var(--surface);
+}
+
+.auth-hero-panel {
+  background: #0f172a;
+}
+
+.auth-surface {
+  background: var(--surface);
+}
+
+.auth-title {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  letter-spacing: -0.04em;
+  font-weight: 700;
+}
+
+.auth-error {
+  background: var(--danger-bg);
+  border-color: rgba(220, 38, 38, 0.18);
+  color: #991b1b;
+}
+
+.auth-note {
+  background: var(--success-bg);
+  border-color: rgba(5, 150, 105, 0.18);
+  color: var(--primary-700);
+}
+
+.auth-brand {
+  letter-spacing: -0.035em;
+}
+
+/* ── Products Studio ─────────────────────────────────────────────────────  */
+
+.products-studio-shell {
+  background: var(--bg);
+}
+
+.products-studio-card,
+.products-studio-catalog,
+.products-studio-empty-state {
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: none;
+}
+
+.products-studio-topbar {
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom-color: var(--border);
+  backdrop-filter: blur(12px);
+}
+
+.products-studio-field input,
+.products-studio-field select,
+.products-studio-field textarea {
+  background: var(--surface);
+  border-color: var(--border);
+  border-radius: var(--radius-md);
+}
+
+.products-studio-field input:focus,
+.products-studio-field select:focus,
+.products-studio-field textarea:focus {
+  border-color: var(--primary-600);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+/* ── Inventory / Tables ───────────────────────────────────────────────────  */
+
+.inventory-status-success,
+.products-studio-status-pill.is-active {
+  background: var(--success-bg);
+  color: var(--primary-700);
+}
+
+.inventory-status-danger,
+.products-studio-status-pill.is-alert {
+  background: var(--danger-bg);
+  color: #991b1b;
+}
+
+/* ── Stock status pill ───────────────────────────────────────────────────  */
+
+.app-sidebar__badge {
+  background: #ef4444;
+}
+
+/* ── DB2 skeleton loading ─────────────────────────────────────────────────  */
+
+.db-kpi-skeleton {
+  background: linear-gradient(90deg, var(--surface-muted), #e8edf5, var(--surface-muted));
+  background-size: 200% 100%;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+}
+
+/* ── Session Strip ────────────────────────────────────────────────────────  */
+
+.db2-session-strip {
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: var(--shadow-soft);
+}
+
+/* ── Eyebrow labels ───────────────────────────────────────────────────────  */
+
+.eyebrow,
+.products-studio-mini-label {
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+/* ── Tables ───────────────────────────────────────────────────────────────  */
+
+.inventory-table th,
+.inventory-table td,
+.app-table th,
+.app-table td {
+  border-bottom-color: var(--border);
+}
+
+.inventory-table th,
+.app-table th {
+  background: var(--surface-muted);
+  font-weight: 600;
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ── Responsive: mobile sidebar ───────────────────────────────────────────  */
+
+@media (max-width: 768px) {
+  .app-sidebar {
+    background: var(--surface);
+    box-shadow: var(--shadow-floating);
+  }
+}
+
+/* ── Dashboard v2 — Stock items & radar (hardcoded overrides) ─────────────  */
+
+.db2-radar {
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+.db2-radar--warn {
+  border-color: rgba(217, 119, 6, 0.2);
+  background: #fffbeb;
+}
+
+.db2-stock-item {
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.db2-stock-item:hover {
+  background: var(--surface);
+  border-color: var(--border-strong);
+  transform: none;
+}
+
+.db2-stock-ok {
+  background: var(--success-bg);
+  border: 1px solid rgba(5, 150, 105, 0.14);
+}
+
+.db2-stock-ok__badge {
+  background: rgba(5, 150, 105, 0.12);
+  color: var(--primary-600);
+  border-radius: var(--radius-md);
+}
+
+/* ── App shell inner content padding ─────────────────────────────────────  */
+
+.app-shell__content-inner {
+  padding: 0 1.75rem;
+}
+
+/* ── Clean page spacing ───────────────────────────────────────────────────  */
+
+.page {
+  padding: 1.75rem 0 3rem;
+}
+
+.app-page {
+  gap: 1.25rem;
+}
+
+/* ── Profile side card meta items ────────────────────────────────────────  */
+
+.profile-side-card__meta div {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+/* ── Alert note on profile ────────────────────────────────────────────────  */
+
+.profile-alert-note {
+  background: var(--success-bg);
+  border-color: rgba(5, 150, 105, 0.18);
+  color: var(--primary-900);
+}
+
+/* ── Inventory / expiring cards ───────────────────────────────────────────  */
+
+.inventory-expiring-card {
+  background: var(--surface);
+  border-color: var(--border);
 }
