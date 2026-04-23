@@ -8,6 +8,8 @@ import {
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const DASHBOARD_EXPIRING_DAYS = 5;
+const DASHBOARD_SALES_TREND_DAYS = 7;
+const DASHBOARD_RECENT_SALES_LIMIT = 6;
 
 const salesReportSelect = {
   soldAt: true,
@@ -22,57 +24,31 @@ type InventoryReportProduct = Prisma.ProductGetPayload<{
   include: typeof inventoryReportInclude;
 }>;
 
+const dashboardRecentSalesInclude = {
+  cashier: {
+    select: {
+      name: true,
+    },
+  },
+  items: {
+    select: {
+      qty: true,
+    },
+  },
+} satisfies Prisma.SaleInclude;
+
+type DashboardRecentSaleRecord = Prisma.SaleGetPayload<{
+  include: typeof dashboardRecentSalesInclude;
+}>;
+
 @Injectable()
 export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getSalesReport(shopId: string, dto: GetSalesReportQueryDto) {
     const timeZone = await this.getShopTimeZone(shopId);
-    const reportWindow = this.resolveSalesReportWindow(timeZone, dto);
-    const localDateFormatter = new Intl.DateTimeFormat('en-CA', {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
 
-    const sales = await this.prisma.sale.findMany({
-      where: {
-        shopId,
-        status: SaleStatus.COMPLETED,
-        soldAt: { gte: reportWindow.start, lt: reportWindow.endExclusive },
-      },
-      select: salesReportSelect,
-    });
-
-    const dayMap = new Map<
-      string,
-      { date: string; revenue: number; transactions: number }
-    >();
-    let totalRevenue = 0;
-
-    for (const sale of sales) {
-      const localDate = localDateFormatter.format(sale.soldAt);
-      const day = dayMap.get(localDate) ?? {
-        date: localDate,
-        revenue: 0,
-        transactions: 0,
-      };
-      day.revenue += sale.totalAmount;
-      day.transactions += 1;
-      dayMap.set(localDate, day);
-      totalRevenue += sale.totalAmount;
-    }
-
-    const days = Array.from(dayMap.values()).sort((a, b) =>
-      a.date.localeCompare(b.date),
-    );
-
-    return {
-      days,
-      totalRevenue,
-      totalTransactions: sales.length,
-    };
+    return this.buildSalesReport(shopId, timeZone, dto);
   }
 
   async getDashboard(shopId: string) {
@@ -92,25 +68,62 @@ export class ReportsService {
       },
     };
 
-    const [dailySalesCount, salesAggregate, inventoryReport] =
-      await Promise.all([
-        this.prisma.sale.count({
-          where: saleWhere,
-        }),
-        this.prisma.sale.aggregate({
-          where: saleWhere,
-          _sum: {
-            totalAmount: true,
-          },
-        }),
-        this.getInventoryReport(shopId, { days: DASHBOARD_EXPIRING_DAYS }),
-      ]);
+    const salesTrendStartDate = this.shiftDateByDays(
+      today,
+      -(DASHBOARD_SALES_TREND_DAYS - 1),
+    );
+
+    const [
+      dailySalesCount,
+      salesAggregate,
+      inventoryReport,
+      totalProducts,
+      salesTrend,
+      recentSales,
+    ] = await Promise.all([
+      this.prisma.sale.count({
+        where: saleWhere,
+      }),
+      this.prisma.sale.aggregate({
+        where: saleWhere,
+        _sum: {
+          totalAmount: true,
+        },
+      }),
+      this.getInventoryReport(shopId, { days: DASHBOARD_EXPIRING_DAYS }),
+      this.prisma.product.count({
+        where: {
+          shopId,
+          isActive: true,
+        },
+      }),
+      this.buildSalesReport(shopId, timeZone, {
+        from: salesTrendStartDate,
+        to: today,
+      }),
+      this.prisma.sale.findMany({
+        where: {
+          shopId,
+          status: SaleStatus.COMPLETED,
+        },
+        include: dashboardRecentSalesInclude,
+        orderBy: {
+          soldAt: 'desc',
+        },
+        take: DASHBOARD_RECENT_SALES_LIMIT,
+      }),
+    ]);
 
     return {
+      generatedAt: new Date().toISOString(),
+      businessDate: today,
       dailySalesTotal: salesAggregate._sum.totalAmount ?? 0,
       dailySalesCount,
+      totalProducts,
       lowStockProducts: inventoryReport.lowStock,
       expiringProducts: inventoryReport.expiringSoon,
+      salesTrend: salesTrend.days,
+      recentSales: recentSales.map((sale) => this.toDashboardRecentSale(sale)),
     };
   }
 
@@ -171,6 +184,58 @@ export class ReportsService {
     ];
 
     return rows.join('\n');
+  }
+
+  private async buildSalesReport(
+    shopId: string,
+    timeZone: string,
+    dto: GetSalesReportQueryDto,
+  ) {
+    const reportWindow = this.resolveSalesReportWindow(timeZone, dto);
+    const localDateFormatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+
+    const sales = await this.prisma.sale.findMany({
+      where: {
+        shopId,
+        status: SaleStatus.COMPLETED,
+        soldAt: { gte: reportWindow.start, lt: reportWindow.endExclusive },
+      },
+      select: salesReportSelect,
+    });
+
+    const dayMap = new Map<
+      string,
+      { date: string; revenue: number; transactions: number }
+    >();
+    let totalRevenue = 0;
+
+    for (const sale of sales) {
+      const localDate = localDateFormatter.format(sale.soldAt);
+      const day = dayMap.get(localDate) ?? {
+        date: localDate,
+        revenue: 0,
+        transactions: 0,
+      };
+      day.revenue += sale.totalAmount;
+      day.transactions += 1;
+      dayMap.set(localDate, day);
+      totalRevenue += sale.totalAmount;
+    }
+
+    const days = Array.from(dayMap.values()).sort((a, b) =>
+      a.date.localeCompare(b.date),
+    );
+
+    return {
+      days,
+      totalRevenue,
+      totalTransactions: sales.length,
+    };
   }
 
   private async getShopTimeZone(shopId: string) {
@@ -275,5 +340,18 @@ export class ReportsService {
       (Number(hours) * 60 + Number(minutes)) * 60 * 1000;
 
     return sign === '+' ? totalMilliseconds : -totalMilliseconds;
+  }
+
+  private toDashboardRecentSale(sale: DashboardRecentSaleRecord) {
+    return {
+      id: sale.id,
+      receiptNumber: sale.receiptNumber,
+      soldAt: sale.soldAt.toISOString(),
+      status: sale.status,
+      paymentMode: sale.paymentMode,
+      cashierName: sale.cashier.name,
+      total: sale.totalAmount,
+      itemCount: sale.items.reduce((count, item) => count + item.qty, 0),
+    };
   }
 }

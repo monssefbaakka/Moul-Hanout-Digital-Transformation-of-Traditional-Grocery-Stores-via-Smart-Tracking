@@ -24,7 +24,7 @@ import { ReportsService } from './reports.service';
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
-  @Roles(Role.OWNER)
+  @Roles(Role.OWNER, Role.CASHIER)
   @Get('dashboard')
   @ApiOkResponse({
     description:

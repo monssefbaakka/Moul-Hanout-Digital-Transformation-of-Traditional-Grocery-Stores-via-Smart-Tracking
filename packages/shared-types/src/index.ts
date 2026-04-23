@@ -289,6 +289,17 @@ export interface SalesReport {
   totalTransactions: number;
 }
 
+export interface DashboardRecentSale {
+  id: string;
+  receiptNumber: string;
+  soldAt: string;
+  status: SaleStatus;
+  paymentMode: PaymentMode;
+  cashierName: string;
+  total: number;
+  itemCount: number;
+}
+
 export interface InventoryReportProduct {
   id: string;
   name: string;
@@ -308,10 +319,15 @@ export interface InventoryReport {
 }
 
 export interface DashboardReport {
+  generatedAt: string;
+  businessDate: string;
   dailySalesTotal: number;
   dailySalesCount: number;
+  totalProducts: number;
   lowStockProducts: InventoryReportProduct[];
   expiringProducts: ExpiringProduct[];
+  salesTrend: SalesReportDay[];
+  recentSales: DashboardRecentSale[];
 }
 
 export interface StockInInput {

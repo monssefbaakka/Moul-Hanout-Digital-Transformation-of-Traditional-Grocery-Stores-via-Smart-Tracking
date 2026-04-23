@@ -16,7 +16,7 @@ import {
   Warehouse,
   X,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 import { AlertsDropdown } from '@/components/alerts/alerts-dropdown';
 import { useAlerts } from '@/components/alerts/alerts-provider';
 import { cn } from '@/lib/utils';
@@ -35,6 +35,7 @@ type AppSidebarProps = {
   id?: string;
   isOpen?: boolean;
   onClose?: () => void;
+  onNavigate?: () => void;
 };
 
 const NAV_ITEMS: NavItem[] = [
@@ -107,20 +108,34 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-export function AppSidebar({ id, isOpen, onClose }: AppSidebarProps) {
+export function AppSidebar({
+  id,
+  isOpen,
+  onClose,
+  onNavigate,
+}: AppSidebarProps) {
   const pathname = usePathname();
   const { unreadCount } = useAlerts();
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const user = useAuthStore((state) => state.user);
   const isOwner = user?.role === 'OWNER';
+  const sidebarRef = useRef<HTMLElement | null>(null);
 
   const visibleItems = NAV_ITEMS.filter((item) => !item.ownerOnly || (hasHydrated && isOwner));
+
+  useEffect(() => {
+    if (isOpen) {
+      sidebarRef.current?.focus();
+    }
+  }, [isOpen]);
 
   return (
     <aside
       id={id}
+      ref={sidebarRef}
       className={cn(styles.sidebar, isOpen && styles.sidebarOpen)}
       aria-label="Navigation principale"
+      tabIndex={-1}
     >
       <div className={styles.panel}>
         <div className={styles.brand}>
@@ -142,21 +157,27 @@ export function AppSidebar({ id, isOpen, onClose }: AppSidebarProps) {
         </div>
 
         <nav className={styles.nav} aria-label="Navigation principale">
-          {visibleItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(styles.navLink, isActive(pathname, item.href) && styles.navLinkActive)}
-            >
-              <span className={styles.iconWrap}>{item.icon}</span>
-              <span className={styles.copy}>
-                <strong>{item.label}</strong>
-              </span>
-              {item.href === '/alertes' && unreadCount > 0 ? (
-                <span className={styles.badge}>{unreadCount > 9 ? '9+' : unreadCount}</span>
-              ) : null}
-            </Link>
-          ))}
+          {visibleItems.map((item) => {
+            const itemIsActive = isActive(pathname, item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(styles.navLink, itemIsActive && styles.navLinkActive)}
+                aria-current={itemIsActive ? 'page' : undefined}
+                onClick={onNavigate}
+              >
+                <span className={styles.iconWrap}>{item.icon}</span>
+                <span className={styles.copy}>
+                  <strong>{item.label}</strong>
+                </span>
+                {item.href === '/alertes' && unreadCount > 0 ? (
+                  <span className={styles.badge}>{unreadCount > 9 ? '9+' : unreadCount}</span>
+                ) : null}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className={styles.footer}>
@@ -166,11 +187,11 @@ export function AppSidebar({ id, isOpen, onClose }: AppSidebarProps) {
 
           {hasHydrated && isOwner ? (
             <div className={styles.quickActions} aria-label="Actions rapides">
-              <Link href="/produits" className={styles.quickAction}>
+              <Link href="/produits" className={styles.quickAction} onClick={onNavigate}>
                 <PackagePlus size={17} />
                 <span>New product</span>
               </Link>
-              <Link href="/categories" className={styles.quickAction}>
+              <Link href="/categories" className={styles.quickAction} onClick={onNavigate}>
                 <FolderPlus size={17} />
                 <span>New category</span>
               </Link>
@@ -187,7 +208,7 @@ export function AppSidebar({ id, isOpen, onClose }: AppSidebarProps) {
           </div>
 
           {hasHydrated && user ? (
-            <Link href="/profil" className={styles.profile}>
+            <Link href="/profil" className={styles.profile} onClick={onNavigate}>
               <span className={styles.avatar}>{getInitials(user.name)}</span>
               <span className={styles.profileMeta}>
                 <strong>{user.name}</strong>

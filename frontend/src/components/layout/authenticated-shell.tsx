@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect, useLayoutEffect, useState } from 'react';
+import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu } from 'lucide-react';
@@ -21,6 +21,8 @@ export function AuthenticatedShell({ children }: AuthenticatedShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const openButtonRef = useRef<HTMLButtonElement | null>(null);
+  const wasSidebarOpenRef = useRef(false);
 
   useLayoutEffect(() => {
     registerAuthFailureHandler(() => {
@@ -47,8 +49,14 @@ export function AuthenticatedShell({ children }: AuthenticatedShellProps) {
 
   useEffect(() => {
     if (!sidebarOpen) {
+      if (wasSidebarOpenRef.current) {
+        openButtonRef.current?.focus();
+      }
+      wasSidebarOpenRef.current = false;
       return;
     }
+
+    wasSidebarOpenRef.current = true;
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key === 'Escape') {
@@ -79,6 +87,7 @@ export function AuthenticatedShell({ children }: AuthenticatedShellProps) {
             <AlertsDropdown compact />
             <button
               type="button"
+              ref={openButtonRef}
               className={styles.mobileToggle}
               onClick={() => setSidebarOpen(true)}
               aria-label="Ouvrir le menu"
@@ -90,14 +99,22 @@ export function AuthenticatedShell({ children }: AuthenticatedShellProps) {
           </div>
         </header>
 
-        <div
+        <button
+          type="button"
           className={cn(styles.overlay, sidebarOpen && styles.overlayVisible)}
           onClick={() => setSidebarOpen(false)}
-          aria-hidden="true"
+          aria-label="Fermer le menu"
+          aria-hidden={!sidebarOpen}
+          tabIndex={sidebarOpen ? 0 : -1}
         />
 
         <div className={styles.layout}>
-          <AppSidebar id="app-sidebar" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+          <AppSidebar
+            id="app-sidebar"
+            isOpen={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+            onNavigate={() => setSidebarOpen(false)}
+          />
 
           <div className={styles.content}>
             <div className={styles.contentInner}>{children}</div>

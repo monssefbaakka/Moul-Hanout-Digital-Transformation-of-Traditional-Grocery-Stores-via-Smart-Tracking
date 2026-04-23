@@ -16,6 +16,7 @@ describe('ReportsService', () => {
       findMany: jest.fn(),
     },
     product: {
+      count: jest.fn(),
       findMany: jest.fn(),
     },
   };
@@ -124,6 +125,7 @@ describe('ReportsService', () => {
           totalAmount: 420,
         },
       });
+      prisma.product.count.mockResolvedValue(18);
       prisma.product.findMany
         .mockResolvedValueOnce([
           {
@@ -144,6 +146,29 @@ describe('ReportsService', () => {
             unit: 'cup',
             expirationDate: new Date('2026-01-18T00:00:00.000Z'),
             category: { name: 'Fresh' },
+          },
+        ]);
+      prisma.sale.findMany
+        .mockResolvedValueOnce([
+          {
+            soldAt: new Date('2026-01-09T10:15:00.000Z'),
+            totalAmount: 110,
+          },
+          {
+            soldAt: new Date('2026-01-14T23:30:00.000Z'),
+            totalAmount: 310,
+          },
+        ])
+        .mockResolvedValueOnce([
+          {
+            id: 'sale-1',
+            receiptNumber: 'MAH-20260115-AAAA1111',
+            soldAt: new Date('2026-01-15T09:00:00.000Z'),
+            status: 'COMPLETED',
+            paymentMode: 'CASH',
+            totalAmount: 220,
+            cashier: { name: 'Amina' },
+            items: [{ qty: 2 }, { qty: 1 }],
           },
         ]);
 
@@ -172,9 +197,18 @@ describe('ReportsService', () => {
           totalAmount: true,
         },
       });
+      expect(prisma.product.count).toHaveBeenCalledWith({
+        where: {
+          shopId: 'shop-1',
+          isActive: true,
+        },
+      });
       expect(report).toEqual({
+        generatedAt: '2026-01-15T10:00:00.000Z',
+        businessDate: '2026-01-15',
         dailySalesTotal: 420,
         dailySalesCount: 3,
+        totalProducts: 18,
         lowStockProducts: [
           {
             id: 'product-low',
@@ -194,6 +228,30 @@ describe('ReportsService', () => {
             unit: 'cup',
             categoryName: 'Fresh',
             expirationDate: '2026-01-18T00:00:00.000Z',
+          },
+        ],
+        salesTrend: [
+          {
+            date: '2026-01-09',
+            revenue: 110,
+            transactions: 1,
+          },
+          {
+            date: '2026-01-15',
+            revenue: 310,
+            transactions: 1,
+          },
+        ],
+        recentSales: [
+          {
+            id: 'sale-1',
+            receiptNumber: 'MAH-20260115-AAAA1111',
+            soldAt: '2026-01-15T09:00:00.000Z',
+            status: 'COMPLETED',
+            paymentMode: 'CASH',
+            cashierName: 'Amina',
+            total: 220,
+            itemCount: 3,
           },
         ],
       });

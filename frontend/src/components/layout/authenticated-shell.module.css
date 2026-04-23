@@ -1,5 +1,6 @@
 .shell {
   min-height: 100vh;
+  overflow-x: clip;
   background:
     radial-gradient(circle at top left, rgba(71, 132, 94, 0.1), transparent 24%),
     radial-gradient(circle at top right, rgba(224, 204, 174, 0.14), transparent 22%),
@@ -14,10 +15,12 @@
 
 .content {
   min-width: 0;
+  overflow-x: clip;
 }
 
 .contentInner {
   width: min(1320px, 100%);
+  max-width: 100%;
   margin: 0 auto;
   padding: 2rem 2rem 3rem;
 }
@@ -75,6 +78,8 @@
 .overlay {
   position: fixed;
   inset: 0;
+  border: none;
+  padding: 0;
   background: rgba(29, 38, 31, 0.28);
   backdrop-filter: blur(4px);
   opacity: 0;
@@ -108,6 +113,6 @@
   }
 
   .contentInner {
-    padding: 1.25rem 1rem 2rem;
+    padding: 1.1rem 1rem 2rem;
   }
 }
