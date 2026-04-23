@@ -16,7 +16,6 @@ type EnvRecord = Record<string, string | undefined>;
 
 export function validateEnv(config: EnvRecord): EnvRecord {
   const missingKeys = requiredEnvKeys.filter((key) => !config[key]?.trim());
-  const isProduction = config.NODE_ENV?.trim() === 'production';
 
   if (missingKeys.length > 0) {
     throw new Error(
@@ -41,12 +40,6 @@ export function validateEnv(config: EnvRecord): EnvRecord {
   const missingMailKeys = optionalMailEnvKeys.filter(
     (key) => !config[key]?.trim(),
   );
-
-  if (isProduction && missingMailKeys.length > 0) {
-    throw new Error(
-      `SMTP configuration is required in production. Missing environment variables: ${missingMailKeys.join(', ')}`,
-    );
-  }
 
   if (
     configuredMailKeys.length > 0 &&
