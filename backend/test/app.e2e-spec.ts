@@ -901,6 +901,7 @@ describe('Phase 1 e2e', () => {
       new TransformInterceptor(),
     );
     await app.init();
+    await app.listen(0);
   });
 
   afterEach(async () => {
