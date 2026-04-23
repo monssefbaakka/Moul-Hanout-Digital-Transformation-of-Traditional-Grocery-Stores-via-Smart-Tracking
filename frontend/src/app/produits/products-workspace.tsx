@@ -456,8 +456,12 @@ export function ProductsWorkspace() {
   const photoPreview = form.photo.trim();
   const userInitials = getInitials(user.name);
   const canChangeInitialStock = !isEditing;
-  const topbarTitle = isEditing ? 'Product Edit Studio' : 'New Product Studio';
-  const topbarSubmitLabel = isSubmitting ? 'Saving...' : isEditing ? 'Update Product' : 'Publish Product';
+  const topbarTitle = isEditing ? 'Modifier un produit' : 'Nouveau produit';
+  const topbarSubmitLabel = isSubmitting
+    ? 'Enregistrement...'
+    : isEditing
+      ? 'Mettre a jour'
+      : 'Publier';
   const footerDraftLabel = isSubmitting
     ? 'Enregistrement...'
     : isEditing
@@ -577,8 +581,8 @@ export function ProductsWorkspace() {
                   <div className="ps-media-zone__icon">
                     <UploadCloud size={26} />
                   </div>
-                  <p className="ps-media-zone__title">Drag and drop product media</p>
-                  <p className="ps-media-zone__hint">High resolution PNG or JPG (Max 5MB)</p>
+                  <p className="ps-media-zone__title">Ajouter une image produit</p>
+                  <p className="ps-media-zone__hint">Glissez une URL ici ou collez-la dans le champ ci-dessous.</p>
                 </>
               )}
             </div>
@@ -588,7 +592,7 @@ export function ProductsWorkspace() {
               className="ps-url-input"
               value={form.photo}
               onChange={(event) => setForm({ ...form, photo: event.target.value })}
-              placeholder="Or paste image URL here..."
+              placeholder="Coller l'URL de l'image"
               maxLength={500}
               disabled={isSubmitting || isLoading}
             />
@@ -598,16 +602,16 @@ export function ProductsWorkspace() {
                 <div className="ps-badge ps-badge--blue">
                   <Info size={14} />
                 </div>
-                <h2>Product Basics</h2>
+                <h2>Informations produit</h2>
               </div>
 
               <div className="ps-fields">
                 <label className="ps-field ps-field--full">
-                  <span className="ps-label">PRODUCT NAME</span>
+                  <span className="ps-label">NOM DU PRODUIT</span>
                   <input
                     value={form.name}
                     onChange={(event) => setForm({ ...form, name: event.target.value })}
-                    placeholder="e.g. Organic Moroccan Mint Tea"
+                    placeholder="Ex : The vert a la menthe"
                     required
                     maxLength={120}
                     disabled={isSubmitting || isLoading}
@@ -616,7 +620,7 @@ export function ProductsWorkspace() {
 
                 <div className="ps-row">
                   <label className="ps-field">
-                    <span className="ps-label">CATEGORY</span>
+                    <span className="ps-label">CATEGORIE</span>
                     <div className="ps-select-wrap">
                       <select
                         value={form.categoryId}
@@ -636,11 +640,11 @@ export function ProductsWorkspace() {
                   </label>
 
                   <label className="ps-field">
-                    <span className="ps-label">UNIT</span>
+                    <span className="ps-label">UNITE</span>
                     <input
                       value={form.unit}
                       onChange={(event) => setForm({ ...form, unit: event.target.value })}
-                      placeholder="kg, gram, piece"
+                      placeholder="kg, gramme, piece"
                       maxLength={30}
                       disabled={isSubmitting || isLoading}
                     />
@@ -652,7 +656,7 @@ export function ProductsWorkspace() {
                   <textarea
                     value={form.description}
                     onChange={(event) => setForm({ ...form, description: event.target.value })}
-                    placeholder="Describe the origin and quality..."
+                    placeholder="Precisez le produit pour l'equipe et le catalogue..."
                     rows={4}
                     maxLength={300}
                     disabled={isSubmitting || isLoading}
@@ -666,18 +670,18 @@ export function ProductsWorkspace() {
                 <div className="ps-badge ps-badge--green">
                   <CircleDollarSign size={14} />
                 </div>
-                <h2>Pricing &amp; Profit</h2>
+                <h2>Prix et marge</h2>
                 {marginLabel ? (
                   <span className="ps-margin-pill">
                     <span className="ps-margin-dot" />
-                    Profit Margin: {marginLabel}
+                    Marge estimee : {marginLabel}
                   </span>
                 ) : null}
               </div>
 
               <div className="ps-row">
                 <label className="ps-field">
-                  <span className="ps-label">COST PRICE</span>
+                  <span className="ps-label">PRIX D&apos;ACHAT</span>
                   <div className="ps-currency-wrap">
                     <span className="ps-currency-symbol">MAD</span>
                     <input
@@ -693,7 +697,7 @@ export function ProductsWorkspace() {
                 </label>
 
                 <label className="ps-field">
-                  <span className="ps-label">SELLING PRICE</span>
+                  <span className="ps-label">PRIX DE VENTE</span>
                   <div className="ps-currency-wrap">
                     <span className="ps-currency-symbol">MAD</span>
                     <input
@@ -716,18 +720,18 @@ export function ProductsWorkspace() {
                 <div className="ps-badge ps-badge--amber">
                   <Package2 size={14} />
                 </div>
-                <h2>Inventory Tracking</h2>
+                <h2>Suivi stock</h2>
               </div>
 
               <div className="ps-fields">
                 <div className="ps-row">
                   <label className="ps-field">
-                    <span className="ps-label">BARCODE / SKU</span>
+                    <span className="ps-label">CODE-BARRES / SKU</span>
                     <div className="ps-icon-wrap">
                       <input
                         value={form.barcode}
                         onChange={(event) => setForm({ ...form, barcode: event.target.value })}
-                        placeholder="Scan or enter code"
+                        placeholder="Scanner ou saisir le code"
                         maxLength={64}
                         disabled={isSubmitting || isLoading}
                       />
@@ -736,7 +740,7 @@ export function ProductsWorkspace() {
                   </label>
 
                   <label className="ps-field">
-                    <span className="ps-label">INITIAL STOCK</span>
+                    <span className="ps-label">STOCK INITIAL</span>
                     <div className="ps-stepper">
                       <button
                         type="button"
@@ -788,7 +792,7 @@ export function ProductsWorkspace() {
 
                 <div className="ps-row">
                   <label className="ps-field">
-                    <span className="ps-label">LOW STOCK ALERT</span>
+                    <span className="ps-label">SEUIL D&apos;ALERTE</span>
                     <input
                       type="number"
                       min="0"
@@ -803,7 +807,7 @@ export function ProductsWorkspace() {
                   </label>
 
                   <label className="ps-field">
-                    <span className="ps-label">EXPIRATION DATE</span>
+                    <span className="ps-label">DATE D&apos;EXPIRATION</span>
                     <div className="ps-icon-wrap">
                       <input
                         type="date"
@@ -822,9 +826,7 @@ export function ProductsWorkspace() {
           </div>
 
           <div className="ps-preview-col">
-            <p className="ps-preview-eyebrow">
-              {isEditing ? 'LIVE EDIT PREVIEW' : 'LIVE PREVIEW'}
-            </p>
+            <p className="ps-preview-eyebrow">{isEditing ? 'Apercu de la fiche' : 'Resume produit'}</p>
 
             <div className="ps-preview-card">
               <div className="ps-preview-media">
@@ -855,10 +857,10 @@ export function ProductsWorkspace() {
                   </div>
                 ) : null}
 
-                <h3 className="ps-preview-name">{form.name || 'Product Name'}</h3>
+                <h3 className="ps-preview-name">{form.name || 'Nom produit'}</h3>
 
                 <p className="ps-preview-desc">
-                  {form.description || 'Add a description to see it here...'}
+                  {form.description || 'Ajoutez une description pour visualiser le resume produit.'}
                 </p>
 
                 <div className="ps-preview-footer">
@@ -887,10 +889,10 @@ export function ProductsWorkspace() {
                 <Lightbulb size={15} />
               </div>
               <div>
-                <h4 className="ps-tip-title">Merchant Tip</h4>
+                <h4 className="ps-tip-title">Conseil de saisie</h4>
                 <p className="ps-tip-body">
-                  Products with detailed descriptions and high-quality natural-light photos tend
-                  to sell faster in digital catalogs.
+                  Gardez des noms courts, une categorie claire et une photo lisible pour accelerer
+                  la recherche produit en caisse.
                 </p>
               </div>
             </div>

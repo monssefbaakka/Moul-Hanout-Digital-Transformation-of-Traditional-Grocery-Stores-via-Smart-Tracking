@@ -703,3 +703,299 @@
     height: 6.2rem;
   }
 }
+
+/* UI refresh overrides */
+
+.dashboard {
+  --dashboard-surface: var(--surface);
+  --dashboard-surface-strong: var(--surface);
+  --dashboard-border: var(--border);
+  --dashboard-shadow: var(--shadow-soft);
+  --dashboard-green: var(--primary-600);
+  --dashboard-green-deep: var(--primary-700);
+  --dashboard-green-soft: var(--primary-50);
+  --dashboard-gold-soft: var(--surface-muted);
+  --dashboard-text: var(--text);
+  --dashboard-muted: var(--text-muted);
+  --dashboard-muted-soft: var(--text-soft);
+  gap: 1.25rem;
+  padding: 0 0 2rem;
+}
+
+.header {
+  padding: 1.4rem;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.welcomeBlock {
+  gap: 0.7rem;
+}
+
+.eyebrow {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+}
+
+.heading {
+  font-size: clamp(1.9rem, 3vw, 2.45rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.subtitle {
+  max-width: 52rem;
+  font-size: 0.96rem;
+}
+
+.metaRow {
+  gap: 0.6rem;
+}
+
+.metaPill,
+.rangePill {
+  min-height: 2rem;
+  padding: 0 0.75rem;
+  border-radius: 0.65rem;
+  border-color: var(--border);
+  background: var(--surface-muted);
+  font-size: 0.8rem;
+}
+
+.metaPillWarning {
+  background: #fff7ed;
+  border-color: rgba(217, 119, 6, 0.16);
+  color: #b45309;
+}
+
+.metaPillSuccess {
+  background: var(--primary-50);
+  border-color: rgba(5, 150, 105, 0.16);
+  color: var(--primary-700);
+}
+
+.headerActions {
+  gap: 0.85rem;
+  min-width: 21rem;
+}
+
+.utilityRow {
+  gap: 0.7rem;
+}
+
+.utilityRow :global(.alerts-dropdown__trigger) {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+
+.profileShortcut {
+  gap: 0.7rem;
+  padding: 0.35rem 0.8rem 0.35rem 0.35rem;
+  min-height: 2.75rem;
+  border-radius: 0.75rem;
+  border-color: var(--border);
+  background: var(--surface);
+  box-shadow: none;
+}
+
+.profileShortcutAvatar {
+  width: 2.1rem;
+  height: 2.1rem;
+  background: var(--primary-50);
+  color: var(--primary-700);
+}
+
+.actionGroup {
+  gap: 0.6rem;
+}
+
+.actionButton {
+  min-height: 2.75rem;
+  border-radius: 0.75rem;
+  padding-inline: 0.95rem;
+}
+
+.actionPrimary {
+  background: var(--primary-600);
+}
+
+.actionSecondary {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.banner,
+.errorCard {
+  border-radius: 0.9rem;
+}
+
+.kpiGrid {
+  gap: 0.85rem;
+}
+
+.metricCard,
+.card,
+.errorCard {
+  border-radius: 0.9rem;
+  border-color: var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: none;
+}
+
+.metricCard {
+  min-height: 0;
+  padding: 1.1rem;
+}
+
+.metricValue {
+  font-size: clamp(1.5rem, 2vw, 1.95rem);
+}
+
+.metricHint {
+  font-size: 0.84rem;
+}
+
+.metricIcon {
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 0.7rem;
+}
+
+.card {
+  padding: 1.2rem;
+}
+
+.cardHeader h2 {
+  font-size: 1.15rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.cardHeader p,
+.emptyState p,
+.inventoryCopy span,
+.inventoryMeta span,
+.legendLabel {
+  margin-top: 0.2rem;
+  font-size: 0.9rem;
+}
+
+.cardLink {
+  font-size: 0.88rem;
+}
+
+.chartCard {
+  min-height: 0;
+}
+
+.chartWrap {
+  height: 18rem;
+  margin-top: 0.5rem;
+}
+
+.mixVisual {
+  width: min(13.5rem, 100%);
+  height: 13.5rem;
+}
+
+.mixCenter {
+  width: 6rem;
+  height: 6rem;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.mixCenter strong {
+  font-size: 1.05rem;
+}
+
+.inventoryRow,
+.activityCard {
+  border-radius: 0.8rem;
+  border-color: var(--border);
+  background: var(--surface-muted);
+}
+
+.table th,
+.table td {
+  border-bottom-color: var(--border);
+}
+
+.table th {
+  background: var(--surface-muted);
+  font-size: 0.72rem;
+  color: var(--text-soft);
+}
+
+.statusPill {
+  min-height: 1.8rem;
+  padding: 0 0.6rem;
+  border-radius: 0.6rem;
+  background: var(--primary-50);
+  color: var(--primary-700);
+}
+
+.sessionCard :global(.app-card) {
+  border-radius: 0.85rem;
+  border-color: var(--border);
+  background: var(--surface-muted);
+}
+
+.tooltip {
+  border-radius: 0.8rem;
+  border-color: var(--border);
+  box-shadow: var(--shadow-soft);
+}
+
+.emptyState {
+  min-height: 11.5rem;
+  padding: 1rem;
+}
+
+.emptyIcon,
+.errorIcon {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+}
+
+.panelSkeleton {
+  border-radius: 0.8rem;
+}
+
+@media (max-width: 1080px) {
+  .header {
+    padding: 1.1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .metricCard,
+  .card,
+  .errorCard {
+    padding: 1rem;
+    border-radius: 0.8rem;
+  }
+
+  .mixVisual {
+    width: 12rem;
+    height: 12rem;
+  }
+
+  .mixCenter {
+    width: 5.4rem;
+    height: 5.4rem;
+  }
+}

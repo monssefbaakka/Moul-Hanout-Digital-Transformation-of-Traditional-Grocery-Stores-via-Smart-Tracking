@@ -40,12 +40,12 @@ type AppSidebarProps = {
 const NAV_ITEMS: NavItem[] = [
   {
     href: '/',
-    label: 'Dashboard',
+    label: 'Tableau de bord',
     icon: <House size={18} />,
   },
   {
     href: '/produits',
-    label: 'Products',
+    label: 'Produits',
     icon: <Package2 size={18} />,
     ownerOnly: true,
   },
@@ -57,34 +57,34 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     href: '/vente',
-    label: 'POS',
+    label: 'Caisse',
     icon: <ReceiptText size={18} />,
   },
   {
     href: '/rapports',
-    label: 'Reports',
+    label: 'Rapports',
     icon: <BarChart2 size={18} />,
     ownerOnly: true,
   },
   {
     href: '/inventaire',
-    label: 'Inventory',
+    label: 'Inventaire',
     icon: <Warehouse size={18} />,
   },
   {
     href: '/alertes',
-    label: 'Alerts',
+    label: 'Alertes',
     icon: <Bell size={18} />,
   },
   {
     href: '/utilisateurs',
-    label: 'Users',
+    label: 'Utilisateurs',
     icon: <Users size={18} />,
     ownerOnly: true,
   },
   {
     href: '/profil',
-    label: 'Profile',
+    label: 'Profil',
     icon: <User size={18} />,
   },
 ];
@@ -141,7 +141,7 @@ export function AppSidebar({
           <MoulHanoutMark className={styles.brandMark} />
           <div className={styles.brandText}>
             <strong>Moul Hanout</strong>
-            <span>Grocery Management</span>
+            <span>Gestion epicerie</span>
           </div>
           {onClose ? (
             <button
@@ -154,6 +154,8 @@ export function AppSidebar({
             </button>
           ) : null}
         </div>
+
+        <span className={styles.sectionLabel}>Navigation</span>
 
         <nav className={styles.nav} aria-label="Navigation principale">
           {visibleItems.map((item) => {
@@ -182,24 +184,26 @@ export function AppSidebar({
         <div className={styles.footer}>
           {hasHydrated && isOwner ? (
             <div className={styles.quickActions} aria-label="Actions rapides">
+              <span className={styles.sectionLabel}>Raccourcis</span>
               <Link href="/produits" className={styles.quickAction} onClick={onNavigate}>
                 <PackagePlus size={17} />
-                <span>New product</span>
+                <span>Nouveau produit</span>
               </Link>
               <Link href="/categories" className={styles.quickAction} onClick={onNavigate}>
                 <FolderPlus size={17} />
-                <span>New category</span>
+                <span>Nouvelle categorie</span>
               </Link>
             </div>
           ) : null}
 
-          <div className={styles.quoteCard}>
-            <span className={styles.quoteEyebrow}>Store ritual</span>
-            <p className={styles.quoteText}>
-              &ldquo;Organization is the key to a thriving neighborhood shop.&rdquo;
+          <div className={styles.summaryCard}>
+            <span className={styles.summaryLabel}>Session active</span>
+            <strong>{isOwner ? 'Espace proprietaire' : 'Espace caisse'}</strong>
+            <p>
+              {isOwner
+                ? 'Pilotez le catalogue, le stock et les rapports du magasin depuis un seul espace.'
+                : 'Accedez rapidement a la vente, au stock et aux alertes utiles a la caisse.'}
             </p>
-            <span className={styles.quoteAccent} aria-hidden="true" />
-            <MoulHanoutMark className={styles.quoteMark} />
           </div>
 
           {hasHydrated && user ? (
@@ -207,7 +211,7 @@ export function AppSidebar({
               <span className={styles.avatar}>{getInitials(user.name)}</span>
               <span className={styles.profileMeta}>
                 <strong>{user.name}</strong>
-                <small>{isOwner ? 'Owner account' : 'Cashier account'}</small>
+                <small>{isOwner ? 'Compte proprietaire' : 'Compte caissier'}</small>
               </span>
             </Link>
           ) : null}
