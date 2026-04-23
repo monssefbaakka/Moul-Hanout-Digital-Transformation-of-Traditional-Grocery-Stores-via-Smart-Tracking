@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import {
   BarChart2,
   Bell,
-  Boxes,
   FolderPlus,
   House,
   Package2,
@@ -22,6 +21,8 @@ import { AlertsDropdown } from '@/components/alerts/alerts-dropdown';
 import { useAlerts } from '@/components/alerts/alerts-provider';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
+import styles from './app-sidebar.module.css';
+import { MoulHanoutMark } from './moul-hanout-mark';
 
 type NavItem = {
   href: string;
@@ -39,22 +40,12 @@ type AppSidebarProps = {
 const NAV_ITEMS: NavItem[] = [
   {
     href: '/',
-    label: 'Tableau de bord',
+    label: 'Dashboard',
     icon: <House size={18} />,
   },
   {
-    href: '/vente',
-    label: 'Vente',
-    icon: <ReceiptText size={18} />,
-  },
-  {
-    href: '/inventaire',
-    label: 'Inventaire',
-    icon: <Warehouse size={18} />,
-  },
-  {
     href: '/produits',
-    label: 'Produits',
+    label: 'Products',
     icon: <Package2 size={18} />,
     ownerOnly: true,
   },
@@ -65,26 +56,36 @@ const NAV_ITEMS: NavItem[] = [
     ownerOnly: true,
   },
   {
+    href: '/vente',
+    label: 'POS',
+    icon: <ReceiptText size={18} />,
+  },
+  {
+    href: '/rapports',
+    label: 'Reports',
+    icon: <BarChart2 size={18} />,
+    ownerOnly: true,
+  },
+  {
+    href: '/inventaire',
+    label: 'Inventory',
+    icon: <Warehouse size={18} />,
+  },
+  {
+    href: '/alertes',
+    label: 'Alerts',
+    icon: <Bell size={18} />,
+  },
+  {
     href: '/utilisateurs',
-    label: 'Utilisateurs',
+    label: 'Users',
     icon: <Users size={18} />,
     ownerOnly: true,
   },
   {
-    href: '/alertes',
-    label: 'Alertes',
-    icon: <Bell size={18} />,
-  },
-  {
     href: '/profil',
-    label: 'Profil',
+    label: 'Profile',
     icon: <User size={18} />,
-  },
-  {
-    href: '/rapports',
-    label: 'Rapports',
-    icon: <BarChart2 size={18} />,
-    ownerOnly: true,
   },
 ];
 
@@ -92,7 +93,18 @@ function isActive(pathname: string, href: string) {
   if (href === '/') {
     return pathname === '/';
   }
+
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function getInitials(name: string) {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part.charAt(0))
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
 }
 
 export function AppSidebar({ id, isOpen, onClose }: AppSidebarProps) {
@@ -105,76 +117,85 @@ export function AppSidebar({ id, isOpen, onClose }: AppSidebarProps) {
   const visibleItems = NAV_ITEMS.filter((item) => !item.ownerOnly || (hasHydrated && isOwner));
 
   return (
-    <aside id={id} className={cn('app-sidebar', isOpen && 'is-open')} aria-label="Navigation principale">
-      <div className="app-sidebar__brand">
-        <div className="app-sidebar__brand-mark">
-          <Boxes size={18} />
-        </div>
-        <div>
-          <strong>Moul Hanout</strong>
-          <span>Espace gestion magasin</span>
-        </div>
-        {onClose && (
-          <button
-            type="button"
-            className="app-sidebar__close"
-            onClick={onClose}
-            aria-label="Fermer le menu"
-          >
-            <X size={16} />
-          </button>
-        )}
-      </div>
-
-      <nav className="app-sidebar__nav" aria-label="Navigation principale">
-        {visibleItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn('app-sidebar__link', isActive(pathname, item.href) && 'is-active')}
-          >
-            <span className="app-sidebar__icon">{item.icon}</span>
-            <span className="app-sidebar__copy">
-              <strong>{item.label}</strong>
-            </span>
-            {item.href === '/alertes' && unreadCount > 0 ? (
-              <span className="app-sidebar__badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
-            ) : null}
-          </Link>
-        ))}
-      </nav>
-
-      <div className="app-sidebar__footer">
-        <AlertsDropdown />
-        {hasHydrated && isOwner ? (
-          <div className="app-sidebar__actions" aria-label="Actions rapides">
-            <Link href="/categories" className="app-btn app-btn--secondary app-sidebar__action">
-              <FolderPlus size={18} />
-              <span>Nouvelle categorie</span>
-            </Link>
-            <Link href="/produits" className="app-btn app-btn--primary app-sidebar__action">
-              <PackagePlus size={18} />
-              <span>Nouveau produit</span>
-            </Link>
+    <aside
+      id={id}
+      className={cn(styles.sidebar, isOpen && styles.sidebarOpen)}
+      aria-label="Navigation principale"
+    >
+      <div className={styles.panel}>
+        <div className={styles.brand}>
+          <MoulHanoutMark className={styles.brandMark} />
+          <div className={styles.brandText}>
+            <strong>Moul Hanout</strong>
+            <span>Grocery Management</span>
           </div>
-        ) : null}
-        <p className="app-sidebar__helper">Interface simple pour la gestion quotidienne du magasin.</p>
-        {hasHydrated && user ? (
-          <Link href="/profil" className="app-sidebar__profile">
-            <span className="app-sidebar__avatar">
-              {user.name
-                .split(' ')
-                .map((part) => part.charAt(0))
-                .slice(0, 2)
-                .join('')
-                .toUpperCase()}
-            </span>
-            <div>
-              <strong>{user.name}</strong>
-              <small>{isOwner ? 'Proprietaire' : 'Caissier'}</small>
+          {onClose ? (
+            <button
+              type="button"
+              className={styles.closeButton}
+              onClick={onClose}
+              aria-label="Fermer le menu"
+            >
+              <X size={16} />
+            </button>
+          ) : null}
+        </div>
+
+        <nav className={styles.nav} aria-label="Navigation principale">
+          {visibleItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(styles.navLink, isActive(pathname, item.href) && styles.navLinkActive)}
+            >
+              <span className={styles.iconWrap}>{item.icon}</span>
+              <span className={styles.copy}>
+                <strong>{item.label}</strong>
+              </span>
+              {item.href === '/alertes' && unreadCount > 0 ? (
+                <span className={styles.badge}>{unreadCount > 9 ? '9+' : unreadCount}</span>
+              ) : null}
+            </Link>
+          ))}
+        </nav>
+
+        <div className={styles.footer}>
+          <div className={styles.alerts}>
+            <AlertsDropdown />
+          </div>
+
+          {hasHydrated && isOwner ? (
+            <div className={styles.quickActions} aria-label="Actions rapides">
+              <Link href="/produits" className={styles.quickAction}>
+                <PackagePlus size={17} />
+                <span>New product</span>
+              </Link>
+              <Link href="/categories" className={styles.quickAction}>
+                <FolderPlus size={17} />
+                <span>New category</span>
+              </Link>
             </div>
-          </Link>
-        ) : null}
+          ) : null}
+
+          <div className={styles.quoteCard}>
+            <span className={styles.quoteEyebrow}>Store ritual</span>
+            <p className={styles.quoteText}>
+              &ldquo;Organization is the key to a thriving neighborhood shop.&rdquo;
+            </p>
+            <span className={styles.quoteAccent} aria-hidden="true" />
+            <MoulHanoutMark className={styles.quoteMark} />
+          </div>
+
+          {hasHydrated && user ? (
+            <Link href="/profil" className={styles.profile}>
+              <span className={styles.avatar}>{getInitials(user.name)}</span>
+              <span className={styles.profileMeta}>
+                <strong>{user.name}</strong>
+                <small>{isOwner ? 'Owner account' : 'Cashier account'}</small>
+              </span>
+            </Link>
+          ) : null}
+        </div>
       </div>
     </aside>
   );
