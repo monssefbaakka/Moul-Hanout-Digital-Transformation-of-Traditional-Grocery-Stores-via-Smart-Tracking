@@ -25,6 +25,16 @@ export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
   @Roles(Role.OWNER)
+  @Get('dashboard')
+  @ApiOkResponse({
+    description:
+      'Aggregated operational dashboard data for today, low-stock products, and products expiring within five days.',
+  })
+  getDashboard(@CurrentUser('shopId') shopId: string) {
+    return this.reportsService.getDashboard(shopId);
+  }
+
+  @Roles(Role.OWNER)
   @Get('sales')
   @ApiOkResponse({
     description: 'Sales grouped by day for the given date range.',

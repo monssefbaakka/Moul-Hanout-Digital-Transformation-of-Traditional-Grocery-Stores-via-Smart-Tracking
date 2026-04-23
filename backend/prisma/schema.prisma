@@ -215,7 +215,7 @@ model Alert {
   productId String
   message   String
   isRead    Boolean   @default(false)
-  emailSentAt DateTime?
+  emailSentAt DateTime? @map("email_sent_at")
   createdAt DateTime  @default(now())
 
   shop    Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade)
@@ -232,6 +232,7 @@ model SaleItem {
   productId String
   qty       Int
   unitPrice Float
+  lineTotal Float
   discount  Float?
 
   sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)

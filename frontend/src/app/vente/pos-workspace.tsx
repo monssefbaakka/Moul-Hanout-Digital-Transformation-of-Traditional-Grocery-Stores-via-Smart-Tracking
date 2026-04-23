@@ -809,9 +809,7 @@ export function PosWorkspace() {
                     </span>
                   </div>
                   <strong>
-                    {formatMoney(
-                      item.qty * item.unitPrice - (item.discount ?? 0),
-                    )}
+                    {formatMoney(item.lineTotal - (item.discount ?? 0))}
                   </strong>
                 </div>
               ))}
@@ -825,6 +823,12 @@ export function PosWorkspace() {
             <div className="app-modal__footer">
               <p>Stock mis à jour — la caisse est prête.</p>
               <div className="pos-v2__receipt-actions">
+                <Link
+                  href={`/vente/recus/${receipt.id}`}
+                  className="app-btn app-btn--secondary"
+                >
+                  Voir le recu
+                </Link>
                 <button
                   type="button"
                   className="app-btn app-btn--secondary"

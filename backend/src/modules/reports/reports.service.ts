@@ -7,6 +7,7 @@ import {
 } from './dto/report.dto';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const DASHBOARD_EXPIRING_DAYS = 5;
 
 const salesReportSelect = {
   soldAt: true,
@@ -26,22 +27,10 @@ export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getSalesReport(shopId: string, dto: GetSalesReportQueryDto) {
-    const shop = await this.prisma.shop.findUnique({
-      where: {
-        id: shopId,
-      },
-      select: {
-        timezone: true,
-      },
-    });
-
-    if (!shop) {
-      throw new NotFoundException('Shop not found');
-    }
-
-    const reportWindow = this.resolveSalesReportWindow(shop.timezone, dto);
+    const timeZone = await this.getShopTimeZone(shopId);
+    const reportWindow = this.resolveSalesReportWindow(timeZone, dto);
     const localDateFormatter = new Intl.DateTimeFormat('en-CA', {
-      timeZone: shop.timezone,
+      timeZone,
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -83,6 +72,45 @@ export class ReportsService {
       days,
       totalRevenue,
       totalTransactions: sales.length,
+    };
+  }
+
+  async getDashboard(shopId: string) {
+    const timeZone = await this.getShopTimeZone(shopId);
+    const today = this.getCurrentDateInTimeZone(timeZone);
+    const reportWindow = this.resolveSalesReportWindow(timeZone, {
+      from: today,
+      to: today,
+    });
+
+    const saleWhere: Prisma.SaleWhereInput = {
+      shopId,
+      status: SaleStatus.COMPLETED,
+      soldAt: {
+        gte: reportWindow.start,
+        lt: reportWindow.endExclusive,
+      },
+    };
+
+    const [dailySalesCount, salesAggregate, inventoryReport] =
+      await Promise.all([
+        this.prisma.sale.count({
+          where: saleWhere,
+        }),
+        this.prisma.sale.aggregate({
+          where: saleWhere,
+          _sum: {
+            totalAmount: true,
+          },
+        }),
+        this.getInventoryReport(shopId, { days: DASHBOARD_EXPIRING_DAYS }),
+      ]);
+
+    return {
+      dailySalesTotal: salesAggregate._sum.totalAmount ?? 0,
+      dailySalesCount,
+      lowStockProducts: inventoryReport.lowStock,
+      expiringProducts: inventoryReport.expiringSoon,
     };
   }
 
@@ -143,6 +171,23 @@ export class ReportsService {
     ];
 
     return rows.join('\n');
+  }
+
+  private async getShopTimeZone(shopId: string) {
+    const shop = await this.prisma.shop.findUnique({
+      where: {
+        id: shopId,
+      },
+      select: {
+        timezone: true,
+      },
+    });
+
+    if (!shop) {
+      throw new NotFoundException('Shop not found');
+    }
+
+    return shop.timezone;
   }
 
   private resolveSalesReportWindow(

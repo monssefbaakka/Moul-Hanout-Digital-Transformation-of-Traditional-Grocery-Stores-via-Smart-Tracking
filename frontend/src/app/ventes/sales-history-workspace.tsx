@@ -488,9 +488,7 @@ export function SalesHistoryWorkspace() {
                         </p>
                       </div>
                       <strong>
-                        {formatMoney(
-                          item.qty * item.unitPrice - (item.discount ?? 0),
-                        )}
+                        {formatMoney(item.lineTotal - (item.discount ?? 0))}
                       </strong>
                     </div>
 

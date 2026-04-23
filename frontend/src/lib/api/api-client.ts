@@ -9,6 +9,7 @@ import type {
   CreateCategoryInput,
   CreateProductInput,
   CreateUserInput,
+  DashboardReport,
   DailySummary,
   ForgotPasswordInput,
   ForgotPasswordResponse,
@@ -231,6 +232,7 @@ export const productsApi = {
 };
 
 export const reportsApi = {
+  dashboard: () => request<DashboardReport>('/reports/dashboard'),
   salesReport: (params?: { from?: string; to?: string }) =>
     request<SalesReport>(`/reports/sales${buildQuery(params)}`),
   inventoryReport: (params?: { days?: number }) =>

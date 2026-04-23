@@ -46,7 +46,7 @@ function buildReceiptHtml(receipt: SaleDetail) {
 
   const itemsMarkup = receipt.items
     .map((item) => {
-      const lineTotal = item.qty * item.unitPrice - (item.discount ?? 0);
+      const lineTotal = item.lineTotal - (item.discount ?? 0);
 
       return `
         <div class="receipt-line">

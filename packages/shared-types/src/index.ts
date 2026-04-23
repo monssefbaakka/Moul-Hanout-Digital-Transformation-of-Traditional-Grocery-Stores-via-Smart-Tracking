@@ -191,6 +191,7 @@ export interface SaleDetailItem {
   productId: string;
   qty: number;
   unitPrice: number;
+  lineTotal: number;
   discount?: number | null;
   product: SaleDetailItemProduct;
 }
@@ -304,6 +305,13 @@ export interface ExpiringProduct extends InventoryReportProduct {
 export interface InventoryReport {
   lowStock: InventoryReportProduct[];
   expiringSoon: ExpiringProduct[];
+}
+
+export interface DashboardReport {
+  dailySalesTotal: number;
+  dailySalesCount: number;
+  lowStockProducts: InventoryReportProduct[];
+  expiringProducts: ExpiringProduct[];
 }
 
 export interface StockInInput {

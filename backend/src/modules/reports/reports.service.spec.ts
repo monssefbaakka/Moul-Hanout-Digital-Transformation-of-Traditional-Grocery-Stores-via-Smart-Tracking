@@ -11,6 +11,8 @@ describe('ReportsService', () => {
       findUnique: jest.fn(),
     },
     sale: {
+      count: jest.fn(),
+      aggregate: jest.fn(),
       findMany: jest.fn(),
     },
     product: {
@@ -106,5 +108,97 @@ describe('ReportsService', () => {
         to: '2026-01-15',
       }),
     ).rejects.toThrow(new NotFoundException('Shop not found'));
+  });
+
+  it('returns an aggregated dashboard payload for the current shop day', async () => {
+    const now = new Date('2026-01-15T10:00:00.000Z');
+    jest.useFakeTimers().setSystemTime(now);
+
+    try {
+      prisma.shop.findUnique.mockResolvedValue({
+        timezone: 'Africa/Casablanca',
+      });
+      prisma.sale.count.mockResolvedValue(3);
+      prisma.sale.aggregate.mockResolvedValue({
+        _sum: {
+          totalAmount: 420,
+        },
+      });
+      prisma.product.findMany
+        .mockResolvedValueOnce([
+          {
+            id: 'product-low',
+            name: 'Milk',
+            currentStock: 2,
+            lowStockThreshold: 5,
+            unit: 'bottle',
+            category: { name: 'Fresh' },
+          },
+        ])
+        .mockResolvedValueOnce([
+          {
+            id: 'product-expiring',
+            name: 'Yogurt',
+            currentStock: 4,
+            lowStockThreshold: 3,
+            unit: 'cup',
+            expirationDate: new Date('2026-01-18T00:00:00.000Z'),
+            category: { name: 'Fresh' },
+          },
+        ]);
+
+      const report = await service.getDashboard('shop-1');
+
+      expect(prisma.sale.count).toHaveBeenCalledWith({
+        where: {
+          shopId: 'shop-1',
+          status: 'COMPLETED',
+          soldAt: {
+            gte: new Date('2026-01-14T23:00:00.000Z'),
+            lt: new Date('2026-01-15T23:00:00.000Z'),
+          },
+        },
+      });
+      expect(prisma.sale.aggregate).toHaveBeenCalledWith({
+        where: {
+          shopId: 'shop-1',
+          status: 'COMPLETED',
+          soldAt: {
+            gte: new Date('2026-01-14T23:00:00.000Z'),
+            lt: new Date('2026-01-15T23:00:00.000Z'),
+          },
+        },
+        _sum: {
+          totalAmount: true,
+        },
+      });
+      expect(report).toEqual({
+        dailySalesTotal: 420,
+        dailySalesCount: 3,
+        lowStockProducts: [
+          {
+            id: 'product-low',
+            name: 'Milk',
+            currentStock: 2,
+            lowStockThreshold: 5,
+            unit: 'bottle',
+            categoryName: 'Fresh',
+          },
+        ],
+        expiringProducts: [
+          {
+            id: 'product-expiring',
+            name: 'Yogurt',
+            currentStock: 4,
+            lowStockThreshold: 3,
+            unit: 'cup',
+            categoryName: 'Fresh',
+            expirationDate: '2026-01-18T00:00:00.000Z',
+          },
+        ],
+      });
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

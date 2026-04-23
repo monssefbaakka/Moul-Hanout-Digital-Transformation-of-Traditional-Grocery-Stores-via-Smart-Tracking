@@ -71,6 +71,7 @@ const summarySaleItemSelect = {
   productId: true,
   qty: true,
   unitPrice: true,
+  lineTotal: true,
   discount: true,
   product: {
     select: {
@@ -82,6 +83,14 @@ const summarySaleItemSelect = {
 type SummarySaleItem = Prisma.SaleItemGetPayload<{
   select: typeof summarySaleItemSelect;
 }>;
+
+type PersistedSaleItemData = {
+  productId: string;
+  qty: number;
+  unitPrice: number;
+  lineTotal: number;
+  discount: number;
+};
 
 @Injectable()
 export class SalesService {
@@ -233,26 +242,12 @@ export class SalesService {
       }
 
       const receiptNumber = this.generateReceiptNumber();
-      const saleItemsData = dto.items.map((item) => {
-        const product = productById.get(item.productId)!;
-        const discount = item.discount ?? 0;
-
-        if (discount > product.salePrice * item.quantity) {
-          throw new UnprocessableEntityException(
-            `Discount cannot exceed line total for product ${product.name}`,
-          );
-        }
-
-        return {
-          productId: item.productId,
-          qty: item.quantity,
-          unitPrice: product.salePrice,
-          discount,
-        };
-      });
+      const saleItemsData = dto.items.map((item) =>
+        this.buildSaleItemData(item, productById),
+      );
 
       const subtotal = saleItemsData.reduce(
-        (sum, item) => sum + item.unitPrice * item.qty,
+        (sum, item) => sum + item.lineTotal,
         0,
       );
       const totalDiscount = saleItemsData.reduce(
@@ -356,7 +351,7 @@ export class SalesService {
 
     for (const item of saleItems) {
       const existingEntry = topProductsMap.get(item.productId);
-      const lineRevenue = item.qty * item.unitPrice - (item.discount ?? 0);
+      const lineRevenue = item.lineTotal - (item.discount ?? 0);
 
       if (existingEntry) {
         existingEntry.quantitySold += item.qty;
@@ -471,6 +466,40 @@ export class SalesService {
 
   private isDateOnlyValue(value: string) {
     return /^\d{4}-\d{2}-\d{2}$/.test(value);
+  }
+
+  private buildSaleItemData(
+    item: CreateSaleDto['items'][number],
+    productById: Map<
+      string,
+      {
+        id: string;
+        name: string;
+        salePrice: number;
+      }
+    >,
+  ): PersistedSaleItemData {
+    const product = productById.get(item.productId)!;
+    const lineTotal = this.calculateLineTotal(item.quantity, product.salePrice);
+    const discount = item.discount ?? 0;
+
+    if (discount > lineTotal) {
+      throw new UnprocessableEntityException(
+        `Discount cannot exceed line total for product ${product.name}`,
+      );
+    }
+
+    return {
+      productId: item.productId,
+      qty: item.quantity,
+      unitPrice: product.salePrice,
+      lineTotal,
+      discount,
+    };
+  }
+
+  private calculateLineTotal(quantity: number, unitPrice: number) {
+    return quantity * unitPrice;
   }
 
   private getCurrentDateInTimeZone(timeZone: string) {
