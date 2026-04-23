@@ -11,7 +11,7 @@
   height: 100%;
   flex-direction: column;
   overflow-y: auto;
-  gap: 1.35rem;
+  gap: 1.2rem;
   padding: 1.4rem;
   border: 1px solid rgba(97, 100, 80, 0.08);
   border-radius: 2rem;
@@ -148,23 +148,7 @@
 .footer {
   margin-top: auto;
   display: grid;
-  gap: 1rem;
-}
-
-.alerts :global(.alerts-dropdown__trigger) {
-  width: 100%;
-  justify-content: space-between;
-  min-height: 3.2rem;
-  padding: 0.95rem 1rem;
-  border-radius: 1.15rem;
-  border-color: rgba(62, 91, 65, 0.08);
-  background: rgba(255, 255, 255, 0.74);
-  color: #304836;
-  box-shadow: none;
-}
-
-.alerts :global(.alerts-dropdown__trigger:hover) {
-  background: rgba(255, 255, 255, 0.92);
+  gap: 0.9rem;
 }
 
 .quickActions {
@@ -202,7 +186,7 @@
   overflow: hidden;
   display: grid;
   gap: 1rem;
-  min-height: 15rem;
+  min-height: 13.5rem;
   padding: 1.3rem 1.2rem 1.1rem;
   border: 1px solid rgba(196, 174, 144, 0.22);
   border-radius: 1.75rem;
@@ -336,5 +320,16 @@
 
   .closeButton {
     display: grid;
+  }
+}
+
+@media (max-height: 860px) {
+  .quoteCard {
+    min-height: 11.5rem;
+  }
+
+  .quoteText {
+    font-size: 1.02rem;
+    line-height: 1.55;
   }
 }

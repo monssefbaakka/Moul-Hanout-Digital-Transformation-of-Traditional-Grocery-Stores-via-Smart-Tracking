@@ -17,7 +17,6 @@ import {
   X,
 } from 'lucide-react';
 import { type ReactNode, useEffect, useRef } from 'react';
-import { AlertsDropdown } from '@/components/alerts/alerts-dropdown';
 import { useAlerts } from '@/components/alerts/alerts-provider';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
@@ -181,10 +180,6 @@ export function AppSidebar({
         </nav>
 
         <div className={styles.footer}>
-          <div className={styles.alerts}>
-            <AlertsDropdown />
-          </div>
-
           {hasHydrated && isOwner ? (
             <div className={styles.quickActions} aria-label="Actions rapides">
               <Link href="/produits" className={styles.quickAction} onClick={onNavigate}>
