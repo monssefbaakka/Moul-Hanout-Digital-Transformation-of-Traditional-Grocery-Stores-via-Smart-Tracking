@@ -272,7 +272,7 @@ function InventoryList({
   return (
     <div className={styles.inventoryList}>
       {items.map((item) => (
-        <article key={item.id} className={styles.inventoryRow}>
+        <article key={item.id} className={cn(styles.inventoryRow, kind === 'expiring' && styles.inventoryRowExpiring)}>
           <div className={styles.inventoryCopy}>
             <strong>{item.name}</strong>
             <span>{item.categoryName}</span>
@@ -751,7 +751,15 @@ export function DashboardOverview() {
                       <td>{formatCurrency(sale.total)}</td>
                       <td>{formatDateTime(sale.soldAt)}</td>
                       <td>
-                        <span className={styles.statusPill}>{getStatusLabel(sale.status)}</span>
+                        <span
+                          className={cn(
+                            styles.statusPill,
+                            sale.status === 'CANCELLED' && styles.statusPillCancelled,
+                            sale.status === 'PENDING' && styles.statusPillPending,
+                          )}
+                        >
+                          {getStatusLabel(sale.status)}
+                        </span>
                       </td>
                     </tr>
                   ))}
@@ -766,7 +774,15 @@ export function DashboardOverview() {
                     <Link href={`/ventes?receipt=${sale.receiptNumber}`} className={styles.invoiceLink}>
                       {sale.receiptNumber}
                     </Link>
-                    <span className={styles.statusPill}>{getStatusLabel(sale.status)}</span>
+                    <span
+                      className={cn(
+                        styles.statusPill,
+                        sale.status === 'CANCELLED' && styles.statusPillCancelled,
+                        sale.status === 'PENDING' && styles.statusPillPending,
+                      )}
+                    >
+                      {getStatusLabel(sale.status)}
+                    </span>
                   </div>
                   <div className={styles.activityCardGrid}>
                     <span>{getPaymentLabel(sale.paymentMode)}</span>
