@@ -72,7 +72,21 @@ type StockMovementRecord = {
   type: MovementType;
   qtyDelta: number;
   reason?: string | null;
+  supplierId?: string | null;
+  supplierName?: string | null;
+  batchId?: string | null;
   createdBy: string;
+  createdAt: Date;
+};
+
+type StockBatchRecord = {
+  id: string;
+  productId: string;
+  quantity: number;
+  supplierId?: string | null;
+  supplierName?: string | null;
+  expiryDate?: Date | null;
+  receivedAt: Date;
   createdAt: Date;
 };
 
@@ -81,8 +95,10 @@ type AlertRecord = {
   shopId: string;
   type: AlertType;
   productId: string;
+  batchId?: string | null;
   message: string;
   isRead: boolean;
+  emailSentAt?: Date | null;
   createdAt: Date;
 };
 
@@ -399,6 +415,7 @@ async function createPrismaMock() {
   ];
 
   const stockMovements: StockMovementRecord[] = [];
+  const stockBatches: StockBatchRecord[] = [];
   const alerts: AlertRecord[] = [];
   const auditLogs: AuditLogRecord[] = [];
   const sessions: SessionRecord[] = [];
@@ -409,6 +426,15 @@ async function createPrismaMock() {
     products.find((product) => product.id === productId) ?? null;
   const getUser = (userId: string) =>
     users.find((user) => user.id === userId) ?? null;
+  const getStockBatchesForProduct = (productId: string) =>
+    stockBatches
+      .filter((batch) => batch.productId === productId)
+      .sort((left, right) => {
+        const leftTime = left.expiryDate?.getTime() ?? Number.MAX_SAFE_INTEGER;
+        const rightTime =
+          right.expiryDate?.getTime() ?? Number.MAX_SAFE_INTEGER;
+        return leftTime - rightTime;
+      });
 
   const prismaMock: any = {
     user: {
@@ -557,12 +583,43 @@ async function createPrismaMock() {
       findMany: jest.fn(async (args?: any) => {
         return products
           .filter((product) => matchProduct(product, args?.where))
-          .map((product) => ({
-            ...product,
-            ...(args?.include?.category
-              ? { category: getCategory(product.categoryId) }
-              : {}),
-          }));
+          .map((product) => {
+            const baseRecord = {
+              ...product,
+              ...(args?.include?.category
+                ? { category: getCategory(product.categoryId) }
+                : {}),
+            };
+
+            if (args?.select) {
+              const selected = selectFields(product, args.select);
+
+              if (args.select.stockBatches) {
+                const batches = getStockBatchesForProduct(product.id)
+                  .filter((batch) => {
+                    if (
+                      args.select.stockBatches.where?.expiryDate?.not === null
+                    ) {
+                      return batch.expiryDate !== null && batch.expiryDate !== undefined;
+                    }
+
+                    return true;
+                  })
+                  .map((batch) =>
+                    selectFields(batch, args.select.stockBatches.select),
+                  );
+
+                return {
+                  ...selected,
+                  stockBatches: batches,
+                };
+              }
+
+              return selected;
+            }
+
+            return baseRecord;
+          });
       }),
       findFirst: jest.fn(async (args: any) => {
         const product =
@@ -576,6 +633,26 @@ async function createPrismaMock() {
           return {
             ...product,
             category: getCategory(product.categoryId),
+          };
+        }
+
+        if (args.select?.stockBatches) {
+          const selected = selectFields(product, args.select);
+          const batches = getStockBatchesForProduct(product.id)
+            .filter((batch) => {
+              if (args.select.stockBatches.where?.expiryDate?.not === null) {
+                return batch.expiryDate !== null && batch.expiryDate !== undefined;
+              }
+
+              return true;
+            })
+            .map((batch) =>
+              selectFields(batch, args.select.stockBatches.select),
+            );
+
+          return {
+            ...selected,
+            stockBatches: batches,
           };
         }
 
@@ -625,6 +702,23 @@ async function createPrismaMock() {
         };
       }),
     },
+    stockBatch: {
+      create: jest.fn(async (args: any) => {
+        const now = new Date();
+        const batch: StockBatchRecord = {
+          id: `batch-${stockBatches.length + 1}`,
+          productId: args.data.productId,
+          quantity: args.data.quantity,
+          supplierId: args.data.supplierId ?? null,
+          supplierName: args.data.supplierName ?? null,
+          expiryDate: args.data.expiryDate ?? null,
+          receivedAt: args.data.receivedAt ?? now,
+          createdAt: now,
+        };
+        stockBatches.push(batch);
+        return { ...batch };
+      }),
+    },
     stockMovement: {
       create: jest.fn(async (args: any) => {
         const movement: StockMovementRecord = {
@@ -633,6 +727,9 @@ async function createPrismaMock() {
           type: args.data.type,
           qtyDelta: args.data.qtyDelta,
           reason: args.data.reason ?? null,
+          supplierId: args.data.supplierId ?? null,
+          supplierName: args.data.supplierName ?? null,
+          batchId: args.data.batchId ?? null,
           createdBy: args.data.createdBy,
           createdAt: new Date(),
         };
@@ -746,8 +843,10 @@ async function createPrismaMock() {
           shopId: args.data.shopId,
           type: args.data.type,
           productId: args.data.productId,
+          batchId: args.data.batchId ?? null,
           message: args.data.message,
           isRead: args.data.isRead ?? false,
+          emailSentAt: args.data.emailSentAt ?? null,
           createdAt: new Date(),
         };
         alerts.push(alert);
