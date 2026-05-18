@@ -78,4 +78,25 @@ export class ReportsController {
     });
     res.send(csv);
   }
+
+  @Roles(Role.OWNER)
+  @Get('sales/export/pdf')
+  @ApiProduces('application/pdf')
+  @ApiOkResponse({
+    description: 'PDF report of daily sales for the given date range.',
+  })
+  async exportSalesPdf(
+    @CurrentUser('shopId') shopId: string,
+    @Query() query: GetSalesReportQueryDto,
+    @Res() res: Response,
+  ) {
+    const pdf = await this.reportsService.exportSalesPdf(shopId, query);
+    const from = query.from ?? 'debut';
+    const to = query.to ?? 'fin';
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="ventes-${from}-${to}.pdf"`,
+    });
+    res.send(pdf);
+  }
 }

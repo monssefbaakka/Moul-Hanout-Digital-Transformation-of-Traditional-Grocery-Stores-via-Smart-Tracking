@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, SaleStatus } from '@prisma/client';
+import PDFDocument from 'pdfkit';
 import { PrismaService } from '../../database/prisma.service';
 import {
   GetInventoryReportQueryDto,
@@ -184,6 +185,78 @@ export class ReportsService {
     ];
 
     return rows.join('\n');
+  }
+
+  async exportSalesPdf(shopId: string, dto: GetSalesReportQueryDto): Promise<Buffer> {
+    const report = await this.getSalesReport(shopId, dto);
+    const shop = await this.prisma.shop.findUnique({
+      where: { id: shopId },
+      select: { name: true, currency: true },
+    });
+
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ margin: 40, size: 'A4' });
+      const chunks: Buffer[] = [];
+
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      // Header
+      doc.fontSize(18).font('Helvetica-Bold').text('Moul Hanout — Rapport des Ventes', { align: 'center' });
+      doc.fontSize(11).font('Helvetica').text(shop?.name ?? '', { align: 'center' });
+      doc.moveDown(0.5);
+      doc.fontSize(10).fillColor('#555555').text(`Période : ${dto.from ?? 'début'} → ${dto.to ?? 'fin'}`, { align: 'center' });
+      doc.fillColor('#000000').moveDown(1);
+
+      // Summary
+      doc.fontSize(11).font('Helvetica-Bold').text('Résumé');
+      doc.font('Helvetica').fontSize(10);
+      doc.text(`Revenu total : ${report.totalRevenue.toFixed(2)} ${shop?.currency ?? 'MAD'}`);
+      doc.text(`Transactions : ${report.totalTransactions}`);
+      doc.moveDown(1);
+
+      // Table header
+      doc.font('Helvetica-Bold').fontSize(10);
+      const colDate = 40;
+      const colRevenu = 260;
+      const colTxn = 420;
+      const rowH = 18;
+      let y = doc.y;
+
+      doc.rect(40, y, 520, rowH).fill('#e8f4f0');
+      doc.fillColor('#000000');
+      doc.text('Date', colDate, y + 4);
+      doc.text(`Revenu (${shop?.currency ?? 'MAD'})`, colRevenu, y + 4);
+      doc.text('Transactions', colTxn, y + 4);
+      y += rowH;
+
+      // Rows
+      doc.font('Helvetica').fontSize(10);
+      let fill = false;
+      for (const day of report.days) {
+        if (y > 740) {
+          doc.addPage();
+          y = 40;
+        }
+        if (fill) doc.rect(40, y, 520, rowH).fill('#f7fbfa');
+        doc.fillColor('#000000');
+        doc.text(day.date, colDate, y + 4);
+        doc.text(day.revenue.toFixed(2), colRevenu, y + 4);
+        doc.text(String(day.transactions), colTxn, y + 4);
+        y += rowH;
+        fill = !fill;
+      }
+
+      // Total row
+      doc.rect(40, y, 520, rowH).fill('#c8e6c9');
+      doc.fillColor('#000000').font('Helvetica-Bold');
+      doc.text('TOTAL', colDate, y + 4);
+      doc.text(report.totalRevenue.toFixed(2), colRevenu, y + 4);
+      doc.text(String(report.totalTransactions), colTxn, y + 4);
+
+      doc.end();
+    });
   }
 
   private async buildSalesReport(

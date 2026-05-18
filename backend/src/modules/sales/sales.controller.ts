@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -15,6 +16,7 @@ import {
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
+import { ApiOperation } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '../../common/enums';
@@ -83,5 +85,19 @@ export class SalesController {
     @Body() dto: CreateSaleDto,
   ) {
     return this.salesService.create(shopId, userId, dto);
+  }
+
+  @Roles(Role.OWNER)
+  @Patch(':id/cancel')
+  @ApiOperation({ summary: 'Cancel a sale and restore stock (OWNER only)' })
+  @ApiOkResponse({ description: 'Sale cancelled and stock restored.' })
+  @ApiNotFoundResponse({ description: 'Sale not found.' })
+  @ApiUnprocessableEntityResponse({ description: 'Sale already cancelled.' })
+  cancel(
+    @CurrentUser('shopId') shopId: string,
+    @CurrentUser('id') userId: string,
+    @Param('id') saleId: string,
+  ) {
+    return this.salesService.cancel(shopId, userId, saleId);
   }
 }

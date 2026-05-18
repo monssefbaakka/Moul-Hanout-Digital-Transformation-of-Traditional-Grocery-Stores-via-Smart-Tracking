@@ -1,17 +1,42 @@
 {
-  "projectTitle": "Moul Hanout Module Board",
+  "projectTitle": "Moul Hanout Delivery Board",
   "projectOwner": "monssefbaakka",
   "repository": "monssefbaakka/Moul-Hanout-Digital-Transformation-of-Traditional-Grocery-Stores-via-Smart-Tracking",
   "labels": [
     {
       "name": "type:epic",
       "color": "5319E7",
-      "description": "Parent issue for a module backlog"
+      "description": "Parent issue for a roadmap track"
     },
     {
       "name": "type:task",
       "color": "0E8A16",
-      "description": "Executable delivery task"
+      "description": "Executable implementation task"
+    },
+    {
+      "name": "stream:hardening",
+      "color": "1D76DB",
+      "description": "Current production hardening work"
+    },
+    {
+      "name": "stream:future",
+      "color": "D93F0B",
+      "description": "Future implementation roadmap work"
+    },
+    {
+      "name": "horizon:now",
+      "color": "B60205",
+      "description": "Immediate delivery priority"
+    },
+    {
+      "name": "horizon:next",
+      "color": "FBCA04",
+      "description": "Next implementation wave"
+    },
+    {
+      "name": "horizon:later",
+      "color": "0E8A16",
+      "description": "Longer-term roadmap work"
     },
     {
       "name": "area:backend",
@@ -26,611 +51,515 @@
     {
       "name": "area:shared",
       "color": "0052CC",
-      "description": "Shared packages or contracts"
+      "description": "Shared packages and contracts"
     },
     {
       "name": "area:devops",
       "color": "D93F0B",
-      "description": "Infrastructure or delivery workflow"
+      "description": "Infrastructure and delivery workflow"
+    },
+    {
+      "name": "area:product",
+      "color": "C5DEF5",
+      "description": "Product workflow and business scope"
+    },
+    {
+      "name": "module:auth",
+      "color": "E11D48",
+      "description": "Authentication and authorization scope"
+    },
+    {
+      "name": "module:users",
+      "color": "7C3AED",
+      "description": "User administration scope"
+    },
+    {
+      "name": "module:catalog",
+      "color": "16A34A",
+      "description": "Categories and product catalog scope"
+    },
+    {
+      "name": "module:inventory",
+      "color": "15803D",
+      "description": "Inventory and stock supervision scope"
+    },
+    {
+      "name": "module:alerts",
+      "color": "CA8A04",
+      "description": "Alerting and notification scope"
+    },
+    {
+      "name": "module:sales",
+      "color": "EA580C",
+      "description": "Point of sale and sales scope"
+    },
+    {
+      "name": "module:reports",
+      "color": "0891B2",
+      "description": "Dashboard, reporting, and analytics scope"
+    },
+    {
+      "name": "module:platform",
+      "color": "0052CC",
+      "description": "Platform, schema, mail, health, and release scope"
+    },
+    {
+      "name": "module:suppliers",
+      "color": "0F766E",
+      "description": "Supplier management scope"
+    },
+    {
+      "name": "module:procurement",
+      "color": "0E7490",
+      "description": "Purchasing and receiving scope"
+    },
+    {
+      "name": "module:forecasting",
+      "color": "9333EA",
+      "description": "Forecasting and smart replenishment scope"
+    },
+    {
+      "name": "module:loyalty",
+      "color": "DB2777",
+      "description": "Customer loyalty and promotion scope"
+    },
+    {
+      "name": "module:multistore",
+      "color": "4F46E5",
+      "description": "Multi-store and central administration scope"
     }
   ],
-  "modules": [
+  "streams": [
     {
-      "key": "dashboard",
-      "label": "module:dashboard",
-      "title": "[Dashboard] Consolidate owner dashboard experience",
-      "summary": "Track the owner-facing dashboard as a delivery epic covering KPIs, quick actions, and shell reliability.",
-      "subIssues": [
+      "key": "hardening",
+      "title": "Current Delivery Hardening",
+      "streamLabel": "stream:hardening",
+      "epics": [
         {
-          "title": "[Dashboard] Align KPI cards with alerts, inventory, and sales APIs",
-          "areas": ["area:frontend", "area:backend"],
-          "deliverables": [
-            "Map every dashboard metric to an explicit API source",
-            "Remove any duplicated client-side business rules",
-            "Confirm empty-state and error-state handling for each widget"
+          "key": "auth-users-hardening",
+          "moduleLabels": ["module:auth", "module:users"],
+          "horizonLabel": "horizon:now",
+          "title": "[Now] Auth, Users, and Access Hardening",
+          "summary": "Stabilize authentication, protected access, profile management, and owner-managed user administration for production use.",
+          "dependencies": [
+            "Platform mail behavior must remain compatible with password reset",
+            "Shared role and auth contracts must remain aligned between backend and frontend"
           ],
-          "acceptance": [
-            "Each KPI has a single backend source of truth",
-            "Dashboard widgets fail gracefully when upstream data is missing",
-            "No metric calculation is duplicated in the frontend"
+          "exitCriteria": [
+            "Login, refresh, logout, and password reset flows are deterministic",
+            "Owner-only user administration rules are explicit and regression-tested",
+            "Frontend route protection matches backend authorization truth"
+          ],
+          "subIssues": [
+            {
+              "title": "[Auth][Now] Close remaining token lifecycle and session-state gaps",
+              "labels": ["module:auth", "area:backend", "area:frontend", "area:shared"],
+              "deliverables": [
+                "Audit login, refresh, logout, forgot-password, and reset-password flows end to end",
+                "Confirm token expiry, invalidation, and stale-session handling across API and UI",
+                "Document the expected success and failure responses for each auth transition"
+              ],
+              "acceptance": [
+                "Auth state transitions are consistent across backend and frontend",
+                "Expired or invalid credentials fail explicitly without stale UI state",
+                "No duplicate auth business rules exist in the frontend"
+              ]
+            },
+            {
+              "title": "[Users][Now] Validate owner-managed user lifecycle and profile editing",
+              "labels": ["module:users", "area:backend", "area:frontend"],
+              "deliverables": [
+                "Review user creation, activation, deactivation, and role updates",
+                "Verify owner self-protection and cashier boundary rules",
+                "Check profile editing flows for validation and synchronization gaps"
+              ],
+              "acceptance": [
+                "Only owners can manage store staff",
+                "Role and activation changes persist correctly",
+                "Profile screens reflect saved state and backend errors clearly"
+              ]
+            },
+            {
+              "title": "[Auth+Users][Now] Add release checklist for access-control regressions",
+              "labels": ["module:auth", "module:users", "area:backend", "area:frontend"],
+              "deliverables": [
+                "Define the critical manual test scenarios for owner and cashier accounts",
+                "Cover protected route redirects, disabled accounts, and reset-password flows",
+                "Document the data and environment prerequisites for verification"
+              ],
+              "acceptance": [
+                "A maintainer can validate access-control behavior without source-code guesswork",
+                "Owner and cashier regressions are easy to detect before release",
+                "Critical auth flows have explicit expected outcomes"
+              ]
+            }
           ]
         },
         {
-          "title": "[Dashboard] Refine quick actions, loading states, and responsive layout",
-          "areas": ["area:frontend"],
-          "deliverables": [
-            "Review authenticated shell integration and navigation affordances",
-            "Standardize loading placeholders and fallback messages",
-            "Validate mobile and desktop layout behavior"
+          "key": "catalog-inventory-hardening",
+          "moduleLabels": ["module:catalog", "module:inventory", "module:alerts"],
+          "horizonLabel": "horizon:now",
+          "title": "[Now] Catalog, Inventory, and Alerts Integrity",
+          "summary": "Stabilize category and product lifecycle rules, inventory integrity, and alert derivation before operational rollout.",
+          "dependencies": [
+            "Catalog rules must stay aligned with shared product and category contracts",
+            "Alerts depend on accurate inventory and expiry state"
           ],
-          "acceptance": [
-            "Dashboard actions navigate to the correct workspaces",
-            "Loading and empty states are explicit and consistent",
-            "Layout remains usable on common desktop and mobile widths"
+          "exitCriteria": [
+            "Catalog updates do not create inconsistent inventory behavior",
+            "Low-stock and expiry alerts reflect real stock state",
+            "Operators can trust inventory visibility and warning surfaces"
+          ],
+          "subIssues": [
+            {
+              "title": "[Catalog][Now] Standardize category and product lifecycle rules",
+              "labels": ["module:catalog", "area:backend", "area:frontend", "area:shared"],
+              "deliverables": [
+                "Review category activation constraints and product-category linkage",
+                "Confirm product validation for pricing, SKU/barcode identity, and stock thresholds",
+                "Trace shared catalog DTOs into all consuming screens"
+              ],
+              "acceptance": [
+                "Catalog constraints are enforced by the backend consistently",
+                "Frontend forms mirror backend validation without duplicating rules",
+                "Shared catalog contracts remain the source of truth"
+              ]
+            },
+            {
+              "title": "[Inventory][Now] Lock down stock movement integrity and operator workflows",
+              "labels": ["module:inventory", "area:backend", "area:frontend"],
+              "deliverables": [
+                "Audit stock movement updates, zero-stock handling, and threshold evaluation",
+                "Review inventory lists, filters, search, and adjustment entry points",
+                "Validate edge cases around missing expiry dates and inactive catalog items"
+              ],
+              "acceptance": [
+                "Inventory mutations preserve consistent stock state",
+                "Critical stock states are visible to operators without ambiguity",
+                "Edge cases are handled predictably across API and UI"
+              ]
+            },
+            {
+              "title": "[Alerts][Now] Verify in-app alert generation and escalation behavior",
+              "labels": ["module:alerts", "area:backend", "area:frontend", "area:devops"],
+              "deliverables": [
+                "Trace low-stock and expiry alert derivation from inventory conditions",
+                "Check unread counts, mark-read flows, and workspace/dropdown synchronization",
+                "Document how optional email escalation behaves when mail infrastructure is unavailable"
+              ],
+              "acceptance": [
+                "Alert generation matches inventory truth",
+                "Unread state remains synchronized across alert entry points",
+                "Email escalation boundaries are explicit and operationally safe"
+              ]
+            }
           ]
         },
         {
-          "title": "[Dashboard] Add regression checklist for owner overview flows",
-          "areas": ["area:frontend", "area:backend"],
-          "deliverables": [
-            "Define the critical owner overview scenarios to test manually",
-            "Cover alert counts, sales totals, and low-stock surfacing",
-            "Document the expected data dependencies for QA"
+          "key": "sales-reporting-hardening",
+          "moduleLabels": ["module:sales", "module:reports"],
+          "horizonLabel": "horizon:now",
+          "title": "[Now] Sales, Dashboard, and Reporting Reliability",
+          "summary": "Stabilize checkout, sales history, dashboard KPIs, and reporting semantics so operators can trust store data end to end.",
+          "dependencies": [
+            "Sales depends on stable catalog and inventory behavior",
+            "Dashboard and reports depend on consistent sales aggregates and timezone semantics"
           ],
-          "acceptance": [
-            "A tester can validate the dashboard without reverse engineering the code",
-            "Critical overview flows are listed with expected results",
-            "Known dependencies are documented for local verification"
+          "exitCriteria": [
+            "Checkout totals and inventory side effects remain consistent",
+            "Dashboard and reports use documented backend metric definitions",
+            "Receipt and history flows stay aligned with sales contracts"
+          ],
+          "subIssues": [
+            {
+              "title": "[Sales][Now] Audit checkout totals, receipts, and sales history behavior",
+              "labels": ["module:sales", "area:backend", "area:frontend", "area:shared"],
+              "deliverables": [
+                "Review cart submission, sale item persistence, payment-mode handling, and receipt payloads",
+                "Validate POS interaction speed, receipt navigation, and sales history filtering",
+                "Eliminate any duplicated total or line-item assumptions outside backend logic"
+              ],
+              "acceptance": [
+                "Checkout persists correct totals and line items",
+                "Receipts and sales history reflect the same source data",
+                "Frontend sales flows do not drift from backend truth"
+              ]
+            },
+            {
+              "title": "[Reports][Now] Align dashboard KPIs, reports, and timezone windows",
+              "labels": ["module:reports", "area:backend", "area:frontend", "area:shared"],
+              "deliverables": [
+                "Map each dashboard metric and report widget to an explicit backend definition",
+                "Review date-range and timezone semantics for daily and period-based reports",
+                "Check chart, table, and export consistency against the same dataset"
+              ],
+              "acceptance": [
+                "Metrics mean the same thing across dashboard and reports",
+                "Timezone-sensitive windows behave consistently",
+                "Displayed and exported report data stays aligned"
+              ]
+            },
+            {
+              "title": "[Sales+Reports][Now] Create operations QA pack for cashier and owner flows",
+              "labels": ["module:sales", "module:reports", "area:backend", "area:frontend"],
+              "deliverables": [
+                "Define critical cashier checkout and owner reporting scenarios",
+                "Cover error states, empty states, and cross-module data dependency checks",
+                "List the exact expected outcomes for manual release verification"
+              ],
+              "acceptance": [
+                "Store operations can be verified quickly before a release",
+                "Cashier and owner workflows have explicit regression coverage",
+                "Known dependencies are documented for reproducible testing"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "platform-release-hardening",
+          "moduleLabels": ["module:platform"],
+          "horizonLabel": "horizon:now",
+          "title": "[Now] Platform, Mail, Health, and Release Readiness",
+          "summary": "Keep shared contracts, Prisma, Docker, health checks, and mail delivery aligned so deployment behavior is predictable.",
+          "dependencies": [
+            "Every module depends on shared contracts and coherent schema behavior",
+            "Auth reset and alert escalation depend on stable mail behavior"
+          ],
+          "exitCriteria": [
+            "Core build, test, and compose flows are reproducible",
+            "Health and readiness semantics match actual runtime state",
+            "Schema, seed, and shared contract drift are visible and controlled"
+          ],
+          "subIssues": [
+            {
+              "title": "[Platform][Now] Reconcile shared contracts, Prisma schema, and seed data",
+              "labels": ["module:platform", "area:backend", "area:shared", "area:devops"],
+              "deliverables": [
+                "Audit shared-types and shared-utils usage across backend and frontend",
+                "Review Prisma schema and migrations against real business flows",
+                "Confirm seed data still supports meaningful operator validation"
+              ],
+              "acceptance": [
+                "Contract duplication is removed or documented explicitly",
+                "Schema behavior matches current product logic",
+                "Seed data remains useful for end-to-end verification"
+              ]
+            },
+            {
+              "title": "[Health+Mail][Now] Tighten readiness checks and operational notification behavior",
+              "labels": ["module:platform", "area:backend", "area:devops"],
+              "deliverables": [
+                "Review health endpoint semantics for database, mail, and runtime readiness",
+                "Trace Docker health checks and startup ordering against real app readiness",
+                "Document mail verification and failure behavior for local and hosted environments"
+              ],
+              "acceptance": [
+                "Health signals have clear operational meaning",
+                "Container readiness does not overstate application readiness",
+                "Mail behavior under valid and invalid configuration is explicit"
+              ]
+            },
+            {
+              "title": "[Release][Now] Define minimum deployment and rollback checklist",
+              "labels": ["module:platform", "area:devops", "area:product"],
+              "deliverables": [
+                "List the commands and checks required before release",
+                "Capture rollback assumptions for schema, seed, and app deployment changes",
+                "Document the post-deploy smoke tests for owner and cashier workflows"
+              ],
+              "acceptance": [
+                "Release verification is concise and repeatable",
+                "Rollback assumptions are known before deployment",
+                "Core production smoke tests are documented clearly"
+              ]
+            }
           ]
         }
       ]
     },
     {
-      "key": "auth",
-      "label": "module:auth",
-      "title": "[Auth] Stabilize authentication and access control",
-      "summary": "Cover login, refresh, logout, protected routes, and password reset flows.",
-      "subIssues": [
+      "key": "future",
+      "title": "Future Implementation Roadmap",
+      "streamLabel": "stream:future",
+      "epics": [
         {
-          "title": "[Auth] Harden login, refresh, logout, and password reset API flows",
-          "areas": ["area:backend"],
-          "deliverables": [
-            "Review DTO validation and token lifecycle handling",
-            "Verify password reset token expiry, invalidation, and replay protection",
-            "Document expected success and failure responses"
+          "key": "suppliers-procurement",
+          "moduleLabels": ["module:suppliers", "module:procurement"],
+          "horizonLabel": "horizon:next",
+          "title": "[Next] Supplier and Procurement Foundations",
+          "summary": "Extend the platform beyond manual stock updates by introducing supplier records, purchase orders, and receiving workflows.",
+          "dependencies": [
+            "Catalog and inventory foundations must remain stable first",
+            "Supplier purchasing should integrate with stock movement history rather than bypass it"
           ],
-          "acceptance": [
-            "Auth endpoints return normalized responses",
-            "Expired or reused reset tokens are rejected explicitly",
-            "Token lifecycle behavior is deterministic across login and logout"
+          "exitCriteria": [
+            "Suppliers become manageable first-class entities",
+            "Purchase order lifecycle is defined from draft to received",
+            "Stock receiving updates inventory through controlled domain rules"
+          ],
+          "subIssues": [
+            {
+              "title": "[Suppliers][Next] Design supplier management module and shared contracts",
+              "labels": ["module:suppliers", "area:backend", "area:frontend", "area:shared", "area:product"],
+              "deliverables": [
+                "Define supplier entity, DTOs, and ownership boundaries",
+                "Design owner-facing supplier CRUD workflows and validation rules",
+                "Map how suppliers connect to products without duplicating catalog logic"
+              ],
+              "acceptance": [
+                "Supplier records have a clear backend source of truth",
+                "Frontend management flows consume shared contracts",
+                "Supplier-product relationships are explicit and maintainable"
+              ]
+            },
+            {
+              "title": "[Procurement][Next] Implement purchase order draft, approval, and receiving flow",
+              "labels": ["module:procurement", "area:backend", "area:frontend", "area:product"],
+              "deliverables": [
+                "Define purchase order states and line-item structure",
+                "Create owner workflows for drafting, confirming, and receiving orders",
+                "Route received quantities through inventory-safe stock updates"
+              ],
+              "acceptance": [
+                "Purchase orders have a controlled lifecycle",
+                "Receiving stock does not bypass inventory integrity rules",
+                "Order state and inventory impact are visible to operators"
+              ]
+            },
+            {
+              "title": "[Suppliers+Procurement][Next] Plan operational reports for purchasing and stock intake",
+              "labels": ["module:suppliers", "module:procurement", "module:reports", "area:backend", "area:frontend"],
+              "deliverables": [
+                "Define the minimum reporting views for incoming stock and supplier activity",
+                "Identify reusable reporting contracts versus new procurement-specific metrics",
+                "Document the dashboard impact of supplier and receiving data"
+              ],
+              "acceptance": [
+                "Procurement reporting requirements are explicit before implementation",
+                "Metric ownership is clear between existing reports and new purchasing views",
+                "Future dashboard dependencies are known in advance"
+              ]
+            }
           ]
         },
         {
-          "title": "[Auth] Review route guards and session handling in the frontend",
-          "areas": ["area:frontend"],
-          "deliverables": [
-            "Audit login, register, forgot-password, and reset-password screens",
-            "Validate route protection and redirect behavior",
-            "Check auth store synchronization with API responses"
+          "key": "automation-forecasting",
+          "moduleLabels": ["module:forecasting", "module:inventory"],
+          "horizonLabel": "horizon:next",
+          "title": "[Next] Smart Inventory Automation and Forecasting",
+          "summary": "Add predictive restocking and barcode-assisted stock operations to move beyond manual stock supervision.",
+          "dependencies": [
+            "Historical sales and inventory data must be reliable",
+            "Supplier and procurement structures improve the value of replenishment suggestions"
           ],
-          "acceptance": [
-            "Protected routes redirect consistently for unauthenticated users",
-            "Frontend state reflects backend auth truth without drift",
-            "Session transitions do not leave stale UI state"
+          "exitCriteria": [
+            "Restocking suggestions have a clear data basis",
+            "Barcode-assisted workflows reduce manual stock-entry friction",
+            "Operators can accept or reject automation recommendations explicitly"
+          ],
+          "subIssues": [
+            {
+              "title": "[Forecasting][Next] Define replenishment suggestion engine inputs and outputs",
+              "labels": ["module:forecasting", "area:backend", "area:shared", "area:product"],
+              "deliverables": [
+                "Specify the historical signals used for restock recommendations",
+                "Define suggestion payloads, confidence fields, and review states",
+                "Document what remains advisory versus fully automated"
+              ],
+              "acceptance": [
+                "Forecasting outputs are explainable to operators",
+                "Shared contracts define recommendation shape clearly",
+                "Automation boundaries are explicit and safe"
+              ]
+            },
+            {
+              "title": "[Inventory][Next] Add barcode-assisted stock receiving and adjustment workflows",
+              "labels": ["module:inventory", "area:backend", "area:frontend", "area:product"],
+              "deliverables": [
+                "Design barcode scan entry points for receiving and stock adjustment",
+                "Map scan results to existing product identity and stock movement logic",
+                "Define fallback behavior when product codes are missing or duplicated"
+              ],
+              "acceptance": [
+                "Barcode-assisted actions integrate with current inventory rules",
+                "Operator fallback paths are clear when scans fail",
+                "Scan-based workflows reduce manual product lookup friction"
+              ]
+            },
+            {
+              "title": "[Forecasting+Inventory][Next] Prototype owner review UI for suggested replenishment",
+              "labels": ["module:forecasting", "module:inventory", "area:frontend", "area:backend"],
+              "deliverables": [
+                "Design a review queue for suggested restocks",
+                "Show the reasoning inputs that justify a recommendation",
+                "Define accept, dismiss, and defer actions for owners"
+              ],
+              "acceptance": [
+                "Owners can review recommendations without blind trust",
+                "Recommendation reasoning is visible enough to audit",
+                "UI actions map to intentional backend states"
+              ]
+            }
           ]
         },
         {
-          "title": "[Auth] Verify shared auth contracts and role semantics",
-          "areas": ["area:shared", "area:backend", "area:frontend"],
-          "deliverables": [
-            "Trace auth DTOs and role enums through shared packages and consumers",
-            "Remove any contract mismatch between backend and frontend",
-            "Confirm role-based restrictions are consistently named"
+          "key": "growth-expansion",
+          "moduleLabels": ["module:loyalty", "module:multistore"],
+          "horizonLabel": "horizon:later",
+          "title": "[Later] Customer Retention and Multi-Store Expansion",
+          "summary": "Prepare the roadmap beyond MVP operations with loyalty mechanics, promotions, and scalable multi-store administration.",
+          "dependencies": [
+            "Core single-store operations must be stable before cross-store complexity is introduced",
+            "Promotions and loyalty should build on trusted sales and product data"
           ],
-          "acceptance": [
-            "Shared auth contracts are the single source of truth",
-            "Frontend and backend import compatible role definitions",
-            "Role checks are aligned across API and UI"
-          ]
-        }
-      ]
-    },
-    {
-      "key": "users",
-      "label": "module:users",
-      "title": "[Users] Strengthen user administration and profile management",
-      "summary": "Track owner-managed user administration and profile editing flows.",
-      "subIssues": [
-        {
-          "title": "[Users] Review owner user-management API behaviors",
-          "areas": ["area:backend"],
-          "deliverables": [
-            "Validate user creation, activation, and listing workflows",
-            "Review authorization boundaries between owner and cashier roles",
-            "Confirm response payloads match shared DTOs"
+          "exitCriteria": [
+            "The product has a clear path from store operations to growth features",
+            "Loyalty and promotion concepts are modeled without breaking POS clarity",
+            "Multi-store architecture assumptions are explicit before implementation"
           ],
-          "acceptance": [
-            "Only authorized owners can manage store users",
-            "User management endpoints expose stable contracts",
-            "Role and activation changes are persisted correctly"
-          ]
-        },
-        {
-          "title": "[Users] Validate profile workspace and account editing UX",
-          "areas": ["area:frontend"],
-          "deliverables": [
-            "Audit user administration and profile workspaces",
-            "Check optimistic UI assumptions against backend responses",
-            "Review validation, toasts, and submission error handling"
-          ],
-          "acceptance": [
-            "User and profile screens surface backend validation errors clearly",
-            "Edit forms remain synchronized with saved state",
-            "Profile-specific flows work without business-logic duplication"
-          ]
-        },
-        {
-          "title": "[Users] Add QA coverage for role, activation, and profile scenarios",
-          "areas": ["area:frontend", "area:backend"],
-          "deliverables": [
-            "List the key administrative flows and negative cases",
-            "Cover role changes, disabled accounts, and profile edits",
-            "Define regression checks for owner-only actions"
-          ],
-          "acceptance": [
-            "Administrative risks are captured in a repeatable checklist",
-            "Role and activation regressions are easy to detect",
-            "Profile edits have explicit expected outcomes"
-          ]
-        }
-      ]
-    },
-    {
-      "key": "categories",
-      "label": "module:categories",
-      "title": "[Categories] Standardize category lifecycle management",
-      "summary": "Track catalog category creation, activation, and frontend integration.",
-      "subIssues": [
-        {
-          "title": "[Categories] Audit category CRUD and activation rules",
-          "areas": ["area:backend"],
-          "deliverables": [
-            "Review create, update, list, and activation logic",
-            "Check validation for duplicate or invalid category states",
-            "Confirm controller thinness and service-owned rules"
-          ],
-          "acceptance": [
-            "Category APIs enforce explicit lifecycle rules",
-            "Duplicate or invalid category states are handled safely",
-            "Business logic remains inside the service layer"
-          ]
-        },
-        {
-          "title": "[Categories] Verify category workspace integration with product and POS flows",
-          "areas": ["area:frontend"],
-          "deliverables": [
-            "Check category creation and activation UX",
-            "Trace how categories feed product creation and cashier filtering",
-            "Review empty-state and disabled-state behavior"
-          ],
-          "acceptance": [
-            "Category updates propagate correctly to dependent UI flows",
-            "Frontend uses backend-provided category truth",
-            "Category states are visible and understandable to operators"
-          ]
-        },
-        {
-          "title": "[Categories] Validate shared category contracts and regression cases",
-          "areas": ["area:shared", "area:backend", "area:frontend"],
-          "deliverables": [
-            "Confirm DTO alignment between modules and UI consumers",
-            "List regression cases for inactive or missing categories",
-            "Document any contract edge cases relevant to downstream modules"
-          ],
-          "acceptance": [
-            "Shared contracts prevent duplicate category typing",
-            "Inactive-category regressions are explicitly tracked",
-            "Downstream consumers know how category edge cases are handled"
-          ]
-        }
-      ]
-    },
-    {
-      "key": "products",
-      "label": "module:products",
-      "title": "[Products] Harden product catalog management",
-      "summary": "Track product CRUD, media, pricing, category mapping, and catalog integrity.",
-      "subIssues": [
-        {
-          "title": "[Products] Audit product CRUD, barcode uniqueness, and threshold rules",
-          "areas": ["area:backend"],
-          "deliverables": [
-            "Review DTO validation, pricing fields, and product lifecycle rules",
-            "Verify barcode uniqueness and category linkage behavior",
-            "Confirm stock-threshold handling stays in the service layer"
-          ],
-          "acceptance": [
-            "Product endpoints enforce explicit catalog constraints",
-            "Barcodes remain unique and validated",
-            "Threshold and catalog rules are not split across layers"
-          ]
-        },
-        {
-          "title": "[Products] Review product workspace, forms, and media flows",
-          "areas": ["area:frontend"],
-          "deliverables": [
-            "Audit create and edit forms, previews, and validation messaging",
-            "Check image handling and category selection UX",
-            "Validate inventory-related product fields on the client"
-          ],
-          "acceptance": [
-            "Product forms reflect backend validation accurately",
-            "Media and category selection flows behave consistently",
-            "Frontend does not recreate product business rules"
-          ]
-        },
-        {
-          "title": "[Products] Align shared product contracts with downstream consumers",
-          "areas": ["area:shared", "area:backend", "area:frontend"],
-          "deliverables": [
-            "Trace product DTO usage in inventory, POS, and reports",
-            "Eliminate mismatched product shape assumptions",
-            "Document contract dependencies for future module work"
-          ],
-          "acceptance": [
-            "Product types are shared rather than duplicated",
-            "Downstream modules consume a consistent product contract",
-            "Schema changes have a clear impact map"
-          ]
-        }
-      ]
-    },
-    {
-      "key": "inventory",
-      "label": "module:inventory",
-      "title": "[Inventory] Secure stock supervision and movement workflows",
-      "summary": "Track stock visibility, threshold monitoring, expiry handling, and movement updates.",
-      "subIssues": [
-        {
-          "title": "[Inventory] Review stock update rules, threshold evaluation, and expiry handling",
-          "areas": ["area:backend"],
-          "deliverables": [
-            "Audit inventory service logic for stock movement updates",
-            "Check low-stock, out-of-stock, and expiry derivation behavior",
-            "Inspect query efficiency and avoid N+1 style regressions"
-          ],
-          "acceptance": [
-            "Inventory updates preserve consistent stock state",
-            "Alert-driving conditions are derived predictably",
-            "Inventory queries remain operationally efficient"
-          ]
-        },
-        {
-          "title": "[Inventory] Validate inventory workspace filters, tables, and action flows",
-          "areas": ["area:frontend"],
-          "deliverables": [
-            "Review stock list, search, filters, and warning surfacing",
-            "Check editing or adjustment entry points against backend capabilities",
-            "Verify empty states and operator clarity"
-          ],
-          "acceptance": [
-            "Critical stock states are visible without ambiguity",
-            "Frontend actions map directly to supported backend behavior",
-            "Filtering and search behave consistently across datasets"
-          ]
-        },
-        {
-          "title": "[Inventory] Define regression checks for stock integrity and expiry scenarios",
-          "areas": ["area:backend", "area:frontend"],
-          "deliverables": [
-            "List stock increase, decrease, threshold, and expiry test scenarios",
-            "Cover edge cases such as zero stock and missing expiration dates",
-            "Document validation expectations for manual QA"
-          ],
-          "acceptance": [
-            "Inventory edge cases have explicit regression coverage",
-            "Manual QA can confirm stock integrity outcomes quickly",
-            "Expiry-related behavior is documented end to end"
-          ]
-        }
-      ]
-    },
-    {
-      "key": "sales",
-      "label": "module:sales",
-      "title": "[Sales] Stabilize POS checkout and sales history flows",
-      "summary": "Track cashier checkout, payment capture, receipt generation, and sales history behavior.",
-      "subIssues": [
-        {
-          "title": "[Sales] Audit checkout API, line totals, and receipt data integrity",
-          "areas": ["area:backend"],
-          "deliverables": [
-            "Review cart submission, totals, and payment-mode handling",
-            "Validate sale item line-total persistence and response shape",
-            "Confirm inventory side effects remain consistent after checkout"
-          ],
-          "acceptance": [
-            "Checkout persists correct totals and sale items",
-            "Receipt data is complete enough for frontend printing",
-            "Sales writes do not corrupt inventory state"
-          ]
-        },
-        {
-          "title": "[Sales] Review POS workspace, receipt screen, and sales history UX",
-          "areas": ["area:frontend"],
-          "deliverables": [
-            "Audit cashier product selection, cart, and payment workflows",
-            "Check receipt navigation and printing integration",
-            "Review sales-history filters, loading states, and error handling"
-          ],
-          "acceptance": [
-            "Cashier flows are fast and operationally clear",
-            "Receipts are accessible from the checkout flow",
-            "Sales-history UI matches the available backend data"
-          ]
-        },
-        {
-          "title": "[Sales] Validate shared sales contracts across POS, receipts, and reports",
-          "areas": ["area:shared", "area:backend", "area:frontend"],
-          "deliverables": [
-            "Trace sale DTOs into receipt and reporting consumers",
-            "Eliminate duplicated total or line-item assumptions",
-            "Document contract dependencies for checkout-related modules"
-          ],
-          "acceptance": [
-            "Sales contract changes are visible to dependent modules",
-            "Receipt and reporting consumers share the same sale model",
-            "Frontend total calculations do not drift from backend truth"
-          ]
-        }
-      ]
-    },
-    {
-      "key": "alerts",
-      "label": "module:alerts",
-      "title": "[Alerts] Strengthen operational alerting and follow-up",
-      "summary": "Track alert derivation, read-state handling, dropdown behavior, and operational follow-up flows.",
-      "subIssues": [
-        {
-          "title": "[Alerts] Review low-stock and expiry alert generation rules",
-          "areas": ["area:backend"],
-          "deliverables": [
-            "Audit alert derivation from inventory state",
-            "Check alert read-state persistence and retrieval behavior",
-            "Confirm alert service abstractions remain modular"
-          ],
-          "acceptance": [
-            "Alert generation reflects real inventory conditions",
-            "Read-state changes persist correctly",
-            "Alert logic is isolated within the alerts module"
-          ]
-        },
-        {
-          "title": "[Alerts] Validate alerts workspace and dropdown interaction design",
-          "areas": ["area:frontend"],
-          "deliverables": [
-            "Review alerts page, dropdown, and provider state handling",
-            "Check unread counts, loading states, and action affordances",
-            "Validate cross-navigation from alerts into relevant workspaces"
-          ],
-          "acceptance": [
-            "Operators can identify and clear alerts with minimal friction",
-            "Unread counts remain synchronized with backend state",
-            "Alerts UI avoids hidden or stale state"
-          ]
-        },
-        {
-          "title": "[Alerts] Trace email-notification dependencies and escalation behavior",
-          "areas": ["area:backend", "area:devops"],
-          "deliverables": [
-            "Map how alerts trigger optional email notifications",
-            "Define the operational fallback when SMTP is unavailable",
-            "Document the risk boundaries between in-app and email alerts"
-          ],
-          "acceptance": [
-            "Email escalation behavior is explicit and testable",
-            "Alerting remains usable without SMTP delivery",
-            "Operational dependencies are documented for maintainers"
-          ]
-        }
-      ]
-    },
-    {
-      "key": "reports",
-      "label": "module:reports",
-      "title": "[Reports] Standardize reporting and export reliability",
-      "summary": "Track KPI reporting, date-window logic, export behavior, and analytics presentation.",
-      "subIssues": [
-        {
-          "title": "[Reports] Audit reporting aggregation logic and date-window handling",
-          "areas": ["area:backend"],
-          "deliverables": [
-            "Review revenue, basket, transaction, and stock-summary calculations",
-            "Check timezone and period-filter semantics",
-            "Inspect reporting queries for correctness and efficiency"
-          ],
-          "acceptance": [
-            "Reporting calculations match intended business definitions",
-            "Date windows behave consistently across environments",
-            "Query patterns remain acceptable for operational use"
-          ]
-        },
-        {
-          "title": "[Reports] Validate charts, tables, and CSV export workflows",
-          "areas": ["area:frontend"],
-          "deliverables": [
-            "Audit reporting workspace charts and detailed tables",
-            "Check export UX and downloaded dataset expectations",
-            "Review loading, empty-state, and no-data behavior"
-          ],
-          "acceptance": [
-            "Operators can trust the displayed and exported report data",
-            "Charts and tables represent the same underlying metrics",
-            "No-data states are explicit rather than confusing"
-          ]
-        },
-        {
-          "title": "[Reports] Align report DTOs with dashboard and sales consumers",
-          "areas": ["area:shared", "area:backend", "area:frontend"],
-          "deliverables": [
-            "Trace report contracts into dashboard summary widgets",
-            "Eliminate duplicate assumptions about metric names or shapes",
-            "Document reporting contract dependencies"
-          ],
-          "acceptance": [
-            "Reporting types are shared where cross-module reuse exists",
-            "Dashboard and reports do not drift on metric semantics",
-            "Future metric changes have a documented impact path"
-          ]
-        }
-      ]
-    },
-    {
-      "key": "health",
-      "label": "module:health",
-      "title": "[Health] Improve service health and readiness tracking",
-      "summary": "Track readiness checks and operational verification for runtime dependencies.",
-      "subIssues": [
-        {
-          "title": "[Health] Verify backend health endpoints for critical dependencies",
-          "areas": ["area:backend"],
-          "deliverables": [
-            "Review current health controller coverage",
-            "Check whether database, mail, and runtime dependencies are represented appropriately",
-            "Document intended health semantics for local and deployed environments"
-          ],
-          "acceptance": [
-            "Health endpoints have clear operational meaning",
-            "Critical dependencies are covered intentionally",
-            "Status responses are understandable to operators"
-          ]
-        },
-        {
-          "title": "[Health] Align Docker and runtime checks with health expectations",
-          "areas": ["area:devops"],
-          "deliverables": [
-            "Trace compose health checks and startup ordering expectations",
-            "Identify gaps between application readiness and container health",
-            "Document the minimum verification flow for developers"
-          ],
-          "acceptance": [
-            "Container health semantics do not misrepresent app readiness",
-            "Local startup checks are reproducible",
-            "Operational verification steps are explicit"
-          ]
-        },
-        {
-          "title": "[Health] Add regression checklist for startup and dependency failures",
-          "areas": ["area:backend", "area:devops"],
-          "deliverables": [
-            "List expected outcomes for dependency-up and dependency-down scenarios",
-            "Cover database and mail-related startup behavior",
-            "Capture the observable signals a maintainer should verify"
-          ],
-          "acceptance": [
-            "Startup regressions can be detected quickly",
-            "Failure scenarios are documented with expected symptoms",
-            "Maintainers know what to validate after infrastructure changes"
-          ]
-        }
-      ]
-    },
-    {
-      "key": "mail",
-      "label": "module:mail",
-      "title": "[Mail] Secure SMTP delivery and notification reliability",
-      "summary": "Track the shared mail module used by password reset and alert notifications.",
-      "subIssues": [
-        {
-          "title": "[Mail] Audit SMTP configuration validation and send-path behavior",
-          "areas": ["area:backend"],
-          "deliverables": [
-            "Review mail service usage and configuration safeguards",
-            "Check startup behavior when SMTP variables are missing or partial",
-            "Confirm explicit failure handling for delivery attempts"
-          ],
-          "acceptance": [
-            "Mail behavior is explicit under valid and invalid configuration",
-            "Partial SMTP configuration does not fail silently",
-            "Delivery failures are observable and actionable"
-          ]
-        },
-        {
-          "title": "[Mail] Validate integration with auth reset and alert-notification flows",
-          "areas": ["area:backend"],
-          "deliverables": [
-            "Trace mail dependencies from auth and alerts modules",
-            "Check message-triggering conditions and recipient targeting",
-            "Document module boundaries around mail responsibilities"
-          ],
-          "acceptance": [
-            "Mail is invoked intentionally from dependent modules",
-            "Recipient and trigger rules are understandable",
-            "Cross-module boundaries remain clear"
-          ]
-        },
-        {
-          "title": "[Mail] Define delivery verification and fallback operations",
-          "areas": ["area:backend", "area:devops"],
-          "deliverables": [
-            "Describe the checks needed to validate SMTP in local and hosted environments",
-            "Record the fallback product behavior when email is unavailable",
-            "Add a maintainer checklist for operational troubleshooting"
-          ],
-          "acceptance": [
-            "SMTP verification steps are documented clearly",
-            "The product remains understandable when email is unavailable",
-            "Maintainers have a repeatable troubleshooting flow"
-          ]
-        }
-      ]
-    },
-    {
-      "key": "platform",
-      "label": "module:platform",
-      "title": "[Platform] Keep shared contracts, database, and delivery workflow aligned",
-      "summary": "Track shared packages, Prisma schema, seed data, and developer workflow consistency.",
-      "subIssues": [
-        {
-          "title": "[Platform] Synchronize shared packages with backend and frontend consumers",
-          "areas": ["area:shared", "area:backend", "area:frontend"],
-          "deliverables": [
-            "Review shared-types and shared-utils usage across the monorepo",
-            "Identify duplicated contract definitions or helper logic",
-            "Document any consumer coupling that needs to stay synchronized"
-          ],
-          "acceptance": [
-            "Shared packages remain the contract source of truth",
-            "Duplicated typing or helper logic is identified explicitly",
-            "Cross-package dependencies are visible to maintainers"
-          ]
-        },
-        {
-          "title": "[Platform] Review Prisma schema, migrations, and seed coherence",
-          "areas": ["area:backend", "area:devops"],
-          "deliverables": [
-            "Audit schema-to-module alignment for current business flows",
-            "Check recent migrations for consistency with runtime logic",
-            "Verify seed data still supports key operator workflows"
-          ],
-          "acceptance": [
-            "Schema changes are coherent with module behavior",
-            "Migrations reflect real product needs without hidden drift",
-            "Seed data remains useful for manual validation"
-          ]
-        },
-        {
-          "title": "[Platform] Validate local build, lint, test, and compose workflow",
-          "areas": ["area:devops", "area:backend", "area:frontend"],
-          "deliverables": [
-            "Review root scripts and workspace verification flow",
-            "Check Docker Compose expectations against the documented setup",
-            "Document the minimum delivery checklist for contributors"
-          ],
-          "acceptance": [
-            "Core developer workflow is understandable and repeatable",
-            "Verification commands map to actual repository responsibilities",
-            "Compose and local workflows are documented consistently"
+          "subIssues": [
+            {
+              "title": "[Loyalty][Later] Design customer, loyalty, and promotion domain boundaries",
+              "labels": ["module:loyalty", "area:backend", "area:frontend", "area:shared", "area:product"],
+              "deliverables": [
+                "Define customer identity, loyalty balance, and promotion eligibility concepts",
+                "Map how loyalty interacts with checkout without complicating cashier flows prematurely",
+                "Document the shared contracts needed for future implementation"
+              ],
+              "acceptance": [
+                "Loyalty concepts are modeled clearly before coding",
+                "Cashier experience remains a first-class constraint",
+                "Contract planning prevents ad hoc future types"
+              ]
+            },
+            {
+              "title": "[Multi-Store][Later] Plan tenant, reporting, and administration expansion model",
+              "labels": ["module:multistore", "area:backend", "area:shared", "area:devops", "area:product"],
+              "deliverables": [
+                "Define what changes when one owner manages multiple shops",
+                "Review schema, authorization, reporting, and seed assumptions for multi-store scale",
+                "Identify which modules would require boundary changes first"
+              ],
+              "acceptance": [
+                "Multi-store impact is understood before schema changes begin",
+                "Authorization and reporting implications are explicit",
+                "A phased expansion strategy exists instead of speculative coding"
+              ]
+            },
+            {
+              "title": "[Growth][Later] Define roadmap KPI model for retention and expansion features",
+              "labels": ["module:loyalty", "module:multistore", "module:reports", "area:product", "area:backend"],
+              "deliverables": [
+                "List the business KPIs needed for customer retention and store expansion decisions",
+                "Map which metrics can reuse the current reporting stack and which require new data structures",
+                "Document the implementation order that keeps analytics consistent"
+              ],
+              "acceptance": [
+                "Growth-oriented KPIs are scoped before implementation",
+                "Metric ownership is clear across current and future reporting",
+                "Expansion work has a measurable success model"
+              ]
+            }
           ]
         }
       ]

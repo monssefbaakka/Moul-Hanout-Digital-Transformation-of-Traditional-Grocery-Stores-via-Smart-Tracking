@@ -54,6 +54,7 @@ enum AlertType {
 model Shop {
   id        String   @id @default(cuid())
   name      String
+  logo      String?
   currency  String   @default("MAD")
   timezone  String   @default("Africa/Casablanca")
   createdAt DateTime @default(now())
@@ -166,6 +167,7 @@ model Product {
   saleItems      SaleItem[]
   alerts         Alert[]
   stockMovements StockMovement[]
+  stockBatches   StockBatch[]
 
   @@unique([shopId, barcode]) // Barcodes must be unique per shop
   @@index([shopId])
@@ -209,17 +211,19 @@ model Payment {
 }
 
 model Alert {
-  id        String    @id @default(cuid())
-  shopId    String
-  type      AlertType
-  productId String
-  message   String
-  isRead    Boolean   @default(false)
+  id          String    @id @default(cuid())
+  shopId      String
+  type        AlertType
+  productId   String
+  batchId     String?
+  message     String
+  isRead      Boolean   @default(false)
   emailSentAt DateTime? @map("email_sent_at")
-  createdAt DateTime  @default(now())
+  createdAt   DateTime  @default(now())
 
-  shop    Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  shop    Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  product Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  batch   StockBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
 
   @@index([shopId, isRead])
   @@index([shopId, emailSentAt])
@@ -241,14 +245,35 @@ model SaleItem {
   @@map("sale_items")
 }
 
+model StockBatch {
+  id           String    @id @default(cuid())
+  productId    String
+  quantity     Int
+  supplierId   String?
+  supplierName String?
+  expiryDate   DateTime?
+  receivedAt   DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  alerts  Alert[]
+
+  @@index([productId])
+  @@index([expiryDate])
+  @@map("stock_batches")
+}
+
 model StockMovement {
-  id        String       @id @default(cuid())
-  productId String
-  type      MovementType
-  qtyDelta  Int // Can be positive (IN) or negative (OUT)
-  reason    String?
-  createdBy String
-  createdAt DateTime     @default(now())
+  id           String       @id @default(cuid())
+  productId    String
+  type         MovementType
+  qtyDelta     Int
+  reason       String?
+  supplierId   String?
+  supplierName String?
+  batchId      String?
+  createdBy    String
+  createdAt    DateTime     @default(now())
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   user    User    @relation(fields: [createdBy], references: [id], onDelete: Restrict)

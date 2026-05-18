@@ -3,7 +3,8 @@ param(
   [string]$Repository,
   [string]$ProjectOwner,
   [string]$ProjectTitle,
-  [switch]$DryRun
+  [switch]$DryRun,
+  [switch]$SkipProject
 )
 
 $ErrorActionPreference = "Stop"
@@ -91,7 +92,7 @@ function Get-ExactIssue {
     "--repo", $Repo,
     "--state", "all",
     "--search", "$Title in:title",
-    "--json", "number,title,url"
+    "--json", "number,title,url,labels"
   )
 
   return $issues | Where-Object { $_.title -eq $Title } | Select-Object -First 1
@@ -102,6 +103,11 @@ function Ensure-Project {
     [string]$Owner,
     [string]$Title
   )
+
+  if ($SkipProject) {
+    Write-Info "Skipping project lookup and project item creation."
+    return $null
+  }
 
   if ($DryRun) {
     Write-Info "Would ensure project '$Title' for '$Owner'"
@@ -131,11 +137,19 @@ function Ensure-Project {
 }
 
 function Build-ChildIssueBody {
-  param([object]$Issue)
+  param(
+    [object]$Issue,
+    [object]$Epic,
+    [object]$Stream
+  )
 
   $lines = @(
-    "## Scope",
-    "This issue belongs to the module board backlog and should be executed as a focused delivery task.",
+    "## Context",
+    $Epic.summary,
+    "",
+    "## Roadmap Placement",
+    "- Stream: $($Stream.title)",
+    "- Priority horizon: $($Epic.horizonLabel)",
     "",
     "## Deliverables"
   )
@@ -151,45 +165,72 @@ function Build-ChildIssueBody {
     $lines += "- $criterion"
   }
 
+  if ($Epic.dependencies.Count -gt 0) {
+    $lines += ""
+    $lines += "## Dependencies"
+    foreach ($dependency in $Epic.dependencies) {
+      $lines += "- $dependency"
+    }
+  }
+
   $lines += ""
   $lines += "## Notes"
-  $lines += "- Respect the monorepo architecture: backend as source of truth, frontend as consumer, shared packages as contract."
-  $lines += "- Keep the implementation scoped to this issue unless a dependent change is required."
+  $lines += "- Backend remains the source of truth."
+  $lines += "- Frontend consumes backend APIs and shared contracts only."
+  $lines += "- Keep the implementation scoped unless a clearly justified dependent change is required."
 
   return ($lines -join "`n")
 }
 
 function Build-ParentIssueBody {
   param(
-    [object]$Module,
+    [object]$Stream,
+    [object]$Epic,
     [object[]]$Children
   )
 
   $lines = @(
     "## Objective",
-    $Module.summary,
+    $Epic.summary,
     "",
-    "## Child Issues"
+    "## Board Organization",
+    "- Stream: $($Stream.title)",
+    "- Priority horizon: $($Epic.horizonLabel)",
+    "",
+    "## Dependencies"
   )
+
+  foreach ($dependency in $Epic.dependencies) {
+    $lines += "- $dependency"
+  }
+
+  $lines += ""
+  $lines += "## Sub-Issues"
 
   foreach ($child in $Children) {
     $lines += "- [ ] #$($child.number) $($child.title)"
   }
 
   $lines += ""
-  $lines += "## Definition of Done"
-  $lines += "- Module work respects controller-service-repository boundaries"
-  $lines += "- Frontend consumes backend contracts without duplicating business rules"
-  $lines += "- Shared DTOs and types remain the single source of truth"
-  $lines += "- Validation, manual checks, and regression review are documented"
+  $lines += "## Exit Criteria"
+
+  foreach ($criterion in $Epic.exitCriteria) {
+    $lines += "- $criterion"
+  }
+
+  $lines += ""
+  $lines += "## Governance"
+  $lines += "- Respect controller -> service -> repository boundaries."
+  $lines += "- Keep frontend business logic thin and contract-driven."
+  $lines += "- Document validation and regressions before closing the epic."
 
   return ($lines -join "`n")
 }
 
-function New-OrReuseIssue {
+function Ensure-Issue {
   param(
     [string]$Repo,
-    [string]$Project,
+    [string]$ProjectName,
     [string]$Title,
     [string]$Body,
     [string[]]$Labels
@@ -214,12 +255,15 @@ function New-OrReuseIssue {
     "issue", "create",
     "--repo", $Repo,
     "--title", $Title,
-    "--body", $Body,
-    "--project", $Project
+    "--body", $Body
   )
 
   foreach ($label in $Labels) {
     $args += @("--label", $label)
+  }
+
+  if (-not $SkipProject -and -not [string]::IsNullOrWhiteSpace($ProjectName)) {
+    $args += @("--project", $ProjectName)
   }
 
   $url = (& gh @args).Trim()
@@ -254,44 +298,48 @@ if (-not $ProjectTitle) {
 }
 
 if (-not (Test-GhAuthenticated)) {
-  throw "GitHub CLI is not authenticated. Run 'gh auth login' and then 'gh auth refresh -s project' before executing this script."
+  throw "GitHub CLI is not authenticated. Run 'gh auth login' before executing this script."
 }
 
 Write-Info "Repository: $Repository"
 Write-Info "Project owner: $ProjectOwner"
 Write-Info "Project title: $ProjectTitle"
 Write-Info "Dry run: $DryRun"
+Write-Info "Skip project: $SkipProject"
 
 foreach ($label in $config.labels) {
   Ensure-Label -Repo $Repository -Label $label
 }
 
-foreach ($module in $config.modules) {
-  Ensure-Label -Repo $Repository -Label ([pscustomobject]@{
-    name = $module.label
-    color = "BFDADC"
-    description = "Issues for the $($module.key) module"
-  })
-}
-
 $project = Ensure-Project -Owner $ProjectOwner -Title $ProjectTitle
+$projectName = if ($null -ne $project) { $ProjectTitle } else { $null }
 
-foreach ($module in $config.modules) {
-  Write-Info "Processing module '$($module.key)'"
-  $children = @()
+foreach ($stream in $config.streams) {
+  Write-Info "Processing stream '$($stream.key)'"
 
-  foreach ($subIssue in $module.subIssues) {
-    $childLabels = @("type:task", $module.label) + $subIssue.areas
-    $childBody = Build-ChildIssueBody -Issue $subIssue
-    $children += New-OrReuseIssue -Repo $Repository -Project $ProjectTitle -Title $subIssue.title -Body $childBody -Labels $childLabels
+  foreach ($epic in $stream.epics) {
+    Write-Info "Processing epic '$($epic.key)'"
+    $children = @()
+
+    foreach ($subIssue in $epic.subIssues) {
+      $childLabels = @("type:task", $stream.streamLabel, $epic.horizonLabel) + $subIssue.labels
+      $childBody = Build-ChildIssueBody -Issue $subIssue -Epic $epic -Stream $stream
+      $children += Ensure-Issue -Repo $Repository -ProjectName $projectName -Title $subIssue.title -Body $childBody -Labels $childLabels
+    }
+
+    $parentLabels = @("type:epic", $stream.streamLabel, $epic.horizonLabel) + $epic.moduleLabels
+    $parentBody = Build-ParentIssueBody -Stream $stream -Epic $epic -Children $children
+    [void](Ensure-Issue -Repo $Repository -ProjectName $projectName -Title $epic.title -Body $parentBody -Labels $parentLabels)
   }
-
-  $parentBody = Build-ParentIssueBody -Module $module -Children $children
-  $parentLabels = @("type:epic", $module.label)
-  [void](New-OrReuseIssue -Repo $Repository -Project $ProjectTitle -Title $module.title -Body $parentBody -Labels $parentLabels)
 }
 
 Write-Info "Board generation flow completed."
+
+if ($SkipProject) {
+  Write-Info "Issues and labels were created without project-board linking."
+  Write-Info "To sync them into the GitHub project later, refresh gh scopes with read:project/project and rerun without -SkipProject."
+}
+
 if ($DryRun) {
   Write-Info "Dry run finished without writing to GitHub."
 }

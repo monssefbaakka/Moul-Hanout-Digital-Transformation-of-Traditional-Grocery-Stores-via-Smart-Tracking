@@ -163,6 +163,60 @@ export class SalesService {
     return sale;
   }
 
+  async cancel(shopId: string, userId: string, saleId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const sale = await tx.sale.findFirst({
+        where: { id: saleId, shopId },
+        include: { items: true },
+      });
+
+      if (!sale) {
+        throw new NotFoundException('Sale not found');
+      }
+
+      if (sale.status === SaleStatus.CANCELLED) {
+        throw new UnprocessableEntityException('Sale is already cancelled');
+      }
+
+      await tx.sale.update({
+        where: { id: saleId },
+        data: { status: SaleStatus.CANCELLED },
+      });
+
+      for (const item of sale.items) {
+        const updatedProduct = await tx.product.update({
+          where: { id: item.productId },
+          data: { currentStock: { increment: item.qty } },
+        });
+
+        await tx.stockMovement.create({
+          data: {
+            productId: item.productId,
+            type: MovementType.IN,
+            qtyDelta: item.qty,
+            reason: `Annulation vente #${sale.receiptNumber}`,
+            createdBy: userId,
+          },
+        });
+
+        await this.alertsPort.syncProductAlerts(tx, updatedProduct);
+      }
+
+      await tx.auditLog.create({
+        data: {
+          shopId,
+          userId,
+          action: 'CANCEL_SALE',
+          entityType: 'SALE',
+          entityId: saleId,
+          payload: { receiptNumber: sale.receiptNumber },
+        },
+      });
+
+      return this.getSaleDetail(tx, shopId, saleId);
+    });
+  }
+
   async findAll(shopId: string, query: GetSalesQueryDto) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;

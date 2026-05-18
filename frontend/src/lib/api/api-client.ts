@@ -264,6 +264,11 @@ export const reportsApi = {
       `/reports/sales/export${buildQuery(params)}`,
       `ventes-${params?.from ?? 'debut'}-${params?.to ?? 'fin'}.csv`,
     ),
+  exportSalesPdf: (params?: { from?: string; to?: string }) =>
+    downloadBlob(
+      `/reports/sales/export/pdf${buildQuery(params)}`,
+      `ventes-${params?.from ?? 'debut'}-${params?.to ?? 'fin'}.pdf`,
+    ),
 };
 
 export const inventoryApi = {
@@ -307,4 +312,6 @@ export const salesApi = {
     request<SalesListResponse>(`/sales${buildQuery(params)}`),
   getById: (id: string) => request<SaleDetail>(`/sales/${id}`),
   dailySummary: () => request<DailySummary>('/sales/summary/daily'),
+  cancel: (saleId: string) =>
+    request<SaleDetail>(`/sales/${saleId}/cancel`, { method: 'PATCH' }),
 };

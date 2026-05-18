@@ -30,7 +30,8 @@
       "Bash(node -e \"require\\('pptxgenjs'\\)\")",
       "Bash(npm install *)",
       "Bash(node presentation/generate.js)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "PowerShell($f = Get-Item \"C:\\\\Users\\\\pc\\\\projectw\\\\Moul-Hanout-Digital-Transformation-of-Traditional-Grocery-Stores-via-Smart-Tracking\\\\presentation\\\\inventory-alerts.pptx\"; Write-Host \"Size: $\\($f.Length\\) bytes | Modified: $\\($f.LastWriteTime\\)\")"
     ]
   }
 }

@@ -164,6 +164,7 @@ export default function RapportsPage() {
   const [inventoryReport, setInventoryReport] = useState<InventoryReport | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadReports = useCallback(() => {
@@ -199,6 +200,18 @@ export default function RapportsPage() {
       setErrorMessage("Échec de l'export CSV.");
     } finally {
       setIsExporting(false);
+    }
+  }
+
+  async function handleExportPdf() {
+    setIsExportingPdf(true);
+    setErrorMessage(null);
+    try {
+      await reportsApi.exportSalesPdf({ from: range.from, to: range.to });
+    } catch {
+      setErrorMessage("Échec de l'export PDF.");
+    } finally {
+      setIsExportingPdf(false);
     }
   }
 
@@ -287,15 +300,26 @@ export default function RapportsPage() {
             Analysez vos ventes et l&apos;état du stock sur la période choisie.
           </p>
         </div>
-        <button
-          type="button"
-          className="rpt-export-btn"
-          onClick={handleExport}
-          disabled={isExporting || isLoading}
-        >
-          <Download size={15} />
-          {isExporting ? "Export…" : "Exporter CSV"}
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            type="button"
+            className="rpt-export-btn"
+            onClick={handleExport}
+            disabled={isExporting || isLoading}
+          >
+            <Download size={15} />
+            {isExporting ? "Export…" : "Exporter CSV"}
+          </button>
+          <button
+            type="button"
+            className="rpt-export-btn"
+            onClick={handleExportPdf}
+            disabled={isExportingPdf || isLoading}
+          >
+            <Download size={15} />
+            {isExportingPdf ? "Export…" : "Exporter PDF"}
+          </button>
+        </div>
       </div>
 
       {/* ── Error ── */}

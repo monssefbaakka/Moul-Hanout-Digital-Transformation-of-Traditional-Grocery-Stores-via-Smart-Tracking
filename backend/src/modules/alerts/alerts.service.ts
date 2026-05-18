@@ -3,9 +3,11 @@ import { AlertType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { AlertSyncProduct, AlertsPort } from './alerts.port';
 
-const ALERT_EXPIRY_DAYS = 5;
+const ALERT_EXPIRY_DAYS = 7;
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 const MANAGED_ALERT_TYPES = [AlertType.LOW_STOCK, AlertType.EXPIRY] as const;
+
+const EXPIRY_THRESHOLDS = [7, 3, 1] as const;
 
 const alertProductSelect = {
   id: true,
@@ -14,6 +16,11 @@ const alertProductSelect = {
   lowStockThreshold: true,
   expirationDate: true,
   isActive: true,
+  stockBatches: {
+    where: { expiryDate: { not: null } },
+    orderBy: { expiryDate: 'asc' as const },
+    select: { id: true, expiryDate: true, quantity: true },
+  },
 } satisfies Prisma.ProductSelect;
 
 const alertWithProductInclude = {
@@ -33,6 +40,11 @@ const alertSyncProductSelect = {
   currentStock: true,
   lowStockThreshold: true,
   expirationDate: true,
+  stockBatches: {
+    where: { expiryDate: { not: null } },
+    orderBy: { expiryDate: 'asc' as const },
+    select: { id: true, expiryDate: true, quantity: true },
+  },
 } satisfies Prisma.ProductSelect;
 
 @Injectable()
@@ -180,9 +192,9 @@ export class AlertsService implements AlertsPort {
     for (const type of MANAGED_ALERT_TYPES) {
       const currentAlerts = alertsByType.get(type) ?? [];
       const [primaryAlert, ...duplicateAlerts] = currentAlerts;
-      const desiredMessage = desiredAlerts.get(type);
+      const desired = desiredAlerts.get(type);
 
-      if (!desiredMessage) {
+      if (!desired) {
         if (currentAlerts.length > 0) {
           await prismaClient.alert.deleteMany({
             where: {
@@ -201,20 +213,22 @@ export class AlertsService implements AlertsPort {
             shopId: product.shopId,
             productId: product.id,
             type,
-            message: desiredMessage,
+            message: desired.message,
+            batchId: desired.batchId ?? null,
             emailSentAt: null,
           },
         });
         continue;
       }
 
-      if (primaryAlert.message !== desiredMessage) {
+      if (primaryAlert.message !== desired.message) {
         await prismaClient.alert.update({
           where: {
             id: primaryAlert.id,
           },
           data: {
-            message: desiredMessage,
+            message: desired.message,
+            batchId: desired.batchId ?? null,
             isRead: false,
             emailSentAt: null,
           },
@@ -233,27 +247,55 @@ export class AlertsService implements AlertsPort {
     }
   }
 
-  private buildDesiredAlerts(product: AlertSyncProduct) {
-    const desiredAlerts = new Map<AlertType, string>();
+  private buildDesiredAlerts(product: AlertSyncProduct): Map<AlertType, { message: string; batchId?: string }> {
+    const desiredAlerts = new Map<AlertType, { message: string; batchId?: string }>();
 
     if (product.currentStock <= product.lowStockThreshold) {
-      desiredAlerts.set(
-        AlertType.LOW_STOCK,
-        `Stock bas pour ${product.name}: ${product.currentStock} unite(s) restantes sur un seuil de ${product.lowStockThreshold}.`,
-      );
+      desiredAlerts.set(AlertType.LOW_STOCK, {
+        message: `Stock bas pour ${product.name}: ${product.currentStock} unite(s) restantes sur un seuil de ${product.lowStockThreshold}.`,
+      });
     }
 
-    if (
-      product.currentStock > 0 &&
-      this.isExpiringSoon(product.expirationDate)
-    ) {
-      desiredAlerts.set(
-        AlertType.EXPIRY,
-        `Expiration proche pour ${product.name}: lot a verifier avant le ${this.formatDate(product.expirationDate!)}.`,
-      );
+    if (product.currentStock > 0) {
+      const expiryAlert = this.findMostUrgentBatchExpiry(product);
+      if (expiryAlert) {
+        desiredAlerts.set(AlertType.EXPIRY, expiryAlert);
+      }
     }
 
     return desiredAlerts;
+  }
+
+  private findMostUrgentBatchExpiry(product: AlertSyncProduct): { message: string; batchId?: string } | null {
+    const now = Date.now();
+    const batches = product.stockBatches ?? [];
+
+    // Find most urgent batch within 7 days
+    for (const batch of batches) {
+      if (!batch.expiryDate) continue;
+      const msUntilExpiry = batch.expiryDate.getTime() - now;
+      if (msUntilExpiry < 0 || msUntilExpiry > ALERT_EXPIRY_DAYS * MILLISECONDS_PER_DAY) continue;
+
+      const daysUntilExpiry = Math.ceil(msUntilExpiry / MILLISECONDS_PER_DAY);
+      const threshold = EXPIRY_THRESHOLDS.find((t) => daysUntilExpiry <= t) ?? EXPIRY_THRESHOLDS[0];
+
+      return {
+        message: `Expiration J-${threshold} pour ${product.name}: lot expire le ${this.formatDate(batch.expiryDate)}.`,
+        batchId: batch.id,
+      };
+    }
+
+    // Fallback to product-level expirationDate (legacy)
+    if (product.expirationDate && this.isExpiringSoon(product.expirationDate)) {
+      const msUntilExpiry = product.expirationDate.getTime() - now;
+      const daysUntilExpiry = Math.ceil(msUntilExpiry / MILLISECONDS_PER_DAY);
+      const threshold = EXPIRY_THRESHOLDS.find((t) => daysUntilExpiry <= t) ?? EXPIRY_THRESHOLDS[0];
+      return {
+        message: `Expiration J-${threshold} pour ${product.name}: lot expire le ${this.formatDate(product.expirationDate)}.`,
+      };
+    }
+
+    return null;
   }
 
   private isExpiringSoon(expirationDate?: Date | null) {

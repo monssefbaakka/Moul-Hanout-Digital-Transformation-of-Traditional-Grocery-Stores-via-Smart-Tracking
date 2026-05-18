@@ -83,12 +83,23 @@ export class InventoryService {
         include: inventoryProductInclude,
       });
 
+      const batch = await tx.stockBatch.create({
+        data: {
+          productId: product.id,
+          quantity: quantityDelta,
+          supplierName: dto.supplierName ?? null,
+          expiryDate: expirationDate ?? null,
+        },
+      });
+
       await tx.stockMovement.create({
         data: {
           productId: product.id,
           type: MovementType.IN,
           qtyDelta: quantityDelta,
           reason: dto.reason,
+          supplierName: dto.supplierName ?? null,
+          batchId: batch.id,
           createdBy: userId,
         },
       });
@@ -103,6 +114,8 @@ export class InventoryService {
           payload: {
             quantity: dto.quantity,
             reason: dto.reason,
+            supplierName: dto.supplierName ?? null,
+            batchId: batch.id,
             previousStock: product.currentStock,
             newStock: updatedStock,
             expirationDate: updatedProduct.expirationDate,

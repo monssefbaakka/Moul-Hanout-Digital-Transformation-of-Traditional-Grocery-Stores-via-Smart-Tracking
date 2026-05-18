@@ -33,6 +33,12 @@ export class StockInDto {
     { message: 'Expiration date must be a valid ISO date string' },
   )
   expirationDate?: string;
+
+  @ApiPropertyOptional({ example: 'Distributeur Atlas' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  supplierName?: string;
 }
 
 export class StockOutDto {

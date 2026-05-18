@@ -8,6 +8,7 @@ export type AlertSyncProduct = {
   currentStock: number;
   lowStockThreshold: number;
   expirationDate?: Date | null;
+  stockBatches?: Array<{ id: string; expiryDate: Date | null; quantity: number }>;
 };
 
 export interface AlertsPort {
