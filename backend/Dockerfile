@@ -31,7 +31,8 @@ COPY backend ./backend
 RUN cd backend && \
     DATABASE_URL=postgresql://prisma:prisma@localhost:5432/prisma \
     npx prisma generate && \
-    npm run build
+    npm run build && \
+    npx tsc --project tsconfig.seed.json
 # Strip devDependencies in-place.  This runs after generate so the
 # Prisma client is already baked into node_modules/@prisma/client.
 RUN HUSKY=0 npm prune --omit=dev
@@ -64,7 +65,7 @@ COPY backend/package.json ./backend/
 
 # Create the uploads directory with correct ownership; node_modules can
 # stay root-owned since the app only needs read access to run.
-RUN mkdir -p uploads && chown nestjs:nodejs uploads
+RUN mkdir -p backend/uploads && chown nestjs:nodejs backend/uploads
 
 USER nestjs
 

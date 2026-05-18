@@ -3,8 +3,11 @@
   "compilerOptions": {
     "module": "CommonJS",
     "moduleResolution": "node",
-    "resolvePackageJsonExports": false
+    "resolvePackageJsonExports": false,
+    "rootDir": "./",
+    "outDir": "./dist"
   },
+  "include": ["prisma/seeds/seed.ts"],
   "ts-node": {
     "transpileOnly": true
   }

@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
-    "husky": "^9.1.7"
+    "husky": "^9.1.7",
+    "pptxgenjs": "^4.0.1"
   }
 }
