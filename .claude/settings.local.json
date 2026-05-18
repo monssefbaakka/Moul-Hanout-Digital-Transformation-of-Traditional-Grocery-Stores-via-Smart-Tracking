@@ -5,7 +5,28 @@
       "Bash(python skills/ui-ux-pro-max/scripts/search.py \"grocery POS SaaS retail dashboard inventory management\" --design-system -p \"Moul Hanout\" -f markdown)",
       "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"grocery POS SaaS retail dashboard inventory\" --design-system -p \"Moul Hanout\" -f markdown)",
       "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"accessibility touch loading animation\" --domain ux -n 8)",
-      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"grocery store management dashboard POS point-of-sale retail Morocco\" --design-system -p \"Moul Hanout\" -f markdown)"
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"grocery store management dashboard POS point-of-sale retail Morocco\" --design-system -p \"Moul Hanout\" -f markdown)",
+      "Bash(npx ts-node *)",
+      "Bash(psql *)",
+      "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -c \"\\\\du\" 2>&1)",
+      "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -c \"CREATE USER moulhanout WITH PASSWORD 'password'; GRANT ALL PRIVILEGES ON DATABASE moulhanout TO moulhanout; ALTER DATABASE moulhanout OWNER TO moulhanout;\" 2>&1)",
+      "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d moulhanout -c \"GRANT ALL ON SCHEMA public TO moulhanout; GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO moulhanout; GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO moulhanout; ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO moulhanout; ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO moulhanout;\" 2>&1)",
+      "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U moulhanout -d moulhanout -c \"\\\\d categories\" 2>&1)",
+      "Bash(npx prisma *)",
+      "Bash(DATABASE_URL=\"postgresql://postgres@localhost:5432/moulhanout?schema=public\" npx prisma migrate resolve --rolled-back 20260417013000_add_inventory_sales_extensions)",
+      "Bash(DATABASE_URL=\"postgresql://postgres@localhost:5432/moulhanout?schema=public\" npx prisma migrate deploy)",
+      "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d moulhanout -c \"\\\\dt\" -c \"\\\\dT+\" 2>&1)",
+      "Bash(DATABASE_URL=\"postgresql://postgres@localhost:5432/moulhanout?schema=public\" npx prisma migrate reset --force)",
+      "Bash(set PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=YES)",
+      "PowerShell($env:PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION = \"YES\"; $env:DATABASE_URL = \"postgresql://postgres@localhost:5432/moulhanout?schema=public\"; Set-Location \"C:\\\\Users\\\\pc\\\\projectw\\\\Moul-Hanout-Digital-Transformation-of-Traditional-Grocery-Stores-via-Smart-Tracking\\\\backend\"; npx prisma migrate reset --force 2>&1)",
+      "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U moulhanout -d moulhanout -c \"SELECT c.name AS category, COUNT\\(p.id\\) AS products FROM categories c LEFT JOIN products p ON p.\\\\\"categoryId\\\\\" = c.id GROUP BY c.name ORDER BY c.name;\" 2>&1)",
+      "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U moulhanout -d moulhanout -t -A -c \"SELECT name FROM categories ORDER BY name;\" 2>&1; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U moulhanout -d moulhanout -t -A -c \"SELECT COUNT\\(*\\) FROM products;\" 2>&1)",
+      "PowerShell(docker exec moul_hanout_db *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{content_type}\\\\n\" \"https://images.openfoodfacts.org/images/products/544/900/000/0996/front_fr.400.jpg\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{content_type}\\\\n\" \"https://images.openfoodfacts.org/images/products/611/104/600/1015/front_fr.400.jpg\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{content_type}\\\\n\" \"https://images.openfoodfacts.org/images/products/611/108/000/1009/front_fr.400.jpg\")",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell($key = \"AIzaSyBB0Gfs1BnBhsRDijfPiEgYrcw4dXKt2V4\"; $r = Invoke-RestMethod \"https://generativelanguage.googleapis.com/v1beta/models?key=$key&pageSize=100\"; $r.models | Select-Object name | Format-Table -AutoSize)"
     ]
   }
 }

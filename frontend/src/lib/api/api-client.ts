@@ -229,6 +229,28 @@ export const productsApi = {
     request<Product>('/products', { method: 'POST', body: payload }),
   update: (productId: string, payload: ProductUpdatePayload) =>
     request<Product>(`/products/${productId}`, { method: 'PATCH', body: payload }),
+  generateImage: (name: string): Promise<string> =>
+    request<{ url: string }>('/products/generate-image', {
+      method: 'POST',
+      body: { name },
+    }).then((r) => r.url),
+  uploadImage: async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const headers: Record<string, string> = {};
+    if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+    const response = await fetch(`${BASE_URL}/products/upload-image`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({ error: 'Upload failed' }));
+      throw new ApiError(response.status, body.error ?? 'Upload failed', '/products/upload-image');
+    }
+    const payload = (await response.json()) as { data: { url: string } };
+    return payload.data.url;
+  },
 };
 
 export const reportsApi = {

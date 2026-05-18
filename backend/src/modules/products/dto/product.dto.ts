@@ -79,3 +79,11 @@ export class CreateProductDto {
 }
 
 export class UpdateProductDto extends PartialType(CreateProductDto) {}
+
+export class GenerateImageDto {
+  @ApiProperty({ example: 'Bouteille d eau 1.5L' })
+  @IsString()
+  @IsNotEmpty({ message: 'Product name is required' })
+  @MaxLength(120)
+  name!: string;
+}

@@ -455,6 +455,7 @@ export function ProductsWorkspace() {
       : null;
   const photoPreview = form.photo.trim();
   const userInitials = getInitials(user.name);
+
   const canChangeInitialStock = !isEditing;
   const topbarTitle = isEditing ? 'Modifier un produit' : 'Nouveau produit';
   const topbarSubmitLabel = isSubmitting
