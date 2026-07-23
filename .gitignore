@@ -11,3 +11,24 @@ Thumbs.db
 coverage/
 frontend/.git-backup-*/
 tasks*.md
+
+# build / tool output
+*.tsbuildinfo
+backend/dist/
+frontend/.next/
+
+# local agent tooling (never ship to buyer)
+.claude/
+.agents/
+agents.md
+skills-lock.json
+.pnpm-store/
+venv/
+__pycache__/
+*.pyc
+
+# scratch / debug dumps
+backend/e2e_fail_full.txt
+backend/e2e_out.txt
+backend/tsc_output.txt
+backend/tmp_moul_cdc.txt
