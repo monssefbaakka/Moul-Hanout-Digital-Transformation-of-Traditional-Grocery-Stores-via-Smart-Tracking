@@ -4,6 +4,25 @@ Goal: take the repository from "working MVP on my machine" to "a clean, licensed
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done
 
+## Progress (2026-07-23)
+
+**Phase 1 — done (committed, not yet pushed):**
+- [x] Proprietary `LICENSE` with ownership-transfer-on-sale terms
+- [x] Untracked all scratch dumps + `frontend/tsconfig.tsbuildinfo`
+- [x] Untracked local tooling: `.claude/`, `.agents/`, `agents.md`, `skills-lock.json`
+- [x] `.gitignore` extended so tooling/scratch never returns
+- [~] Secrets: leaked Gemini key must be **revoked in Google Cloud** (removal from HEAD does not scrub history) — owner action
+- [ ] Optional history rewrite (scrub key from history + reword placeholder commit `ed5ff11`) → force-push, coordinate with collaborator
+- [ ] `git push origin main` — blocked on GitHub auth in the automated shell; push manually
+
+**Phase 2 — in progress:**
+- [x] Backend unit tests green: **35 passed, 8 suites** (`npm run test --workspace backend`)
+- [x] Money-path specs already exist: `sales`, `reports`, `auth`, `users`, `alerts`
+- [x] `HANDOVER.md` written (deploy, env, migrations, limitations) + linked from README
+- [ ] Frontend automated tests still absent (no runner) — biggest remaining confidence gap
+- [ ] Full `npm run verify` (needs a live PostgreSQL for e2e)
+- [ ] Clean-clone `docker compose up --build` dry run
+
 ---
 
 ## 0. Reality check — what you are selling

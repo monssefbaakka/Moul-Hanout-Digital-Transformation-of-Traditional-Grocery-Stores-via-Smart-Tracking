@@ -257,6 +257,7 @@ The seed also creates a baseline shop, sample categories, and sample products so
 
 ## Additional Documentation
 
+- [Buyer handover guide](HANDOVER.md)
 - [Project overview](docs/overview.md)
 - [Architecture](docs/architecture.md)
 - [Task documentation baseline](docs/task-project-documentation-baseline.md)
